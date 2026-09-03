@@ -6,7 +6,7 @@ import { recalcCity, recalcFacility } from "@/lib/aggregates";
 import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { getCurrentUser } from "@/lib/session";
-import { StudentField, TrainingKind } from "@/generated/prisma/client";
+import { StudentField, TraineeRole } from "@/generated/prisma/client";
 
 /**
  * Writing, editing and withdrawing a review.
@@ -77,9 +77,16 @@ const reviewSchema = z.object({
       .max(120, "Keep the headline under 120 characters")
       .optional(),
   ),
-  training: z.preprocess(
+  // Paired with `field`, this is what lets a reader weigh the review — a
+  // first-week student and a second-year resident describe different places.
+  role: z.enum(TraineeRole, "Say what you were there as"),
+  department: z.preprocess(
     emptyToUndefined,
-    z.enum(TrainingKind, "Pick one of the listed kinds of training").optional(),
+    z
+      .string()
+      .trim()
+      .max(60, "A department name, not a description")
+      .optional(),
   ),
   trainingYear: z.preprocess(
     emptyToUndefined,
@@ -113,7 +120,8 @@ function readReviewFields(formData: FormData) {
     body: get("body"),
     field: get("field"),
     title: get("title"),
-    training: get("training"),
+    role: get("role"),
+    department: get("department"),
     trainingYear: get("trainingYear"),
     supervision: get("supervision"),
     handsOn: get("handsOn"),
@@ -157,7 +165,8 @@ function reviewPayload(input: ReviewInput) {
     body: input.body,
     field: input.field,
     title: input.title ?? null,
-    training: input.training ?? "CLINICAL_ROTATION",
+    role: input.role,
+    department: input.department ?? null,
     trainingYear: input.trainingYear ?? null,
     supervision: input.supervision ?? null,
     handsOn: input.handsOn ?? null,

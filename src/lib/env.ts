@@ -39,7 +39,16 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 
-if (env.NODE_ENV === "production" && !env.IP_HASH_SECRET) {
+/**
+ * A production deployment without this secret has guessable rate-limit
+ * buckets, so refuse to serve. The build is exempt: `next build` evaluates
+ * every module to collect page data, and requiring runtime secrets there
+ * would force CI and `docker build` to hold production credentials they have
+ * no business seeing.
+ */
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+
+if (env.NODE_ENV === "production" && !isBuildPhase && !env.IP_HASH_SECRET) {
   throw new Error(
     "IP_HASH_SECRET must be set in production — rate limiting depends on it.",
   );

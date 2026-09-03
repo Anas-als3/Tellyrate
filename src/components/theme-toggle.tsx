@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
@@ -8,10 +8,14 @@ type Theme = "light" | "dark";
 const STORAGE_KEY = "hospirate-theme";
 
 /**
- * What the page is showing right now — the explicit choice if there is one,
- * otherwise whatever the operating system asked for.
+ * The theme is not React state — it lives on the document element, was applied
+ * before React existed on the page, and can change without React's help when
+ * the operating system flips at sunset. So it is read as an external store.
  */
-function resolveTheme(): Theme {
+const listeners = new Set<() => void>();
+let snapshot: Theme | null = null;
+
+function readTheme(): Theme {
   const chosen = document.documentElement.dataset.theme;
   if (chosen === "dark" || chosen === "light") return chosen;
   return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -19,38 +23,52 @@ function resolveTheme(): Theme {
     : "light";
 }
 
+function publish() {
+  snapshot = null;
+  for (const listener of listeners) listener();
+}
+
+function subscribe(onStoreChange: () => void): () => void {
+  listeners.add(onStoreChange);
+  // A visitor who has never pressed the button keeps following the OS.
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", publish);
+
+  return () => {
+    listeners.delete(onStoreChange);
+    if (listeners.size === 0) media.removeEventListener("change", publish);
+  };
+}
+
+function getSnapshot(): Theme {
+  if (snapshot === null) snapshot = readTheme();
+  return snapshot;
+}
+
+/**
+ * The server cannot know what the browser resolved, so it renders a neutral
+ * icon. React re-reads the real value straight after hydration, which keeps
+ * the first paint free of a mismatch and free of a flash.
+ */
+function getServerSnapshot(): null {
+  return null;
+}
+
 export function ThemeToggle() {
-  // Null until mounted. The server cannot know which theme the browser
-  // resolved, so guessing here would swap the icon during hydration.
-  const [theme, setTheme] = useState<Theme | null>(null);
-
-  useEffect(() => {
-    setTheme(resolveTheme());
-
-    // A visitor who has never pressed the button should keep following the OS,
-    // including when it flips at sunset.
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onSystemChange = () => {
-      if (!document.documentElement.dataset.theme) {
-        setTheme(media.matches ? "dark" : "light");
-      }
-    };
-    media.addEventListener("change", onSystemChange);
-    return () => media.removeEventListener("change", onSystemChange);
-  }, []);
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function toggle() {
-    // Read the live value rather than state, so the button still does the
-    // right thing if it is pressed before the effect has run.
-    const next: Theme = resolveTheme() === "dark" ? "light" : "dark";
+    // Read the document rather than the snapshot, so the button behaves
+    // correctly even if it is pressed before hydration has settled.
+    const next: Theme = readTheme() === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // Private browsing or a full quota — the theme still applies for this
-      // page view, it just will not be remembered.
+      // Private browsing or a full quota: the theme still applies to this page
+      // view, it just will not be remembered.
     }
-    setTheme(next);
+    publish();
   }
 
   const label =
@@ -97,7 +115,7 @@ const iconProps = {
   "aria-hidden": true,
 };
 
-/** The pre-mount placeholder: half-filled disc, committing to neither state. */
+/** The pre-hydration placeholder: a half-filled disc, committing to neither. */
 function ContrastIcon() {
   return (
     <svg {...iconProps}>

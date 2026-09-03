@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useViewer } from "@/components/use-viewer";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
@@ -20,7 +21,11 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SiteHeader({ user }: { user: HeaderUser | null }) {
+export function SiteHeader() {
+  // Fetched client-side rather than passed down, so that reading the session
+  // cookie does not make every public page render per-request. See use-viewer.
+  const { viewer: user } = useViewer();
+
   const pathname = usePathname();
 
   return (
@@ -150,7 +155,9 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
                 Log in
               </Link>
             )}
-            <Link href="/review/new" className="btn btn--primary btn--small">
+            {/* A review always belongs to one facility, so the call to action
+                leads to the directory the reader picks it from. */}
+            <Link href="/facilities" className="btn btn--primary btn--small">
               Write a review
             </Link>
           </div>
@@ -255,7 +262,7 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
               )}
 
               <Link
-                href="/review/new"
+                href="/facilities"
                 className="btn btn--primary btn--small"
                 style={{ marginBlockStart: "var(--space-2xs)" }}
               >

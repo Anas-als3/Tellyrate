@@ -218,6 +218,40 @@ export function hasActiveFilters(query: FacilityQuery): boolean {
   return query.q !== "" || activeFamilies(query).length > 0;
 }
 
+/** The selected value of one family, as the string its option links carry. */
+export function familyValue(
+  query: FacilityQuery,
+  family: FilterFamily,
+): string | undefined {
+  const value = query[family];
+  return value === undefined ? undefined : String(value);
+}
+
+/**
+ * An override that sets — or, with `undefined`, clears — one family.
+ *
+ * Written as a switch rather than a computed key so the numeric `min` keeps
+ * its type and a typo in a family name is a compile error.
+ */
+export function familyOverride(
+  family: FilterFamily,
+  value: string | undefined,
+): FacilityQueryOverrides {
+  switch (family) {
+    case "city":
+      return { city: value };
+    case "country":
+      return { country: value };
+    case "kind":
+      return { kind: value };
+    case "min": {
+      if (value === undefined) return { min: undefined };
+      const parsed = Number(value);
+      return { min: isMinRating(parsed) ? parsed : undefined };
+    }
+  }
+}
+
 /**
  * Whether this result set should be kept out of the index.
  *

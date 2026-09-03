@@ -244,7 +244,10 @@ export function ReportControl({
   }
 
   return (
-    <details style={{ display: "inline-block" }}>
+    // Positioned rather than inline: opening the panel must not shove the
+    // vote buttons around, which is what an in-flow disclosure does inside a
+    // flex action row.
+    <details style={{ display: "inline-block", position: "relative" }}>
       <summary
         className="btn btn--quiet btn--small"
         style={{ color: "var(--ink-3)", listStyle: "none" }}
@@ -255,9 +258,13 @@ export function ReportControl({
       <div
         className="card"
         style={{
-          marginBlockStart: "var(--space-xs)",
+          position: "absolute",
+          insetInlineEnd: 0,
+          insetBlockStart: "calc(100% + var(--space-2xs))",
+          zIndex: 10,
+          inlineSize: "min(30rem, 80vw)",
           padding: "var(--space-m)",
-          maxInlineSize: "34rem",
+          boxShadow: "var(--shadow-2)",
         }}
       >
         {state.ok ? (
