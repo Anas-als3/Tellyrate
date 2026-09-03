@@ -1,3 +1,11 @@
+// Hospirate — anonymous reviews of clinical training placements.
+//
+// A privacy note that shapes this whole file: there is no email, no phone, no
+// real name and no school anywhere in it. An account is a username, a password
+// hash and a creation date. That is the entire identity surface, deliberately,
+// because a student who names a hospital's problems should not be traceable
+// back to a rotation list.
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -7,22 +15,459 @@ datasource db {
   provider = "postgresql"
 }
 
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum FacilityKind {
+  HOSPITAL
+  CLINIC
+  HEALTH_CENTER
+  DENTAL_CLINIC
+  PHARMACY
+  LABORATORY
+  REHAB_CENTER
+  MENTAL_HEALTH
+  OTHER
+}
+
+/// The discipline the reviewer was training in. Kept broad on purpose: a
+/// narrower list would make a reviewer easier to pick out of a small cohort.
+enum StudentField {
+  MEDICINE
+  NURSING
+  PHARMACY
+  DENTISTRY
+  LABORATORY
+  RADIOLOGY
+  PHYSIOTHERAPY
+  RESPIRATORY
+  NUTRITION
+  EMERGENCY_MEDICAL
+  PUBLIC_HEALTH
+  OTHER
+}
+
+enum TrainingKind {
+  CLINICAL_ROTATION
+  INTERNSHIP
+  RESIDENCY
+  SUMMER_TRAINING
+  OBSERVERSHIP
+  OTHER
+}
+
+enum ContentStatus {
+  PUBLISHED
+  PENDING
+  HIDDEN
+  REMOVED
+}
+
+enum FacilityStatus {
+  PUBLISHED
+  PENDING
+  MERGED
+  REJECTED
+}
+
+/// Where a facility record came from. OSM records are trusted and appear
+/// immediately; user-submitted ones are held to a light duplicate check.
+enum FacilitySource {
+  OPENSTREETMAP
+  USER_SUBMITTED
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  PERSONAL_INFO
+  MISINFORMATION
+  OFF_TOPIC
+  DUPLICATE
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
 model User {
-  id           String    @id @default(cuid())
-  username     String    @unique
-  usernameFold String    @unique
+  id       String @id @default(cuid())
+  username String @unique
+
+  /// Case-folded username. Uniqueness is enforced on this so that `Nurse01`
+  /// and `nurse01` cannot both exist and be confused for one another, while
+  /// the display casing the user chose is preserved above.
+  usernameFold String @unique
+
   passwordHash String
-  createdAt    DateTime  @default(now())
-  sessions     Session[]
+
+  /// Hash of a single-use recovery code shown once at signup. With no email on
+  /// file this is the only way back into an account, and hashing it means we
+  /// cannot read it out either.
+  recoveryCodeHash String?
+  recoveryUsedAt   DateTime?
+
+  role     UserRole @default(USER)
+  isBanned Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  sessions            Session[]
+  reviews             Review[]
+  reviewVotes         ReviewVote[]
+  comments            Comment[]
+  commentVotes        CommentVote[]
+  reports             Report[]       @relation("ReportAuthor")
+  resolvedReports     Report[]       @relation("ReportResolver")
+  submittedFacilities Facility[]     @relation("FacilitySubmitter")
+  facilityEdits       FacilityEdit[]
+
+  @@index([createdAt])
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id String @id @default(cuid())
+
+  /// SHA-256 of the session token. The token itself only ever lives in the
+  /// user's cookie, so this table is useless to an attacker who dumps it.
+  tokenHash String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// Places
+// ---------------------------------------------------------------------------
+
+/// Cities are first-class rather than a free-text column on Facility, because
+/// "browse by city" is a primary navigation route and because OpenStreetMap
+/// fills in `addr:city` on only a small minority of facilities — the importer
+/// assigns the city from the bounding box it queried instead.
+model City {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  name     String
+  /// Lower-cased, accent-stripped name for case-insensitive lookup and to
+  /// collapse transliteration variants ("Ar Riyadh" / "Riyadh").
+  nameFold String
+
+  country     String
+  countryCode String @db.Char(2)
+
+  lat Float
+  lon Float
+
+  /// Bounding box used by the importer, in Overpass order.
+  bboxSouth Float
+  bboxWest  Float
+  bboxNorth Float
+  bboxEast  Float
+
+  facilityCount Int @default(0)
+  reviewCount   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  facilities Facility[]
+
+  @@unique([nameFold, countryCode])
+  @@index([countryCode, name])
+  @@index([facilityCount(sort: Desc)])
+  @@index([reviewCount(sort: Desc)])
+}
+
+model Facility {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  name      String
+  /// Localised names kept alongside the primary one so Arabic-script and Latin
+  /// searches both hit, and so the UI can show a familiar name to each reader.
+  nameEn    String?
+  nameLocal String?
+
+  kind   FacilityKind
+  source FacilitySource @default(OPENSTREETMAP)
+  status FacilityStatus @default(PUBLISHED)
+
+  cityId String
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  address  String?
+  postcode String?
+  lat      Float?
+  lon      Float?
+
+  website String?
+  phone   String?
+
+  /// OpenStreetMap identity, used to make re-imports idempotent.
+  osmType String?
+  osmId   BigInt?
+
+  submittedById String?
+  submittedBy   User?   @relation("FacilitySubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+
+  /// When two records turn out to be the same place, the loser points here and
+  /// its reviews are moved across rather than deleted.
+  mergedIntoId String?
+  mergedInto   Facility?  @relation("FacilityMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom   Facility[] @relation("FacilityMerge")
+
+  // -- Denormalised aggregates -------------------------------------------
+  // Recomputed inside the same transaction as any review write. Sorting a
+  // directory by rating cannot afford a join and an aggregate per row.
+  reviewCount Int   @default(0)
+  ratingSum   Int   @default(0)
+  ratingAvg   Float @default(0)
+
+  /// Bayesian-adjusted rating; this is what "highest rated" sorts on, so that
+  /// one enthusiastic five-star review cannot outrank a hundred solid fours.
+  /// See lib/ranking.ts for the formula.
+  bayesScore Float @default(0)
+
+  avgSupervision  Float?
+  avgHandsOn      Float?
+  avgStaffRespect Float?
+  avgWorkload     Float?
+  avgResources    Float?
+  avgSafety       Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews Review[]
+  edits   FacilityEdit[]
+
+  @@unique([osmType, osmId])
+  @@index([cityId, status])
+  @@index([status, bayesScore(sort: Desc)])
+  @@index([status, reviewCount(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([kind, status])
+  @@index([name])
+}
+
+/// An append-only trail of who changed a facility's details, so vandalism can
+/// be reverted without keeping any record of who reads what.
+model FacilityEdit {
+  id String @id @default(cuid())
+
+  facilityId String
+  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  editorId String?
+  editor   User?   @relation(fields: [editorId], references: [id], onDelete: SetNull)
+
+  field    String
+  oldValue String?
+  newValue String?
+
+  createdAt DateTime @default(now())
+
+  @@index([facilityId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+
+model Review {
+  id String @id @default(cuid())
+
+  facilityId String
+  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  /// The one required rating. Sub-scores below are optional so that leaving a
+  /// review costs one click and a sentence, not a form.
+  overall Int
+
+  supervision  Int?
+  handsOn      Int?
+  staffRespect Int?
+  workload     Int?
+  resources    Int?
+  safety       Int?
+
+  title String?
+  body  String
+
+  field    StudentField
+  training TrainingKind @default(CLINICAL_ROTATION)
+
+  /// Coarse timing only — a month and year would, in a small department,
+  /// narrow a reviewer down to one person.
+  trainingYear Int?
+
+  status ContentStatus @default(PUBLISHED)
+
+  likeCount    Int   @default(0)
+  dislikeCount Int   @default(0)
+  /// Wilson lower bound on the like ratio; used for the "most helpful" sort.
+  helpfulScore Float @default(0)
+  commentCount Int   @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  editedAt  DateTime?
+
+  votes    ReviewVote[]
+  comments Comment[]
+
+  /// One review per person per facility. Someone who trained somewhere twice
+  /// edits their review rather than stacking the average.
+  @@unique([facilityId, authorId])
+  @@index([facilityId, status, helpfulScore(sort: Desc)])
+  @@index([facilityId, status, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([authorId])
+}
+
+model ReviewVote {
+  id String @id @default(cuid())
+
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 1 for a like, -1 for a dislike. Toggling off deletes the row.
+  value Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, userId])
+  @@index([userId])
+}
+
+model Comment {
+  id String @id @default(cuid())
+
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  /// One level of nesting only — replies to replies turn a review thread into
+  /// a forum, which is not what this site is for.
+  parentId String?
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+
+  body   String
+  status ContentStatus @default(PUBLISHED)
+
+  likeCount    Int @default(0)
+  dislikeCount Int @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  editedAt  DateTime?
+
+  votes CommentVote[]
+
+  @@index([reviewId, status, createdAt])
+  @@index([parentId])
+  @@index([authorId])
+}
+
+model CommentVote {
+  id String @id @default(cuid())
+
+  commentId String
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  value Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Moderation and abuse control
+// ---------------------------------------------------------------------------
+
+model Report {
+  id String @id @default(cuid())
+
+  /// "review" | "comment" | "facility". A polymorphic pointer rather than
+  /// three nullable foreign keys, since reports are low-volume and only ever
+  /// read from the moderation queue.
+  targetType String
+  targetId   String
+
+  reporterId String?
+  reporter   User?   @relation("ReportAuthor", fields: [reporterId], references: [id], onDelete: SetNull)
+
+  reason ReportReason
+  note   String?
+
+  status       ReportStatus @default(OPEN)
+  resolvedById String?
+  resolvedBy   User?        @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([targetType, targetId, reporterId])
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+/// Fixed-window counters for throttling.
+///
+/// The `bucket` key never contains a raw IP address — see lib/ratelimit.ts,
+/// which hashes the address with a salt that rotates daily. That is enough to
+/// stop a flood while making the table useless for telling who did what, and
+/// worthless for linking activity across days.
+model RateLimit {
+  bucket  String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
+/// Single-row table (id = "global") holding the site-wide mean rating that the
+/// Bayesian ranking needs. Recomputed periodically rather than per query.
+model SiteStat {
+  id String @id @default("global")
+
+  meanRating  Float @default(4.0)
+  reviewCount Int   @default(0)
+
+  updatedAt DateTime @updatedAt
 }
