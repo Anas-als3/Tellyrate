@@ -1,12 +1,15 @@
 import type { NextConfig } from "next";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 /**
  * Content Security Policy.
  *
  * The privacy promise of this site is that nothing you read or write here is
  * shared with anyone else, so the policy is written to make that structurally
  * true rather than merely intended: no third-party origin can be contacted at
- * all — no analytics, no font CDN, no embeds.
+ * all — no analytics, no font CDN, no map tiles, no embeds. Fonts are
+ * self-hosted precisely so this line can stay `'self'`.
  *
  * `'unsafe-inline'` is present for scripts because the App Router emits inline
  * hydration payloads on every page. The alternative — per-request nonces from
@@ -26,7 +29,8 @@ const contentSecurityPolicy = [
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",
-  "upgrade-insecure-requests",
+  // Would break nothing on localhost, but there is no reason to send it there.
+  ...(isProduction ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const securityHeaders = [
@@ -39,10 +43,15 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
   },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
+  // Only over HTTPS. Sending it in development would be meaningless at best.
+  ...(isProduction
+    ? [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=63072000; includeSubDomains; preload",
+        },
+      ]
+    : []),
 ];
 
 const nextConfig: NextConfig = {
@@ -51,7 +60,19 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      {
+        // Font filenames are stable, so cache them for a year.
+        source: "/fonts/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
   },
 };
 
