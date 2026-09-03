@@ -6,6 +6,16 @@ import { rotationStamp, STUDENT_FIELD_LABELS } from "@/lib/labels";
 import { FacilityCard } from "@/components/facility-card";
 import { Stars } from "@/components/stars";
 
+/**
+ * Rendered per request, not prerendered.
+ *
+ * This page reads live data, so prerendering it would need a database during
+ * `next build` — which `docker build` has no route to, and which would bake a
+ * snapshot of the directory into the image. The prose pages (/about,
+ * /privacy, /guidelines) carry no data and stay static.
+ */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: {
     absolute: "Hospirate — what a clinical rotation is really like",
