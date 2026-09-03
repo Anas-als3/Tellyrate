@@ -45,10 +45,8 @@ next-env.d.ts
 # prisma
 /prisma/dev.db*
 
-# local data / imports
-/data/*.json
-/data/*.ndjson
-!/data/.gitkeep
+# Downloaded OpenStreetMap dumps, not the committed city seed.
+/data/cache/
 
 # agent skill caches
 /.agents/
