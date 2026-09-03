@@ -211,12 +211,9 @@ function FilterGroups({
           </Link>
         }
       />
-      <FilterGroup
-        base={base}
-        query={query}
-        family="country"
-        options={facets.countries}
-      />
+      {/* No country group: the site covers Saudi Arabia only, so a filter with
+          one option is noise. The `country` URL param still parses, so links
+          keep working if the scope ever widens. */}
       <FilterGroup base={base} query={query} family="kind" options={facets.kinds} />
       <FilterGroup base={base} query={query} family="min" options={facets.ratings} />
     </div>
