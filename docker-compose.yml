@@ -1,0 +1,23 @@
+# Local development database for Hospirate.
+# Usage: npm run db:up   (start)   |   npm run db:down   (stop)
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: hospirate-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hospirate
+      POSTGRES_PASSWORD: hospirate
+      POSTGRES_DB: hospirate
+    ports:
+      - "5433:5432"
+    volumes:
+      - hospirate-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hospirate -d hospirate"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  hospirate-pgdata:
