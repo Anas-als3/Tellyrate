@@ -231,9 +231,28 @@ async function main() {
     if (index < cities.length - 1) await sleep(args.pauseMs);
   }
 
+  // Reassignment moves a facility from one city to another, and only the
+  // receiving city's counter was touched as we went — so the city it left is
+  // now overstated. Recompute every city rather than track which ones moved.
+  const allCities = await prisma.city.findMany({ select: { id: true } });
+  for (const { id } of allCities) {
+    const [facilityCount, agg] = await Promise.all([
+      prisma.facility.count({ where: { cityId: id, status: "PUBLISHED" } }),
+      prisma.facility.aggregate({
+        where: { cityId: id, status: "PUBLISHED" },
+        _sum: { reviewCount: true },
+      }),
+    ]);
+    await prisma.city.update({
+      where: { id },
+      data: { facilityCount, reviewCount: agg._sum.reviewCount ?? 0 },
+    });
+  }
+
   console.log(
     `\nDone. ${totalCreated} created, ${totalUpdated} updated, ${totalSkipped} reassigned to nearer cities.`,
   );
+  console.log(`Counters refreshed for ${allCities.length} cities.`);
   console.log("Facility data © OpenStreetMap contributors (ODbL).");
 
   await prisma.$disconnect();
