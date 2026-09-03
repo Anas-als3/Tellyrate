@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Cities",
   description:
-    "Every city with a hospital, clinic or health centre on Hospirate, grouped by country.",
+    "Every Saudi city with a hospital, clinic or health centre where students train.",
   alternates: { canonical: "/cities" },
 };
 
@@ -104,8 +104,7 @@ export default async function CitiesPage() {
         <p className="hint" style={{ maxInlineSize: "var(--measure)" }}>
           <span className="tnum">{cities.length}</span>{" "}
           {cities.length === 1 ? "city" : "cities"} with{" "}
-          <span className="tnum">{totalFacilities}</span> places to train,
-          grouped by country.
+          <span className="tnum">{totalFacilities}</span> places to train.
         </p>
       </header>
 
