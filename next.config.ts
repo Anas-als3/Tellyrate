@@ -20,7 +20,10 @@ const isProduction = process.env.NODE_ENV === "production";
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  // React's development build uses eval() for debugging features such as
+  // reconstructing cross-environment stacks. It never does in production, so
+  // this relaxation is scoped to dev and the shipped policy stays strict.
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",

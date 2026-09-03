@@ -54,12 +54,19 @@ enum StudentField {
   OTHER
 }
 
-enum TrainingKind {
-  CLINICAL_ROTATION
-  INTERNSHIP
-  RESIDENCY
-  SUMMER_TRAINING
-  OBSERVERSHIP
+/// What the reviewer actually was at the facility.
+///
+/// This replaced a separate "kind of training" field: asking both what you
+/// were and what the placement was is the same question twice, and this form
+/// is meant to be one screen. Summer training is a role here rather than a
+/// placement type because that is how people in Saudi Arabia describe it.
+enum TraineeRole {
+  STUDENT
+  SUMMER_TRAINEE
+  INTERN
+  RESIDENT
+  FELLOW
+  OBSERVER
   OTHER
 }
 
@@ -318,8 +325,14 @@ model Review {
   title String?
   body  String
 
-  field    StudentField
-  training TrainingKind @default(CLINICAL_ROTATION)
+  field StudentField
+  /// What they were there as — student, intern, resident. Paired with `field`
+  /// this reads as "Pharmacy · Intern", which is how a reader places a review.
+  role  TraineeRole
+
+  /// Free text, e.g. "Emergency", "ICU", "Inpatient pharmacy". Optional, and
+  /// deliberately not an enum: departments are named differently everywhere.
+  department String?
 
   /// Coarse timing only — a month and year would, in a small department,
   /// narrow a reviewer down to one person.

@@ -21,28 +21,13 @@
     "lat": 21.5504432,
     "lon": 39.1742363,
     "bbox": [
-      21.30044,
-      38.92424,
-      21.80044,
-      39.42424
+      21.39044,
+      39.01424,
+      21.71044,
+      39.33424
     ],
     "osmType": "node",
     "osmId": 1933393717
-  },
-  {
-    "name": "Dammam",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.4367824,
-    "lon": 50.1039991,
-    "bbox": [
-      26.18678,
-      49.854,
-      26.68678,
-      50.354
-    ],
-    "osmType": "node",
-    "osmId": 287865393
   },
   {
     "name": "Mecca",
@@ -75,19 +60,49 @@
     "osmId": 3679869
   },
   {
-    "name": "Abha",
+    "name": "Dammam",
     "country": "Saudi Arabia",
     "countryCode": "SA",
-    "lat": 18.4031209,
-    "lon": 42.4724333,
+    "lat": 26.4367824,
+    "lon": 50.1039991,
     "bbox": [
-      17.48522,
-      41.02411,
-      19.08534,
-      43.53365
+      26.27678,
+      49.944,
+      26.59678,
+      50.264
     ],
-    "osmType": "relation",
-    "osmId": 12436473
+    "osmType": "node",
+    "osmId": 287865393
+  },
+  {
+    "name": "Al Khobar",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.3039999,
+    "lon": 50.1960237,
+    "bbox": [
+      26.144,
+      50.03602,
+      26.464,
+      50.35602
+    ],
+    "osmType": "node",
+    "osmId": 32441763
+  },
+  {
+    "name": "Dhahran",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.2966528,
+    "lon": 50.1202146,
+    "bbox": [
+      26.13665,
+      49.96021,
+      26.45665,
+      50.28021
+    ],
+    "osmType": "node",
+    "osmId": 447805356
   },
   {
     "name": "Taif",
@@ -96,10 +111,10 @@
     "lat": 21.2702801,
     "lon": 40.4158308,
     "bbox": [
-      21.02028,
-      40.16583,
-      21.52028,
-      40.66583
+      21.11028,
+      40.25583,
+      21.43028,
+      40.57583
     ],
     "osmType": "node",
     "osmId": 1236468526
@@ -120,6 +135,21 @@
     "osmId": 12406852
   },
   {
+    "name": "Unaizah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.0908582,
+    "lon": 43.9864354,
+    "bbox": [
+      25.92458,
+      43.84479,
+      26.24458,
+      44.16479
+    ],
+    "osmType": "way",
+    "osmId": 785290146
+  },
+  {
     "name": "Tabuk",
     "country": "Saudi Arabia",
     "countryCode": "SA",
@@ -135,1398 +165,498 @@
     "osmId": 3679867
   },
   {
-    "name": "Khobar",
+    "name": "Abha",
     "country": "Saudi Arabia",
     "countryCode": "SA",
-    "lat": 26.3039999,
-    "lon": 50.1960237,
+    "lat": 18.4031209,
+    "lon": 42.4724333,
     "bbox": [
-      26.054,
-      49.94602,
-      26.554,
-      50.44602
+      17.48522,
+      41.02411,
+      19.08534,
+      43.53365
+    ],
+    "osmType": "relation",
+    "osmId": 12436473
+  },
+  {
+    "name": "Khamis Mushait",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 18.3,
+    "lon": 42.733333,
+    "bbox": [
+      18.14,
+      42.57333,
+      18.46,
+      42.89333
     ],
     "osmType": "node",
-    "osmId": 32441763
+    "osmId": 983083570
   },
   {
-    "name": "Cairo",
-    "country": "Egypt",
-    "countryCode": "EG",
-    "lat": 30.0443879,
-    "lon": 31.2357257,
+    "name": "Najran",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 18,
+    "lon": 45.666667,
     "bbox": [
-      29.74831,
-      31.22003,
-      30.32092,
-      31.90901
+      16.95,
+      43.59569,
+      19.44889,
+      52.00175
     ],
     "osmType": "relation",
-    "osmId": 5466227
+    "osmId": 3667317
   },
   {
-    "name": "Alexandria",
-    "country": "Egypt",
-    "countryCode": "EG",
-    "lat": 30.9432983,
-    "lon": 29.765645,
+    "name": "Jazan",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 17.333333,
+    "lon": 42.666667,
     "bbox": [
-      30.35968,
-      29.47161,
-      31.59032,
-      30.09312
+      16.37953,
+      41.45691,
+      18.05874,
+      43.3365
     ],
     "osmType": "relation",
-    "osmId": 3061846
+    "osmId": 3679903
   },
   {
-    "name": "Giza",
-    "country": "Egypt",
-    "countryCode": "EG",
-    "lat": 29.0540358,
-    "lon": 29.4190807,
+    "name": "Hail",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 27.8289499,
+    "lon": 40.8183065,
     "bbox": [
-      27.738,
-      27.31059,
-      30.34013,
-      31.90628
+      26.73508,
+      39.11418,
+      28.92316,
+      42.29669
     ],
     "osmType": "relation",
-    "osmId": 3824206
+    "osmId": 12413060
   },
   {
-    "name": "Mansoura",
-    "country": "Egypt",
-    "countryCode": "EG",
-    "lat": 31.0407773,
-    "lon": 31.3581295,
+    "name": "Arar",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 30.916667,
+    "lon": 41.5,
     "bbox": [
-      30.86077,
-      31.17906,
-      31.22077,
-      31.53906
+      30.54625,
+      39.5557,
+      31.99403,
+      42.216
     ],
     "osmType": "relation",
-    "osmId": 17091862
+    "osmId": 12413339
   },
   {
-    "name": "Assiut",
-    "country": "Egypt",
-    "countryCode": "EG",
-    "lat": 27.0463044,
-    "lon": 31.0148027,
+    "name": "Sakakah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 29.9784008,
+    "lon": 40.2047701,
     "bbox": [
-      26.79641,
-      30.7674,
-      27.29641,
-      31.2674
-    ],
-    "osmType": "way",
-    "osmId": 101416990
-  },
-  {
-    "name": "Amman",
-    "country": "Jordan",
-    "countryCode": "JO",
-    "lat": 31.6300869,
-    "lon": 36.2519843,
-    "bbox": [
-      31.25492,
-      35.67993,
-      32.08865,
-      37.25391
+      28.91363,
+      39.48188,
+      30.96334,
+      41.99684
     ],
     "osmType": "relation",
-    "osmId": 2926344
+    "osmId": 12413342
   },
   {
-    "name": "Irbid",
-    "country": "Jordan",
-    "countryCode": "JO",
-    "lat": 32.6050446,
-    "lon": 35.7551068,
+    "name": "Al Bahah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 20.2372671,
+    "lon": 41.4615479,
     "bbox": [
-      32.24578,
-      35.54632,
-      32.75631,
-      36.0889
+      19.44188,
+      40.83591,
+      20.82938,
+      42.13005
     ],
     "osmType": "relation",
-    "osmId": 2925617
+    "osmId": 3679888
   },
   {
-    "name": "Dubai",
-    "country": "United Arab Emirates",
-    "countryCode": "AE",
-    "lat": 25.0742823,
-    "lon": 55.1885624,
+    "name": "Yanbu",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 24.252616,
+    "lon": 38.2536615,
     "bbox": [
-      24.62308,
-      54.7154,
-      25.52507,
-      56.2053
+      23.64392,
+      37.36689,
+      24.86148,
+      38.90032
     ],
     "osmType": "relation",
-    "osmId": 4479752
+    "osmId": 12429009
   },
   {
-    "name": "Abu Dhabi",
-    "country": "United Arab Emirates",
-    "countryCode": "AE",
-    "lat": 24.4538352,
-    "lon": 54.3774014,
+    "name": "Al Kharj",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 23.8304401,
+    "lon": 47.6840134,
     "bbox": [
-      24.26144,
-      54.29716,
-      24.62144,
-      54.76591
+      23.07291,
+      46.93071,
+      24.58403,
+      48.15413
     ],
     "osmType": "relation",
-    "osmId": 4479763
+    "osmId": 12423676
   },
   {
-    "name": "Sharjah",
-    "country": "United Arab Emirates",
-    "countryCode": "AE",
-    "lat": 25.2691848,
-    "lon": 55.6934811,
+    "name": "Hafar Al Batin",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 28.4328084,
+    "lon": 45.9627527,
     "bbox": [
-      24.75726,
-      53.97771,
-      25.69898,
-      56.60245
-    ],
-    "osmType": "relation",
-    "osmId": 3766486
-  },
-  {
-    "name": "Doha",
-    "country": "Qatar",
-    "countryCode": "QA",
-    "lat": 25.3108807,
-    "lon": 51.5081812,
-    "bbox": [
-      25.15054,
-      51.39577,
-      25.6832,
-      52.41712
-    ],
-    "osmType": "relation",
-    "osmId": 27332
-  },
-  {
-    "name": "Kuwait City",
-    "country": "Kuwait",
-    "countryCode": "KW",
-    "lat": 29.3796532,
-    "lon": 47.9734174,
-    "bbox": [
-      29.12965,
-      47.72342,
-      29.62965,
-      48.22342
+      28.27281,
+      45.80275,
+      28.59281,
+      46.12275
     ],
     "osmType": "node",
-    "osmId": 544060405
+    "osmId": 983083568
   },
   {
-    "name": "Manama",
-    "country": "Bahrain",
-    "countryCode": "BH",
-    "lat": 26.2235041,
-    "lon": 50.5822436,
+    "name": "Qatif",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.6078257,
+    "lon": 49.9196611,
     "bbox": [
-      25.9735,
-      50.33224,
-      26.4735,
-      50.83224
+      26.44811,
+      49.74957,
+      26.77088,
+      50.09077
+    ],
+    "osmType": "relation",
+    "osmId": 12403818
+  },
+  {
+    "name": "Hofuf",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 25.3696585,
+    "lon": 49.5865224,
+    "bbox": [
+      25.20966,
+      49.42652,
+      25.52966,
+      49.74652
     ],
     "osmType": "node",
-    "osmId": 38903284
+    "osmId": 208501048
   },
   {
-    "name": "Muscat",
-    "country": "Oman",
-    "countryCode": "OM",
-    "lat": 23.6123628,
-    "lon": 58.5938134,
+    "name": "Jubail",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 27.0006968,
+    "lon": 49.6532161,
     "bbox": [
-      23.43464,
-      58.40797,
-      23.79464,
-      58.76797
-    ],
-    "osmType": "relation",
-    "osmId": 19168058
-  },
-  {
-    "name": "Baghdad",
-    "country": "Iraq",
-    "countryCode": "IQ",
-    "lat": 33.3061701,
-    "lon": 44.3872213,
-    "bbox": [
-      33.15329,
-      44.18462,
-      33.51329,
-      44.57
-    ],
-    "osmType": "relation",
-    "osmId": 5638803
-  },
-  {
-    "name": "Basra",
-    "country": "Iraq",
-    "countryCode": "IQ",
-    "lat": 30.2020701,
-    "lon": 47.5274169,
-    "bbox": [
-      29.11961,
-      46.56678,
-      31.28852,
-      49.10677
-    ],
-    "osmType": "relation",
-    "osmId": 3244379
-  },
-  {
-    "name": "Erbil",
-    "country": "Iraq",
-    "countryCode": "IQ",
-    "lat": 36.4553009,
-    "lon": 44.3259943,
-    "bbox": [
-      35.77317,
-      43.58919,
-      37.32299,
-      45.07187
-    ],
-    "osmType": "relation",
-    "osmId": 2969761
-  },
-  {
-    "name": "Beirut",
-    "country": "Lebanon",
-    "countryCode": "LB",
-    "lat": 33.8883901,
-    "lon": 35.5008361,
-    "bbox": [
-      33.70922,
-      35.32469,
-      34.06922,
-      35.68469
-    ],
-    "osmType": "relation",
-    "osmId": 316552
-  },
-  {
-    "name": "Damascus",
-    "country": "Syria",
-    "countryCode": "SY",
-    "lat": 33.5130695,
-    "lon": 36.3095814,
-    "bbox": [
-      33.26307,
-      36.05958,
-      33.76307,
-      36.55958
+      26.8407,
+      49.49322,
+      27.1607,
+      49.81322
     ],
     "osmType": "node",
-    "osmId": 1091272140
+    "osmId": 38903292
   },
   {
-    "name": "Casablanca",
-    "country": "Morocco",
-    "countryCode": "MA",
-    "lat": 33.5945144,
-    "lon": -7.6200284,
+    "name": "Bisha",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 20,
+    "lon": 42.6,
     "bbox": [
-      33.38713,
-      -7.78433,
-      33.74713,
-      -7.42433
+      18.9891,
+      41.87327,
+      20.59168,
+      43.11121
     ],
     "osmType": "relation",
-    "osmId": 4072985
+    "osmId": 12436475
   },
   {
-    "name": "Rabat",
-    "country": "Morocco",
-    "countryCode": "MA",
-    "lat": 34.0218454,
-    "lon": -6.8408929,
+    "name": "Al Qunfudhah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 19.1264288,
+    "lon": 41.0788747,
     "bbox": [
-      33.78712,
-      -7.02602,
-      34.14712,
-      -6.66602
+      18.50827,
+      40.03095,
+      19.83711,
+      41.6249
     ],
     "osmType": "relation",
-    "osmId": 2799215
+    "osmId": 12429518
   },
   {
-    "name": "Marrakesh",
-    "country": "Morocco",
-    "countryCode": "MA",
-    "lat": 31.6258257,
-    "lon": -7.9891608,
+    "name": "Rabigh",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 22.7989669,
+    "lon": 39.0335547,
     "bbox": [
-      31.44731,
-      -8.16704,
-      31.80731,
-      -7.80704
+      22.30247,
+      38.65977,
+      23.49728,
+      39.88517
     ],
     "osmType": "relation",
-    "osmId": 2799538
+    "osmId": 12429524
   },
   {
-    "name": "Tunis",
-    "country": "Tunisia",
-    "countryCode": "TN",
-    "lat": 36.8002068,
-    "lon": 10.1857757,
+    "name": "Al Majmaah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.5411549,
+    "lon": 45.777715,
     "bbox": [
-      36.63777,
-      9.9993,
-      36.99777,
-      10.3593
+      25.3811,
+      44.82173,
+      27.7021,
+      46.63197
     ],
     "osmType": "relation",
-    "osmId": 8896976
+    "osmId": 12423675
   },
   {
-    "name": "Algiers",
-    "country": "Algeria",
-    "countryCode": "DZ",
-    "lat": 36.7001535,
-    "lon": 3.0291661,
+    "name": "Shaqra",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 25.248333,
+    "lon": 45.252778,
     "bbox": [
-      36.52019,
-      2.79951,
-      36.88019,
-      3.38268
+      24.91571,
+      44.62229,
+      25.81044,
+      45.75437
     ],
     "osmType": "relation",
-    "osmId": 157062
+    "osmId": 12423677
   },
   {
-    "name": "Istanbul",
-    "country": "Turkey",
-    "countryCode": "TR",
-    "lat": 41.0707456,
-    "lon": 29.0509414,
+    "name": "Ad Dawadimi",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 24.494167,
+    "lon": 44.383333,
     "bbox": [
-      40.73767,
-      27.97085,
-      41.671,
-      29.9588
-    ],
-    "osmType": "relation",
-    "osmId": 223474
-  },
-  {
-    "name": "Ankara",
-    "country": "Turkey",
-    "countryCode": "TR",
-    "lat": 39.7160439,
-    "lon": 32.7059948,
-    "bbox": [
-      38.67286,
-      30.83438,
-      40.75628,
-      33.87325
-    ],
-    "osmType": "relation",
-    "osmId": 223422
-  },
-  {
-    "name": "Izmir",
-    "country": "Turkey",
-    "countryCode": "TR",
-    "lat": 38.23166,
-    "lon": 27.02997,
-    "bbox": [
-      37.81523,
-      26.17079,
-      39.38549,
-      28.49308
-    ],
-    "osmType": "relation",
-    "osmId": 223167
-  },
-  {
-    "name": "Karachi",
-    "country": "Pakistan",
-    "countryCode": "PK",
-    "lat": 24.8546842,
-    "lon": 67.0207055,
-    "bbox": [
-      24.42735,
-      66.28623,
-      25.6768,
-      67.58278
-    ],
-    "osmType": "relation",
-    "osmId": 6080948
-  },
-  {
-    "name": "Lahore",
-    "country": "Pakistan",
-    "countryCode": "PK",
-    "lat": 31.4568448,
-    "lon": 74.4078357,
-    "bbox": [
-      31.20059,
-      74.00685,
-      31.71342,
-      74.65467
-    ],
-    "osmType": "relation",
-    "osmId": 16117666
-  },
-  {
-    "name": "Islamabad",
-    "country": "Pakistan",
-    "countryCode": "PK",
-    "lat": 33.6443389,
-    "lon": 73.1995493,
-    "bbox": [
-      33.46405,
-      72.8176,
-      33.82405,
-      73.37488
-    ],
-    "osmType": "relation",
-    "osmId": 358002
-  },
-  {
-    "name": "Delhi",
-    "country": "India",
-    "countryCode": "IN",
-    "lat": 28.6328027,
-    "lon": 77.2197713,
-    "bbox": [
-      28.40463,
-      76.83884,
-      28.88345,
-      77.34534
-    ],
-    "osmType": "relation",
-    "osmId": 1942586
-  },
-  {
-    "name": "Mumbai",
-    "country": "India",
-    "countryCode": "IN",
-    "lat": 19.054999,
-    "lon": 72.8692035,
-    "bbox": [
-      18.805,
-      72.6192,
-      19.305,
-      73.1192
+      24.33417,
+      44.22333,
+      24.65417,
+      44.54333
     ],
     "osmType": "node",
-    "osmId": 16173235
+    "osmId": 1236695687
   },
   {
-    "name": "Bengaluru",
-    "country": "India",
-    "countryCode": "IN",
-    "lat": 12.9767936,
-    "lon": 77.590082,
+    "name": "Az Zulfi",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.2995806,
+    "lon": 44.8151967,
     "bbox": [
-      12.80806,
-      77.44197,
-      13.16806,
-      77.80197
+      25.97023,
+      44.38393,
+      27.01695,
+      45.09648
     ],
     "osmType": "relation",
-    "osmId": 7902476
+    "osmId": 12423674
   },
   {
-    "name": "Chennai",
-    "country": "India",
-    "countryCode": "IN",
-    "lat": 13.0836939,
-    "lon": 80.270186,
+    "name": "Qurayyat",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 30.8263242,
+    "lon": 37.9659429,
     "bbox": [
-      12.85198,
-      80.05654,
-      13.23516,
-      80.41654
+      29.90521,
+      37.00617,
+      31.7451,
+      38.40298
     ],
     "osmType": "relation",
-    "osmId": 1766358
+    "osmId": 12413343
   },
   {
-    "name": "Hyderabad",
-    "country": "India",
-    "countryCode": "IN",
-    "lat": 17.360589,
-    "lon": 78.4740613,
+    "name": "Wadi ad-Dawasir",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 20.4602516,
+    "lon": 44.799553,
     "bbox": [
-      17.24623,
-      78.23871,
-      17.60623,
-      78.62239
+      19.2687,
+      43.42441,
+      22.57712,
+      45.81256
     ],
     "osmType": "relation",
-    "osmId": 7868535
+    "osmId": 12423662
   },
   {
-    "name": "Kolkata",
-    "country": "India",
-    "countryCode": "IN",
-    "lat": 22.5726459,
-    "lon": 88.3638953,
+    "name": "Sharurah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 17.491225,
+    "lon": 47.1126055,
     "bbox": [
-      22.35305,
-      88.17055,
-      22.71305,
-      88.53055
+      16.95,
+      45.54139,
+      19.3333,
+      52.00175
     ],
     "osmType": "relation",
-    "osmId": 9381363
+    "osmId": 12424984
   },
   {
-    "name": "Dhaka",
-    "country": "Bangladesh",
-    "countryCode": "BD",
-    "lat": 23.9456166,
-    "lon": 90.2526382,
+    "name": "Ras Tanura",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.707417,
+    "lon": 50.067352,
     "bbox": [
-      22.84565,
-      89.30123,
-      24.78869,
-      91.24878
-    ],
-    "osmType": "relation",
-    "osmId": 3921322
-  },
-  {
-    "name": "Colombo",
-    "country": "Sri Lanka",
-    "countryCode": "LK",
-    "lat": 6.9388614,
-    "lon": 79.8542005,
-    "bbox": [
-      6.74189,
-      79.67523,
-      7.10189,
-      80.03523
-    ],
-    "osmType": "relation",
-    "osmId": 16132
-  },
-  {
-    "name": "Kathmandu",
-    "country": "Nepal",
-    "countryCode": "NP",
-    "lat": 27.708317,
-    "lon": 85.3205817,
-    "bbox": [
-      27.52898,
-      85.14513,
-      27.88898,
-      85.50513
-    ],
-    "osmType": "relation",
-    "osmId": 12394677
-  },
-  {
-    "name": "Kuala Lumpur",
-    "country": "Malaysia",
-    "countryCode": "MY",
-    "lat": 3.1516964,
-    "lon": 101.6942371,
-    "bbox": [
-      2.95898,
-      101.50682,
-      3.31898,
-      101.86682
-    ],
-    "osmType": "relation",
-    "osmId": 2939672
-  },
-  {
-    "name": "Singapore",
-    "country": "Singapore",
-    "countryCode": "SG",
-    "lat": 1.357107,
-    "lon": 103.8194992,
-    "bbox": [
-      1.13036,
-      103.56558,
-      1.51432,
-      104.57123
-    ],
-    "osmType": "relation",
-    "osmId": 536780
-  },
-  {
-    "name": "Jakarta",
-    "country": "Indonesia",
-    "countryCode": "ID",
-    "lat": -6.1754049,
-    "lon": 106.827168,
-    "bbox": [
-      -6.37446,
-      106.31467,
-      -4.99936,
-      106.97397
-    ],
-    "osmType": "relation",
-    "osmId": 6362934
-  },
-  {
-    "name": "Manila",
-    "country": "Philippines",
-    "countryCode": "PH",
-    "lat": 14.5904492,
-    "lon": 120.9803621,
-    "bbox": [
-      14.41519,
-      120.72894,
-      14.77519,
-      121.08894
-    ],
-    "osmType": "relation",
-    "osmId": 103703
-  },
-  {
-    "name": "Bangkok",
-    "country": "Thailand",
-    "countryCode": "TH",
-    "lat": 13.7524938,
-    "lon": 100.4935089,
-    "bbox": [
-      13.2191,
-      100.32788,
-      13.95517,
-      100.9386
-    ],
-    "osmType": "relation",
-    "osmId": 92277
-  },
-  {
-    "name": "London",
-    "country": "United Kingdom",
-    "countryCode": "GB",
-    "lat": 51.5074456,
-    "lon": -0.1277653,
-    "bbox": [
-      51.28676,
-      -0.51038,
-      51.69187,
-      0.33402
-    ],
-    "osmType": "relation",
-    "osmId": 175342
-  },
-  {
-    "name": "Manchester",
-    "country": "United Kingdom",
-    "countryCode": "GB",
-    "lat": 53.4424618,
-    "lon": -2.2324547,
-    "bbox": [
-      53.26235,
-      -2.41337,
-      53.62235,
-      -2.05337
-    ],
-    "osmType": "relation",
-    "osmId": 146656
-  },
-  {
-    "name": "Birmingham",
-    "country": "United Kingdom",
-    "countryCode": "GB",
-    "lat": 52.4948994,
-    "lon": -1.8518439,
-    "bbox": [
-      52.31488,
-      -2.06125,
-      52.67488,
-      -1.70125
-    ],
-    "osmType": "relation",
-    "osmId": 162378
-  },
-  {
-    "name": "Glasgow",
-    "country": "United Kingdom",
-    "countryCode": "GB",
-    "lat": 55.861155,
-    "lon": -4.2501687,
-    "bbox": [
-      55.61115,
-      -4.50017,
-      56.11115,
-      -4.00017
+      26.54742,
+      49.90735,
+      26.86742,
+      50.22735
     ],
     "osmType": "node",
-    "osmId": 11127374
+    "osmId": 1237805652
   },
   {
-    "name": "Dublin",
-    "country": "Ireland",
-    "countryCode": "IE",
-    "lat": 53.3493795,
-    "lon": -6.2605593,
+    "name": "Safwa",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.6484641,
+    "lon": 49.9466586,
     "bbox": [
-      53.17464,
-      -6.43095,
-      53.53464,
-      -6.07095
-    ],
-    "osmType": "relation",
-    "osmId": 1109531
-  },
-  {
-    "name": "Berlin",
-    "country": "Germany",
-    "countryCode": "DE",
-    "lat": 52.5173885,
-    "lon": 13.3951309,
-    "bbox": [
-      52.32688,
-      13.08835,
-      52.68688,
-      13.76116
-    ],
-    "osmType": "relation",
-    "osmId": 62422
-  },
-  {
-    "name": "Munich",
-    "country": "Germany",
-    "countryCode": "DE",
-    "lat": 48.1371079,
-    "lon": 11.5753822,
-    "bbox": [
-      47.97487,
-      11.36078,
-      48.33487,
-      11.72291
-    ],
-    "osmType": "relation",
-    "osmId": 62428
-  },
-  {
-    "name": "Paris",
-    "country": "France",
-    "countryCode": "FR",
-    "lat": 48.8534951,
-    "lon": 2.3483915,
-    "bbox": [
-      48.67887,
-      2.16694,
-      49.03887,
-      2.52694
-    ],
-    "osmType": "relation",
-    "osmId": 71525
-  },
-  {
-    "name": "Madrid",
-    "country": "Spain",
-    "countryCode": "ES",
-    "lat": 40.416782,
-    "lon": -3.703507,
-    "bbox": [
-      40.29785,
-      -3.88895,
-      40.65785,
-      -3.51833
-    ],
-    "osmType": "relation",
-    "osmId": 5326784
-  },
-  {
-    "name": "Barcelona",
-    "country": "Spain",
-    "countryCode": "ES",
-    "lat": 41.3825802,
-    "lon": 2.177073,
-    "bbox": [
-      41.21247,
-      1.96043,
-      41.57247,
-      2.32043
-    ],
-    "osmType": "relation",
-    "osmId": 347950
-  },
-  {
-    "name": "Rome",
-    "country": "Italy",
-    "countryCode": "IT",
-    "lat": 41.8933203,
-    "lon": 12.4829321,
-    "bbox": [
-      41.65564,
-      12.23447,
-      42.14103,
-      12.85576
-    ],
-    "osmType": "relation",
-    "osmId": 41485
-  },
-  {
-    "name": "Milan",
-    "country": "Italy",
-    "countryCode": "IT",
-    "lat": 45.4641943,
-    "lon": 9.1896346,
-    "bbox": [
-      45.28129,
-      8.9795,
-      45.64129,
-      9.3395
-    ],
-    "osmType": "relation",
-    "osmId": 44915
-  },
-  {
-    "name": "Amsterdam",
-    "country": "Netherlands",
-    "countryCode": "NL",
-    "lat": 52.3730796,
-    "lon": 4.8924534,
-    "bbox": [
-      52.17462,
-      4.72397,
-      52.53462,
-      5.08397
-    ],
-    "osmType": "relation",
-    "osmId": 271110
-  },
-  {
-    "name": "Brussels",
-    "country": "Belgium",
-    "countryCode": "BE",
-    "lat": 50.8467372,
-    "lon": 4.352493,
-    "bbox": [
-      50.67512,
-      4.19542,
-      51.03512,
-      4.55542
-    ],
-    "osmType": "relation",
-    "osmId": 58274
-  },
-  {
-    "name": "Vienna",
-    "country": "Austria",
-    "countryCode": "AT",
-    "lat": 48.2083537,
-    "lon": 16.3725042,
-    "bbox": [
-      48.04029,
-      16.18183,
-      48.40029,
-      16.57751
-    ],
-    "osmType": "relation",
-    "osmId": 109166
-  },
-  {
-    "name": "Zurich",
-    "country": "Switzerland",
-    "countryCode": "CH",
-    "lat": 47.3744489,
-    "lon": 8.5410422,
-    "bbox": [
-      47.19744,
-      8.35674,
-      47.55744,
-      8.71674
-    ],
-    "osmType": "relation",
-    "osmId": 1682248
-  },
-  {
-    "name": "Stockholm",
-    "country": "Sweden",
-    "countryCode": "SE",
-    "lat": 59.3336131,
-    "lon": 18.0275091,
-    "bbox": [
-      59.15377,
-      17.76069,
-      59.51377,
-      18.20008
-    ],
-    "osmType": "relation",
-    "osmId": 398021
-  },
-  {
-    "name": "Oslo",
-    "country": "Norway",
-    "countryCode": "NO",
-    "lat": 59.9133301,
-    "lon": 10.7389701,
-    "bbox": [
-      59.79221,
-      10.48917,
-      60.15221,
-      10.95139
-    ],
-    "osmType": "relation",
-    "osmId": 406091
-  },
-  {
-    "name": "Copenhagen",
-    "country": "Denmark",
-    "countryCode": "DK",
-    "lat": 55.6867243,
-    "lon": 12.5700724,
-    "bbox": [
-      55.43672,
-      12.32007,
-      55.93672,
-      12.82007
+      26.48846,
+      49.78666,
+      26.80846,
+      50.10666
     ],
     "osmType": "node",
-    "osmId": 13707878
+    "osmId": 11361447139
   },
   {
-    "name": "Warsaw",
-    "country": "Poland",
-    "countryCode": "PL",
-    "lat": 52.2319581,
-    "lon": 21.0067249,
+    "name": "Turaif",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 31.6725877,
+    "lon": 38.6615532,
     "bbox": [
-      52.053,
-      20.85169,
-      52.413,
-      21.27115
-    ],
-    "osmType": "relation",
-    "osmId": 336075
-  },
-  {
-    "name": "New York",
-    "country": "United States",
-    "countryCode": "US",
-    "lat": 40.7127281,
-    "lon": -74.0060152,
-    "bbox": [
-      40.47658,
-      -74.25884,
-      40.91763,
-      -73.70023
-    ],
-    "osmType": "relation",
-    "osmId": 175905
-  },
-  {
-    "name": "Los Angeles",
-    "country": "United States",
-    "countryCode": "US",
-    "lat": 34.0536909,
-    "lon": -118.242766,
-    "bbox": [
-      33.65954,
-      -118.66818,
-      34.33731,
-      -118.1553
-    ],
-    "osmType": "relation",
-    "osmId": 207359
-  },
-  {
-    "name": "Chicago",
-    "country": "United States",
-    "countryCode": "US",
-    "lat": 41.8755616,
-    "lon": -87.6244212,
-    "bbox": [
-      41.64453,
-      -87.94009,
-      42.02305,
-      -87.52412
-    ],
-    "osmType": "relation",
-    "osmId": 122604
-  },
-  {
-    "name": "Houston",
-    "country": "United States",
-    "countryCode": "US",
-    "lat": 29.7589382,
-    "lon": -95.3676974,
-    "bbox": [
-      29.53707,
-      -95.90974,
-      30.11035,
-      -95.01205
-    ],
-    "osmType": "relation",
-    "osmId": 2688911
-  },
-  {
-    "name": "Boston",
-    "country": "United States",
-    "countryCode": "US",
-    "lat": 42.3588336,
-    "lon": -71.0578303,
-    "bbox": [
-      42.13245,
-      -71.19124,
-      42.49245,
-      -70.80449
-    ],
-    "osmType": "relation",
-    "osmId": 2315704
-  },
-  {
-    "name": "Philadelphia",
-    "country": "United States",
-    "countryCode": "US",
-    "lat": 39.9527237,
-    "lon": -75.1635262,
-    "bbox": [
-      39.82248,
-      -75.29805,
-      40.18248,
-      -74.93805
-    ],
-    "osmType": "relation",
-    "osmId": 188022
-  },
-  {
-    "name": "Baltimore",
-    "country": "United States",
-    "countryCode": "US",
-    "lat": 39.2908816,
-    "lon": -76.610759,
-    "bbox": [
-      39.10462,
-      -76.80049,
-      39.46462,
-      -76.44049
-    ],
-    "osmType": "relation",
-    "osmId": 133345
-  },
-  {
-    "name": "Toronto",
-    "country": "Canada",
-    "countryCode": "CA",
-    "lat": 43.6534817,
-    "lon": -79.3839347,
-    "bbox": [
-      43.53753,
-      -79.63928,
-      43.89753,
-      -79.11322
-    ],
-    "osmType": "relation",
-    "osmId": 324211
-  },
-  {
-    "name": "Montreal",
-    "country": "Canada",
-    "countryCode": "CA",
-    "lat": 45.5031824,
-    "lon": -73.5698065,
-    "bbox": [
-      45.37743,
-      -73.97416,
-      45.73743,
-      -73.4743
-    ],
-    "osmType": "relation",
-    "osmId": 1634158
-  },
-  {
-    "name": "Vancouver",
-    "country": "Canada",
-    "countryCode": "CA",
-    "lat": 49.2608724,
-    "lon": -123.113952,
-    "bbox": [
-      49.07755,
-      -123.3041,
-      49.43755,
-      -122.9441
-    ],
-    "osmType": "relation",
-    "osmId": 1852574
-  },
-  {
-    "name": "Sydney",
-    "country": "Australia",
-    "countryCode": "AU",
-    "lat": -33.8698439,
-    "lon": 151.2082848,
-    "bbox": [
-      -34.25984,
-      150.26083,
-      -33.36419,
-      151.3439
-    ],
-    "osmType": "relation",
-    "osmId": 5750005
-  },
-  {
-    "name": "Melbourne",
-    "country": "Australia",
-    "countryCode": "AU",
-    "lat": -37.8142454,
-    "lon": 144.9631732,
-    "bbox": [
-      -38.49937,
-      144.44405,
-      -37.40175,
-      146.1925
-    ],
-    "osmType": "relation",
-    "osmId": 4246124
-  },
-  {
-    "name": "Auckland",
-    "country": "New Zealand",
-    "countryCode": "NZ",
-    "lat": -36.5412811,
-    "lon": 174.5506105,
-    "bbox": [
-      -37.36447,
-      173.89633,
-      -35.69839,
-      175.90322
-    ],
-    "osmType": "relation",
-    "osmId": 2094141
-  },
-  {
-    "name": "Lagos",
-    "country": "Nigeria",
-    "countryCode": "NG",
-    "lat": 6.5269033,
-    "lon": 3.5774005,
-    "bbox": [
-      6.35174,
-      2.70598,
-      6.71174,
-      4.35091
-    ],
-    "osmType": "relation",
-    "osmId": 3718182
-  },
-  {
-    "name": "Abuja",
-    "country": "Nigeria",
-    "countryCode": "NG",
-    "lat": 9.0643305,
-    "lon": 7.4892974,
-    "bbox": [
-      8.81433,
-      7.2393,
-      9.31433,
-      7.7393
+      31.51259,
+      38.50155,
+      31.83259,
+      38.82155
     ],
     "osmType": "node",
-    "osmId": 31203257
+    "osmId": 1236745370
   },
   {
-    "name": "Nairobi",
-    "country": "Kenya",
-    "countryCode": "KE",
-    "lat": -1.2890006,
-    "lon": 36.8172812,
+    "name": "Duba",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 27.5626296,
+    "lon": 36.092896,
     "bbox": [
-      -1.48278,
-      36.6647,
-      -1.12278,
-      37.10487
+      26.813,
+      34.8991,
+      28.31302,
+      36.73169
     ],
     "osmType": "relation",
-    "osmId": 9185096
+    "osmId": 12420157
   },
   {
-    "name": "Accra",
-    "country": "Ghana",
-    "countryCode": "GH",
-    "lat": 5.5571096,
-    "lon": -0.2012376,
+    "name": "Al Wajh",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.6270634,
+    "lon": 36.66529,
     "bbox": [
-      5.41215,
-      -0.34956,
-      5.77215,
-      0.01044
+      25.75675,
+      36.04105,
+      27.49729,
+      37.69519
     ],
     "osmType": "relation",
-    "osmId": 12803764
+    "osmId": 12420156
   },
   {
-    "name": "Cape Town",
-    "country": "South Africa",
-    "countryCode": "ZA",
-    "lat": -33.9288301,
-    "lon": 18.4172197,
+    "name": "Afif",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 23.9023697,
+    "lon": 42.9150847,
     "bbox": [
-      -34.17883,
-      18.16722,
-      -33.67883,
-      18.66722
+      22.41814,
+      41.68113,
+      24.7334,
+      43.68309
+    ],
+    "osmType": "relation",
+    "osmId": 12423683
+  },
+  {
+    "name": "Al Quway'iyah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 24.065056,
+    "lon": 45.284381,
+    "bbox": [
+      21.92795,
+      43.26991,
+      24.67027,
+      45.97166
+    ],
+    "osmType": "relation",
+    "osmId": 12423672
+  },
+  {
+    "name": "Baljurashi",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 19.859444,
+    "lon": 41.557222,
+    "bbox": [
+      19.69809,
+      41.50283,
+      20.29958,
+      41.97897
+    ],
+    "osmType": "relation",
+    "osmId": 12429798
+  },
+  {
+    "name": "Mahayil",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 18.546389,
+    "lon": 42.048889,
+    "bbox": [
+      18.38639,
+      41.88889,
+      18.70639,
+      42.20889
     ],
     "osmType": "node",
-    "osmId": 32675806
-  },
-  {
-    "name": "Johannesburg",
-    "country": "South Africa",
-    "countryCode": "ZA",
-    "lat": -26.205,
-    "lon": 28.049722,
-    "bbox": [
-      -26.455,
-      27.79972,
-      -25.955,
-      28.29972
-    ],
-    "osmType": "node",
-    "osmId": 261833893
-  },
-  {
-    "name": "Addis Ababa",
-    "country": "Ethiopia",
-    "countryCode": "ET",
-    "lat": 9,
-    "lon": 38.75,
-    "bbox": [
-      8.78585,
-      38.59398,
-      9.14585,
-      38.95398
-    ],
-    "osmType": "relation",
-    "osmId": 1707699
-  },
-  {
-    "name": "Khartoum",
-    "country": "Sudan",
-    "countryCode": "SD",
-    "lat": 15.5635972,
-    "lon": 32.5349123,
-    "bbox": [
-      15.32223,
-      32.4057,
-      15.68223,
-      32.7657
-    ],
-    "osmType": "relation",
-    "osmId": 3851428
-  },
-  {
-    "name": "Sao Paulo",
-    "country": "Brazil",
-    "countryCode": "BR",
-    "lat": -23.5506507,
-    "lon": -46.6333824,
-    "bbox": [
-      -24.0079,
-      -46.82627,
-      -23.35776,
-      -46.36509
-    ],
-    "osmType": "relation",
-    "osmId": 298285
-  },
-  {
-    "name": "Rio de Janeiro",
-    "country": "Brazil",
-    "countryCode": "BR",
-    "lat": -22.9110137,
-    "lon": -43.2093727,
-    "bbox": [
-      -23.0944,
-      -43.79625,
-      -22.7344,
-      -43.09908
-    ],
-    "osmType": "relation",
-    "osmId": 2697338
-  },
-  {
-    "name": "Buenos Aires",
-    "country": "Argentina",
-    "countryCode": "AR",
-    "lat": -34.6095579,
-    "lon": -58.3887904,
-    "bbox": [
-      -34.79618,
-      -58.6133,
-      -34.43618,
-      -58.2533
-    ],
-    "osmType": "relation",
-    "osmId": 1224652
-  },
-  {
-    "name": "Mexico City",
-    "country": "Mexico",
-    "countryCode": "MX",
-    "lat": 19.3207722,
-    "lon": -99.1514678,
-    "bbox": [
-      19.04872,
-      -99.36492,
-      19.59276,
-      -98.9403
-    ],
-    "osmType": "relation",
-    "osmId": 1376330
-  },
-  {
-    "name": "Bogota",
-    "country": "Colombia",
-    "countryCode": "CO",
-    "lat": 4.6533817,
-    "lon": -74.0836331,
-    "bbox": [
-      4.4656,
-      -74.29683,
-      4.83325,
-      -73.93683
-    ],
-    "osmType": "relation",
-    "osmId": 7426387
-  },
-  {
-    "name": "Lima",
-    "country": "Peru",
-    "countryCode": "PE",
-    "lat": -12.2001093,
-    "lon": -76.2850579,
-    "bbox": [
-      -13.32417,
-      -77.88631,
-      -10.27419,
-      -75.5075
-    ],
-    "osmType": "relation",
-    "osmId": 1944659
-  },
-  {
-    "name": "Santiago",
-    "country": "Chile",
-    "countryCode": "CL",
-    "lat": -33.4377752,
-    "lon": -70.6505796,
-    "bbox": [
-      -33.63208,
-      -70.83852,
-      -33.27208,
-      -70.47852
-    ],
-    "osmType": "relation",
-    "osmId": 164609
+    "osmId": 1236688965
   }
 ]

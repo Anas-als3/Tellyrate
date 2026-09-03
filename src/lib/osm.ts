@@ -141,13 +141,71 @@ export async function runOverpass(
   throw lastError ?? new OverpassError("Overpass request failed");
 }
 
+/**
+ * Businesses that carry a health-ish OSM tag but are not places a healthcare
+ * student is ever placed: opticians, spas, cupping and herbal shops,
+ * veterinary practices. Matched on the name in both scripts, because the tags
+ * alone do not separate them — an optician is frequently `shop=optician` with
+ * `healthcare=optometrist`, and a massage parlour sometimes just `healthcare`.
+ */
+const NOT_A_TRAINING_SITE = [
+  // English
+  "optic", "optical", "optician", "eyewear", "glasses", "spa", "massage",
+  "beauty", "cosmetic", "slimming", "herbal", "cupping", "hijama",
+  "veterinary", "vet clinic", "gym", "fitness", "barber",
+  // Arabic
+  "نظارات", "بصريات", "للعيون الطبية", "مساج", "سبا", "تجميل", "حجامة",
+  "أعشاب", "اعشاب", "بيطري", "بيطرية", "حلاق", "لياقة",
+];
+
+/**
+ * Signals strong enough to overrule the exclusion list.
+ *
+ * This exists because of a real false positive: Magrabi Hospital, a major eye
+ * hospital and an ophthalmology training site, carries the OpenStreetMap
+ * local name "مغربي للبصريات" — literally "Magrabi for optics" — and was being
+ * dropped as an optician. A hospital is a hospital whatever else its name says.
+ */
+const DEFINITELY_A_TRAINING_SITE = [
+  "hospital", "medical city", "medical center", "medical centre",
+  "health center", "health centre", "primary health", "university",
+  "مستشفى", "مدينة طبية", "مركز طبي", "المركز الطبي", "مركز صحي",
+  "الرعاية الصحية", "مستوصف", "جامعة", "كلية",
+];
+
+export function isTrainingSite(
+  tags: Record<string, string>,
+  name: string,
+): boolean {
+  const lower = name.toLowerCase();
+
+  // Positive evidence wins. An OSM hospital tag or an explicit "hospital" in
+  // the name outranks any keyword in the exclusion list.
+  if (tags.amenity === "hospital" || tags.healthcare === "hospital") return true;
+  if (DEFINITELY_A_TRAINING_SITE.some((term) => lower.includes(term))) return true;
+
+  if (NOT_A_TRAINING_SITE.some((term) => lower.includes(term))) return false;
+  if (tags.shop === "optician" || tags.shop === "hairdresser") return false;
+  if (tags.amenity === "veterinary") return false;
+  if (tags.leisure === "fitness_centre") return false;
+  return true;
+}
+
+/** Arabic and English names for primary-care centres, which OSM tags loosely. */
+const HEALTH_CENTRE_TERMS = [
+  "health center", "health centre", "primary health", "polyclinic",
+  "مركز صحي", "المركز الصحي", "رعاية صحية", "الرعاية الصحية", "مستوصف",
+];
+
 /** Map OSM tags onto our facility taxonomy. */
 export function classifyFacility(
   tags: Record<string, string>,
+  name = "",
 ): FacilityKindValue {
   const amenity = tags.amenity ?? "";
   const healthcare = tags.healthcare ?? "";
   const speciality = tags["healthcare:speciality"] ?? "";
+  const lower = name.toLowerCase();
 
   if (amenity === "hospital" || healthcare === "hospital") return "HOSPITAL";
   if (amenity === "dentist" || healthcare === "dentist") return "DENTAL_CLINIC";
@@ -163,9 +221,22 @@ export function classifyFacility(
   ) {
     return "MENTAL_HEALTH";
   }
-  if (healthcare === "centre" || amenity === "health_post") return "HEALTH_CENTER";
+
+  // Primary-care centres are the single biggest placement type for nursing and
+  // family-medicine students, and OSM tags them inconsistently — so fall back
+  // to the name, which is reliably "مركز صحي" or "primary health care centre".
+  if (
+    healthcare === "centre" ||
+    amenity === "health_post" ||
+    HEALTH_CENTRE_TERMS.some((term) => lower.includes(term))
+  ) {
+    return "HEALTH_CENTER";
+  }
+
   if (amenity === "clinic" || healthcare === "clinic") return "CLINIC";
   if (amenity === "doctors" || healthcare === "doctor") return "CLINIC";
+  if (lower.includes("hospital") || lower.includes("مستشفى")) return "HOSPITAL";
+  if (lower.includes("clinic") || lower.includes("عيادة")) return "CLINIC";
 
   return "OTHER";
 }
@@ -192,7 +263,9 @@ const LATIN = /[A-Za-z]/;
  * Turn a raw OSM element into a facility row, or null when it is unusable.
  *
  * Unnamed elements are dropped: a review of "an unnamed clinic somewhere in
- * Cairo" helps nobody, and they make up a fifth of the raw results.
+ * Riyadh" helps nobody, and they make up a fifth of the raw results. So are
+ * opticians, spas and the like — they carry health tags but no student is
+ * ever placed in one.
  */
 export function normaliseElement(el: OsmElement): NormalisedFacility | null {
   const tags = el.tags;
@@ -216,13 +289,15 @@ export function normaliseElement(el: OsmElement): NormalisedFacility | null {
   const address =
     [housenumber, street].filter(Boolean).join(" ").trim() || null;
 
+  if (!isTrainingSite(tags, `${name} ${nameLocal ?? ""}`)) return null;
+
   return {
     osmType: el.type,
     osmId: BigInt(el.id),
     name: name.slice(0, 200),
     nameEn: nameEn && nameEn !== name ? nameEn.slice(0, 200) : null,
     nameLocal: nameLocal ? nameLocal.slice(0, 200) : null,
-    kind: classifyFacility(tags),
+    kind: classifyFacility(tags, `${name} ${nameLocal ?? ""}`),
     lat,
     lon,
     address,

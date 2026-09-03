@@ -37,16 +37,62 @@ export const STUDENT_FIELD_LABELS: Record<string, string> = {
 
 export const STUDENT_FIELDS = Object.keys(STUDENT_FIELD_LABELS);
 
-export const TRAINING_KIND_LABELS: Record<string, string> = {
-  CLINICAL_ROTATION: "Clinical rotation",
-  INTERNSHIP: "Internship",
-  RESIDENCY: "Residency",
-  SUMMER_TRAINING: "Summer training",
-  OBSERVERSHIP: "Observership",
+/**
+ * What the reviewer was at the facility. Read together with their field, so a
+ * review is placed as "Pharmacy · Intern" or "Medicine · Summer trainee".
+ */
+export const TRAINEE_ROLE_LABELS: Record<string, string> = {
+  STUDENT: "Student on rotation",
+  SUMMER_TRAINEE: "Summer trainee",
+  INTERN: "Intern",
+  RESIDENT: "Resident",
+  FELLOW: "Fellow",
+  OBSERVER: "Observer",
   OTHER: "Other",
 };
 
-export const TRAINING_KINDS = Object.keys(TRAINING_KIND_LABELS);
+export const TRAINEE_ROLES = Object.keys(TRAINEE_ROLE_LABELS);
+
+/** The short form used in the rotation stamp, where space is tight. */
+export const TRAINEE_ROLE_SHORT: Record<string, string> = {
+  STUDENT: "Student",
+  SUMMER_TRAINEE: "Summer trainee",
+  INTERN: "Intern",
+  RESIDENT: "Resident",
+  FELLOW: "Fellow",
+  OBSERVER: "Observer",
+  OTHER: "Trainee",
+};
+
+/**
+ * Suggestions for the free-text department field. Offered through a
+ * `<datalist>` rather than a `<select>`, because departments are named
+ * differently at every hospital and a closed list would just be wrong.
+ */
+export const DEPARTMENT_SUGGESTIONS = [
+  "Emergency",
+  "Internal medicine",
+  "General surgery",
+  "Paediatrics",
+  "Obstetrics & gynaecology",
+  "Intensive care",
+  "Anaesthesia",
+  "Orthopaedics",
+  "Psychiatry",
+  "Radiology",
+  "Cardiology",
+  "Oncology",
+  "Family medicine",
+  "Inpatient pharmacy",
+  "Outpatient pharmacy",
+  "Clinical pharmacy",
+  "Laboratory",
+  "Microbiology",
+  "Physiotherapy",
+  "Dentistry",
+  "Nursing ward",
+  "Outpatient clinics",
+];
 
 /**
  * The sub-rating axes, in the order they are shown.
@@ -105,63 +151,19 @@ export const REPORT_REASON_LABELS: Record<string, string> = {
   OTHER: "Something else",
 };
 
-/** Country names for the codes present in the seed data. */
+/**
+ * Hospirate covers Saudi Arabia only.
+ *
+ * The scope is deliberate rather than a starting point: a review site is only
+ * useful once a given hospital has several reviews, and spreading thin across
+ * many countries would leave every facility with one. The schema keeps a
+ * country column so this can widen later without a migration.
+ */
+export const SITE_COUNTRY_CODE = "SA";
+export const SITE_COUNTRY_NAME = "Saudi Arabia";
+
 export const COUNTRY_NAMES: Record<string, string> = {
-  AE: "United Arab Emirates",
-  AR: "Argentina",
-  AT: "Austria",
-  AU: "Australia",
-  BD: "Bangladesh",
-  BE: "Belgium",
-  BH: "Bahrain",
-  BR: "Brazil",
-  CA: "Canada",
-  CH: "Switzerland",
-  CL: "Chile",
-  CO: "Colombia",
-  DE: "Germany",
-  DK: "Denmark",
-  DZ: "Algeria",
-  EG: "Egypt",
-  ES: "Spain",
-  ET: "Ethiopia",
-  FR: "France",
-  GB: "United Kingdom",
-  GH: "Ghana",
-  ID: "Indonesia",
-  IE: "Ireland",
-  IN: "India",
-  IQ: "Iraq",
-  IT: "Italy",
-  JO: "Jordan",
-  KE: "Kenya",
-  KW: "Kuwait",
-  LB: "Lebanon",
-  LK: "Sri Lanka",
-  MA: "Morocco",
-  MX: "Mexico",
-  MY: "Malaysia",
-  NG: "Nigeria",
-  NL: "Netherlands",
-  NO: "Norway",
-  NP: "Nepal",
-  NZ: "New Zealand",
-  OM: "Oman",
-  PE: "Peru",
-  PH: "Philippines",
-  PK: "Pakistan",
-  PL: "Poland",
-  QA: "Qatar",
   SA: "Saudi Arabia",
-  SD: "Sudan",
-  SE: "Sweden",
-  SG: "Singapore",
-  SY: "Syria",
-  TH: "Thailand",
-  TN: "Tunisia",
-  TR: "Türkiye",
-  US: "United States",
-  ZA: "South Africa",
 };
 
 /**

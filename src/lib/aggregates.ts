@@ -140,14 +140,22 @@ export async function refreshSiteStats(): Promise<{
   meanRating: number;
   reviewCount: number;
 }> {
-  const agg = await prisma.review.aggregate({
-    where: { status: "PUBLISHED" },
-    _avg: { overall: true },
-    _count: { _all: true },
-  });
+  // The prior is the mean of facility means, not the mean of all reviews.
+  // Averaging reviews directly would let one heavily-reviewed teaching
+  // hospital define the prior that every small clinic is shrunk toward.
+  const [rows, reviewCount] = await Promise.all([
+    prisma.facility.findMany({
+      where: { reviewCount: { gt: 0 } },
+      select: { ratingSum: true, reviewCount: true },
+    }),
+    prisma.review.count({ where: { status: "PUBLISHED" } }),
+  ]);
 
-  const meanRating = agg._avg.overall ?? DEFAULT_MEAN_RATING;
-  const reviewCount = agg._count._all;
+  const meanRating =
+    rows.length > 0
+      ? rows.reduce((sum, f) => sum + f.ratingSum / f.reviewCount, 0) /
+        rows.length
+      : DEFAULT_MEAN_RATING;
 
   await prisma.siteStat.upsert({
     where: { id: "global" },
