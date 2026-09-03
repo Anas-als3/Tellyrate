@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch makes the first run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+
+    services:
+      # The build renders pages that query Postgres, so a real database has to
+      # be reachable — a placeholder connection string would fail at prerender.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: hospirate
+          POSTGRES_PASSWORD: hospirate
+          POSTGRES_DB: hospirate_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hospirate -d hospirate_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://hospirate:hospirate@localhost:5432/hospirate_ci?schema=public
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      # `lib/env.ts` requires this whenever NODE_ENV is production, which is
+      # what `next build` sets. Not a secret: this database is thrown away
+      # when the job ends.
+      IP_HASH_SECRET: ci-only-not-a-real-secret
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      # Runs the postinstall hook, which already generates the Prisma client.
+      - name: Install dependencies
+        run: npm ci
+
+      # Repeated explicitly so a generation failure is reported as its own
+      # step rather than buried in the install log.
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
