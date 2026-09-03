@@ -31,21 +31,27 @@ function scrypt(
  * supply-chain surface — which matters for a site whose whole premise is that
  * users trust it with nothing but a username.
  *
- * N = 2^15 costs ~40ms on a laptop and ~100-150ms on a serverless vCPU, which
- * is the right side of the security/latency trade for an interactive login.
+ * N = 2^15, r = 8, p = 3 is one of OWASP's four listed equivalent settings.
+ * Measured at ~110ms here, which is the right side of the security/latency
+ * trade for an interactive login and stays within a serverless CPU budget.
  */
 const SCRYPT_N = 32768;
 const SCRYPT_R = 8;
-const SCRYPT_P = 1;
+const SCRYPT_P = 3;
 const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
-// scrypt needs 128 * N * r bytes; give it headroom over the 32 MiB default.
-const MAX_MEM = 96 * 1024 * 1024;
+/**
+ * OpenSSL's actual requirement is `128*r*p + 32*r*(N+2)*4`, which for these
+ * parameters is just over 32 MiB — above Node's 32 MiB default, so it must be
+ * raised explicitly or every hash throws. The headroom also lets us verify
+ * older hashes stored with heavier parameters.
+ */
+const MAX_MEM = 192 * 1024 * 1024;
 
 /** Hash a password into a self-describing string: `scrypt$N$r$p$salt$key`. */
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(SALT_LENGTH);
-  const key = (await scrypt(password.normalize("NFKC"), salt, KEY_LENGTH, {
+  const key = (await scrypt(password.normalize("NFC"), salt, KEY_LENGTH, {
     N: SCRYPT_N,
     r: SCRYPT_R,
     p: SCRYPT_P,
@@ -87,7 +93,7 @@ export async function verifyPassword(
 
   let actual: Buffer;
   try {
-    actual = await scrypt(password.normalize("NFKC"), salt, expected.length, {
+    actual = await scrypt(password.normalize("NFC"), salt, expected.length, {
       N,
       r,
       p,

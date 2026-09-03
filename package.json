@@ -17,7 +17,9 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "import:facilities": "tsx scripts/import-facilities.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "tsx --test tests/*.test.ts",
+    "test:watch": "tsx --test --watch tests/*.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

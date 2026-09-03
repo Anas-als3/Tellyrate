@@ -1,0 +1,218 @@
+import "server-only";
+import { prisma } from "@/lib/db";
+import { fold } from "@/lib/slug";
+import {
+  DEFAULT_MEAN_RATING,
+  type ReviewSortKey,
+  type SortKey,
+} from "@/lib/ranking";
+import type { FacilityKind, Prisma } from "@/generated/prisma/client";
+
+export const PAGE_SIZE = 24;
+export const REVIEWS_PAGE_SIZE = 10;
+
+export type FacilityFilters = {
+  sort: SortKey;
+  citySlug?: string;
+  countryCode?: string;
+  kind?: string;
+  query?: string;
+  minRating?: number;
+  page: number;
+};
+
+/**
+ * "Highest rated" orders by the stored Bayesian score rather than the raw
+ * average — see lib/ranking.ts for why. It is written on each review so the
+ * sort stays a plain indexed column scan.
+ */
+function orderFor(sort: SortKey): Prisma.FacilityOrderByWithRelationInput[] {
+  switch (sort) {
+    case "highest_rated":
+      return [
+        { bayesScore: "desc" },
+        { reviewCount: "desc" },
+        { name: "asc" },
+      ];
+    case "newest":
+      return [{ createdAt: "desc" }, { name: "asc" }];
+    case "name":
+      return [{ name: "asc" }];
+    case "most_reviewed":
+    default:
+      return [
+        { reviewCount: "desc" },
+        { bayesScore: "desc" },
+        { name: "asc" },
+      ];
+  }
+}
+
+function facilityWhere(filters: FacilityFilters): Prisma.FacilityWhereInput {
+  const where: Prisma.FacilityWhereInput = { status: "PUBLISHED" };
+
+  const city: Prisma.CityWhereInput = {};
+  if (filters.citySlug) city.slug = filters.citySlug;
+  if (filters.countryCode) city.countryCode = filters.countryCode;
+  if (Object.keys(city).length > 0) where.city = city;
+
+  if (filters.kind) where.kind = filters.kind as FacilityKind;
+  if (filters.minRating !== undefined) {
+    // A minimum rating only makes sense among facilities that have been rated.
+    where.reviewCount = { gt: 0 };
+    where.ratingAvg = { gte: filters.minRating };
+  }
+
+  if (filters.query) {
+    const q = filters.query.trim();
+    if (q) {
+      // Match across the display name and both localised names, so an Arabic
+      // or English spelling finds the same place.
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { nameEn: { contains: q, mode: "insensitive" } },
+        { nameLocal: { contains: q } },
+        { city: { name: { contains: q, mode: "insensitive" } } },
+      ];
+    }
+  }
+
+  return where;
+}
+
+export async function listFacilities(filters: FacilityFilters) {
+  const where = facilityWhere(filters);
+  const skip = (filters.page - 1) * PAGE_SIZE;
+
+  const [facilities, total] = await Promise.all([
+    prisma.facility.findMany({
+      where,
+      orderBy: orderFor(filters.sort),
+      skip,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        nameLocal: true,
+        kind: true,
+        reviewCount: true,
+        ratingAvg: true,
+        bayesScore: true,
+        city: { select: { name: true, slug: true, countryCode: true } },
+      },
+    }),
+    prisma.facility.count({ where }),
+  ]);
+
+  return {
+    facilities,
+    total,
+    page: filters.page,
+    pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+  };
+}
+
+export async function getFacilityBySlug(slug: string) {
+  return prisma.facility.findFirst({
+    where: { slug, status: { in: ["PUBLISHED", "PENDING"] } },
+    include: {
+      city: true,
+      submittedBy: { select: { username: true } },
+    },
+  });
+}
+
+function reviewOrder(sort: ReviewSortKey): Prisma.ReviewOrderByWithRelationInput[] {
+  switch (sort) {
+    case "newest":
+      return [{ createdAt: "desc" }];
+    case "oldest":
+      return [{ createdAt: "asc" }];
+    case "highest":
+      return [{ overall: "desc" }, { helpfulScore: "desc" }];
+    case "lowest":
+      return [{ overall: "asc" }, { helpfulScore: "desc" }];
+    case "helpful":
+    default:
+      return [{ helpfulScore: "desc" }, { createdAt: "desc" }];
+  }
+}
+
+export async function listReviews(
+  facilityId: string,
+  sort: ReviewSortKey,
+  page: number,
+  viewerId?: string | null,
+) {
+  const where: Prisma.ReviewWhereInput = {
+    facilityId,
+    status: "PUBLISHED",
+  };
+
+  const [reviews, total] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      orderBy: reviewOrder(sort),
+      skip: (page - 1) * REVIEWS_PAGE_SIZE,
+      take: REVIEWS_PAGE_SIZE,
+      include: {
+        author: { select: { id: true, username: true } },
+        // Only the viewer's own vote is fetched, never the full voter list —
+        // who liked what is nobody else's business.
+        votes: viewerId
+          ? { where: { userId: viewerId }, select: { value: true } }
+          : false,
+      },
+    }),
+    prisma.review.count({ where }),
+  ]);
+
+  return {
+    reviews,
+    total,
+    page,
+    pageCount: Math.max(1, Math.ceil(total / REVIEWS_PAGE_SIZE)),
+  };
+}
+
+export async function listCities(options: { query?: string; countryCode?: string } = {}) {
+  const where: Prisma.CityWhereInput = { facilityCount: { gt: 0 } };
+  if (options.countryCode) where.countryCode = options.countryCode;
+  if (options.query?.trim()) {
+    where.nameFold = { contains: fold(options.query) };
+  }
+
+  return prisma.city.findMany({
+    where,
+    orderBy: [{ reviewCount: "desc" }, { facilityCount: "desc" }, { name: "asc" }],
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      country: true,
+      countryCode: true,
+      facilityCount: true,
+      reviewCount: true,
+    },
+  });
+}
+
+export async function getCityBySlug(slug: string) {
+  return prisma.city.findUnique({ where: { slug } });
+}
+
+/** The site-wide mean rating that the Bayesian prior needs. */
+export async function getMeanRating(): Promise<number> {
+  const stat = await prisma.siteStat.findUnique({ where: { id: "global" } });
+  return stat?.meanRating ?? DEFAULT_MEAN_RATING;
+}
+
+export async function getSiteCounts() {
+  const [facilities, reviews, cities] = await Promise.all([
+    prisma.facility.count({ where: { status: "PUBLISHED" } }),
+    prisma.review.count({ where: { status: "PUBLISHED" } }),
+    prisma.city.count({ where: { facilityCount: { gt: 0 } } }),
+  ]);
+  return { facilities, reviews, cities };
+}
