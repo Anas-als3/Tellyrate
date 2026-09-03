@@ -66,6 +66,22 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       {
+        /**
+         * The sitemap lists every published facility, so each request is a
+         * full-table read. It cannot be prerendered — that would need a
+         * database during `next build` — so let the CDN absorb the crawlers
+         * instead. Six hours is far fresher than any crawler needs, and it
+         * keeps a serverless database from being woken up by robots.
+         */
+        source: "/sitemap.xml",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=21600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
         // Font filenames are stable, so cache them for a year.
         source: "/fonts/:file*",
         headers: [
