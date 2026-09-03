@@ -1,0 +1,49 @@
+name: Nightly maintenance
+
+# Runs the job that nothing else runs: pruning expired sessions and spent
+# rate-limit windows, recomputing the site-wide mean rating, and rescoring
+# every facility against it.
+#
+# Deliberately here rather than in a Vercel Cron function. It walks every
+# facility, which is exactly the shape of work that outgrows a serverless
+# invocation limit first — and on the Hobby plan there is one cron slot, which
+# is better spent on nothing at all than on a job that will start timing out.
+on:
+  schedule:
+    # 02:00 UTC — 05:00 in Riyadh, the quietest hour for this audience.
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    name: Prune, rescore, reconcile
+    runs-on: ubuntu-latest
+    # Without the secret the job cannot connect; skip rather than fail loudly
+    # every night on a fork or before the secret is set.
+    if: github.repository_owner != ''
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run nightly maintenance
+        env:
+          # The direct (unpooled) connection: this job holds one connection for
+          # its whole run, which is what a pooler is worst at.
+          DATABASE_URL: ${{ secrets.DIRECT_URL || secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning::No DATABASE_URL secret set — skipping."
+            exit 0
+          fi
+          npm run job:nightly

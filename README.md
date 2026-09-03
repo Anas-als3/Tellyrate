@@ -18,11 +18,15 @@ list.
 - **Post with a username and a password.** Writing a review, commenting, or voting needs
   an account. Creating one asks for two fields.
 - **Sort by what matters.** Most reviewed, highest rated, newest, or by name — and filter
-  by city, country, facility kind and minimum rating. All of it lives in the URL, so any
-  view is shareable and crawlable.
-- **Facilities come from OpenStreetMap.** Roughly a thousand real hospitals and clinics
-  are imported per country, so most students find their placement already listed. If it
-  is missing, they add it — after a search-first step that makes duplicates hard.
+  by city, facility kind and minimum rating. All of it lives in the URL, so any view is
+  shareable and crawlable.
+- **Facilities come from OpenStreetMap.** Around two thousand real hospitals, clinics,
+  health centres, laboratories and pharmacies across 44 Saudi cities, so most students
+  find their placement already listed. If it is missing, they add it — after a
+  search-first step that makes duplicates hard.
+- **Saudi Arabia only, on purpose.** A review site is worth nothing until a given
+  hospital has several reviews; spreading across countries would leave every one of them
+  with a single review. The schema keeps a country column so this can widen later.
 
 ### "Highest rated" is not a naive average
 
@@ -87,31 +91,109 @@ second run updates rather than duplicates.
 
 ## Deploying
 
-### Vercel
+The site runs on Vercel's free tier with a free Neon database. Two settings
+below are not optional — the defaults would make the site slow for exactly the
+people it is for.
 
-1. Push the repository and import it at [vercel.com/new](https://vercel.com/new).
-2. Create a Postgres database — [Neon](https://neon.tech) has a usable free tier — and
-   take **both** connection strings.
-3. Set the environment variables below in the project settings.
-4. Deploy. `postinstall` runs `prisma generate`, so no custom build command is needed.
-5. Apply migrations once against the direct URL:
+### 1. The database — Neon, in Frankfurt
 
-   ```bash
-   DATABASE_URL="<direct-url>" npx prisma migrate deploy
-   ```
+Create a project at [neon.tech](https://neon.tech) and **choose the Frankfurt
+region** (`eu-central-1`). Neon has no Gulf region; Frankfurt is ~89 ms from
+Riyadh and every other option is worse.
 
-`DATABASE_URL` must be the **pooled** connection string. Serverless functions open a
-connection per invocation, and an unpooled Postgres will run out of them under any real
-traffic. Migrations need the **direct** one, because a pooler cannot run DDL.
+Copy both connection strings from the dashboard:
 
-### Docker
+- the **pooled** one, whose host contains `-pooler` — this is `DATABASE_URL`
+- the **direct** one — this is `DIRECT_URL`
+
+Both are needed. Serverless functions open a connection per invocation and
+will exhaust an unpooled Postgres; migrations do the opposite, because a
+transaction pooler cannot run DDL.
+
+### 2. The app — Vercel, in Frankfurt
+
+Import the repository at [vercel.com/new](https://vercel.com/new). No build
+settings to change: `postinstall` already runs `prisma generate`.
+
+**Set the function region to Frankfurt (`fra1`)** — `vercel.json` pins it, but
+confirm it under Settings → Functions. The default is Washington DC, which
+puts the app an ocean away from its database and turns a ~140 ms page into a
+~500 ms one. Colocating the app with the database matters far more here than
+putting the app near the reader, because each page makes several round trips
+to Postgres and only one to the browser.
+
+Set these environment variables:
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | the Neon **pooled** string, with `?sslmode=require` |
+| `DIRECT_URL` | the Neon **direct** string |
+| `IP_HASH_SECRET` | `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
+| `NEXT_PUBLIC_SITE_URL` | `https://your-domain.com` |
+
+### 3. Create the schema
+
+Once, from your machine — never at request time:
 
 ```bash
-docker build --build-arg BUILD_STANDALONE=1 -t hospirate .
+DIRECT_URL="<neon-direct-string>" npx prisma migrate deploy
+```
+
+### 4. Load the facilities
+
+**This cannot run on Vercel.** A full import is 44 cities against a rate-limited
+public API and takes 10–50 minutes; every serverless platform caps an
+invocation well below that. Run it from your own machine against the
+production database:
+
+```bash
+DATABASE_URL="<neon-direct-string>" npm run import:facilities -- --country SA
+```
+
+Start with `--limit 3 --dry-run` to see what it would do. Re-running is safe —
+facilities are keyed on their OpenStreetMap identity, so a second pass updates
+rather than duplicates. Repeat it every few months to pick up new facilities.
+
+Do **not** run `npm run db:seed` against production; it inserts demo reviews.
+
+### 5. Nightly maintenance
+
+`.github/workflows/nightly.yml` prunes expired sessions and spent rate-limit
+windows, recomputes the site-wide mean rating and rescores every facility
+against it. Add `DIRECT_URL` as a GitHub Actions secret and it runs itself.
+
+Without it, sessions accumulate forever and the Bayesian scores drift away
+from a mean that is no longer current.
+
+### What the free tier actually costs you
+
+Vercel's Hobby plan forbids commercial use — that includes ads, affiliate
+links and **donation buttons**. Hospirate carries none, so it qualifies; adding
+any of them later means moving to Pro at $20/month.
+
+Neon's free tier allows 100 compute-hours a month with a five-minute idle
+suspend. A site that is quiet overnight fits comfortably; one busy enough that
+the database never idles will not. Do **not** point an uptime monitor at
+`/api/health` every minute — it keeps the compute awake and burns the entire
+allowance on nothing.
+
+### Self-hosting instead
+
+One server running both the app and Postgres is cheaper at scale and removes
+every cliff above — around $7/month on a small VPS, with app-to-database
+latency of essentially zero.
+
+```bash
+docker build --build-arg NEXT_PUBLIC_SITE_URL=https://your-domain.com -t hospirate .
 docker run -p 3000:3000 --env-file .env hospirate
 ```
 
-The image uses Next's standalone output and runs as a non-root user.
+The image uses Next's standalone output, runs as a non-root user, and carries
+a health check. `docker-compose.yml` in this repo starts Postgres for local
+development and is a reasonable base for a production compose file. Set
+`TRUSTED_PROXY_HOPS` to the number of proxies in front of the app — 1 behind a
+single nginx, 2 behind Cloudflare *and* nginx — or the rate limiter will
+throttle everyone into one bucket.
 
 ### Environment variables
 
@@ -119,9 +201,9 @@ The image uses Next's standalone output and runs as a non-root user.
 | --- | --- | --- |
 | `DATABASE_URL` | yes | Postgres connection string. Pooled, in production. |
 | `DIRECT_URL` | production | Unpooled connection, used only by `prisma migrate`. |
-| `IP_HASH_SECRET` | production | 32+ random bytes, base64. Keys the daily-rotating salt that pseudonymises addresses for rate limiting. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. |
+| `IP_HASH_SECRET` | production | 32+ random bytes, base64. Keys the daily-rotating salt that pseudonymises addresses for rate limiting. |
 | `NEXT_PUBLIC_SITE_URL` | yes | Public origin, for canonical URLs and the sitemap. |
-| `TRUSTED_PROXY_HOPS` | no | Proxies in front of the app. Default 1 (Vercel, or a single nginx). Raise it if you add a CDN. |
+| `TRUSTED_PROXY_HOPS` | no | Proxies in front of the app. Default 1, which is correct on Vercel. |
 
 ---
 
