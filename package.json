@@ -20,7 +20,8 @@
     "postinstall": "prisma generate",
     "test": "tsx --test tests/*.test.ts",
     "test:watch": "tsx --test --watch tests/*.test.ts",
-    "reclassify": "tsx scripts/reclassify-facilities.ts"
+    "reclassify": "tsx scripts/reclassify-facilities.ts",
+    "job:nightly": "tsx scripts/nightly.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

@@ -1,0 +1,36 @@
+# Keep the build context small and, more importantly, keep secrets out of it:
+# anything listed here can never end up in an image layer.
+
+node_modules
+.next
+out
+build
+coverage
+
+.git
+.github
+.gitignore
+
+.env
+.env.*
+!.env.example
+
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Bulk OpenStreetMap dumps — the importer fetches these, they are not part of
+# the application.
+# data/cities.json is seed input the importer needs — keep it in the image.
+data/cache/
+
+# Editor and agent scaffolding.
+.agents
+.claude
+.windsurf
+.DS_Store
+*.log
