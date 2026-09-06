@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Anonymous reviews of clinical training placements, by the students who did them.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f5f7f3",
-    theme_color: "#2f6b57",
+    background_color: "#fbfafa",
+    theme_color: "#c41e3a",
     icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
   };
 }

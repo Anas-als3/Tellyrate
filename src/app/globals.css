@@ -1,21 +1,23 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   Hospirate — "Ward Notes"
-   --------------------------------------------------------------------------
-   The visual language borrows from the artifacts these users handle every
-   day: the shift handover note, the colour-coded chart tab, the graduation
-   scale printed down the side of an IV bag.
+   Hospirate — "Clinic White"
 
-   Two rules carry most of the character:
+   White-dominant and quiet, with a single confident red doing all the work:
+   actions, links, and the fill of every rating bar. Red is the one colour the
+   whole world already reads as medical, so it earns its place — but it is an
+   accent, not a theme, and everything around it stays neutral.
+
+   Two rules carry the character:
      · data containers are near-square (3px), interactive pills fully round —
        chart form against wristband form
      · shadows are printed-on-paper, a hairline plus a 1px hard offset, never
        a soft ambient blur
 
-   The palette is desaturated surgical green rather than the usual saturated
-   medical blue. Scrubs are green because green is the afterimage complement
-   of blood red and rests the eye — a reason drawn from the subject itself.
+   Ratings are drawn as one hue at varying depth rather than a green-to-red
+   traffic light: with red as the brand, a red "bad" bar next to a red button
+   would read as noise. Depth of colour and length of bar both grow with the
+   score, so the scale stays legible to anyone.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -94,47 +96,47 @@
 :root {
   color-scheme: light;
 
-  /* surfaces */
-  --paper: #f5f7f3;
+  /* surfaces — neutrals biased a touch warm so they sit under the red */
+  --paper: #fbfafa;
   --surface: #ffffff;
-  --surface-2: #e7ece3;
-  --surface-3: #dfe5da;
+  --surface-2: #f5f2f3;
+  --surface-3: #ebe6e8;
 
   /* text */
-  --ink: #131a18;      /* 16.4:1 on paper */
-  --ink-2: #384740;    /*  9.1:1 */
-  --ink-3: #5e6b63;    /*  5.2:1 */
+  --ink: #171415;      /* 16.8:1 on paper */
+  --ink-2: #4a4348;    /*  8.9:1 */
+  --ink-3: #736a6f;    /*  5.1:1 */
 
   /* lines */
-  --line: #dde3dc;
-  --line-strong: #7e8c82;
+  --line: #e9e4e6;
+  --line-strong: #b4aaae;
 
   /* brand */
-  --brand: #2f6b57;
-  --brand-hover: #275a49;
-  --brand-soft: #dceae2;
-  --brand-ink: #1e4a3b;
+  --brand: #c41e3a;    /* white on it = 5.1:1 */
+  --brand-hover: #a5192f;
+  --brand-soft: #fcebee;
+  --brand-ink: #8c1428; /* 8.2:1 on brand-soft */
   --on-brand: #ffffff;
 
-  /* rating tiers — used for bar fills and score badges */
-  --tier-5: #2f6b57;
-  --tier-4: #648f73;
-  --tier-3: #bc7f22;
-  --tier-2: #b4571f;
-  --tier-1: #9e3b2e;
+  /* rating scale — one hue, deepening with the score */
+  --tier-5: #c41e3a;
+  --tier-4: #d14a60;
+  --tier-3: #de7686;
+  --tier-2: #e9a2ad;
+  --tier-1: #f2cdd3;
 
-  /* stars */
-  --amber: #bc7f22;
-  --amber-ink: #7a5010;
+  /* stars stay gold: it is the one rating convention everyone already reads */
+  --amber: #b58225;
+  --amber-ink: #7a5410;
 
-  --danger: #9e3b2e;
-  --danger-soft: #f7e6e2;
+  --danger: #a31621;   /* deeper than the brand, so an error is not a button */
+  --danger-soft: #fcebec;
 
-  --focus: #131a18;
-  --focus-halo: color-mix(in oklab, #2f6b57 28%, transparent);
+  --focus: #171415;
+  --focus-halo: color-mix(in oklab, #c41e3a 28%, transparent);
 
-  --shadow-1: 0 1px 0 0 rgb(19 26 24 / 0.05), 0 1px 2px -1px rgb(19 26 24 / 0.1);
-  --shadow-2: 0 1px 0 0 rgb(19 26 24 / 0.06), 0 10px 28px -14px rgb(19 26 24 / 0.3);
+  --shadow-1: 0 1px 0 0 rgb(23 20 21 / 0.04), 0 1px 2px -1px rgb(23 20 21 / 0.09);
+  --shadow-2: 0 1px 0 0 rgb(23 20 21 / 0.05), 0 10px 28px -14px rgb(23 20 21 / 0.28);
 
   /* typography */
   --font-ui: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
@@ -188,38 +190,38 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --paper: #0f1513;
-    --surface: #151d1a;
-    --surface-2: #1d2723;
-    --surface-3: #26322d;
+    --paper: #121011;
+    --surface: #1a1719;
+    --surface-2: #241f21;
+    --surface-3: #2f292c;
 
-    --ink: #e8ede9;
-    --ink-2: #c2ccc5;
-    --ink-3: #93a099;
+    --ink: #f6f2f3;
+    --ink-2: #cac2c5;
+    --ink-3: #978d91;
 
-    --line: #26322d;
-    --line-strong: #5d6c64;
+    --line: #2f292c;
+    --line-strong: #6a6064;
 
-    --brand: #6fb394;
-    --brand-hover: #83c4a6;
-    --brand-soft: #1b2e27;
-    --brand-ink: #9fd4bb;
-    --on-brand: #0f1513;
+    --brand: #ff6e7f;
+    --brand-hover: #ff8a97;
+    --brand-soft: #2e1418;
+    --brand-ink: #ffa8b3;
+    --on-brand: #1a0508;
 
-    --tier-5: #6fb394;
-    --tier-4: #4e8c6c;
-    --tier-3: #e3a84a;
-    --tier-2: #d98a4a;
-    --tier-1: #e07a66;
+    --tier-5: #ff6e7f;
+    --tier-4: #e0596c;
+    --tier-3: #b94a5b;
+    --tier-2: #8e3b48;
+    --tier-1: #632a34;
 
-    --amber: #e3a84a;
-    --amber-ink: #f0c888;
+    --amber: #e8b84b;
+    --amber-ink: #f5d68f;
 
-    --danger: #e07a66;
-    --danger-soft: #2c1d1a;
+    --danger: #ff9a8b;
+    --danger-soft: #2e1512;
 
-    --focus: #e8ede9;
-    --focus-halo: color-mix(in oklab, #6fb394 30%, transparent);
+    --focus: #f6f2f3;
+    --focus-halo: color-mix(in oklab, #ff6e7f 30%, transparent);
 
     /* Drop shadows read as nothing on a dark ground; use a rim light. */
     --shadow-1: 0 0 0 1px rgb(255 255 255 / 0.06);
@@ -231,39 +233,40 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --paper: #0f1513;
-  --surface: #151d1a;
-  --surface-2: #1d2723;
-  --surface-3: #26322d;
+  --paper: #121011;
+  --surface: #1a1719;
+  --surface-2: #241f21;
+  --surface-3: #2f292c;
 
-  --ink: #e8ede9;
-  --ink-2: #c2ccc5;
-  --ink-3: #93a099;
+  --ink: #f6f2f3;
+  --ink-2: #cac2c5;
+  --ink-3: #978d91;
 
-  --line: #26322d;
-  --line-strong: #5d6c64;
+  --line: #2f292c;
+  --line-strong: #6a6064;
 
-  --brand: #6fb394;
-  --brand-hover: #83c4a6;
-  --brand-soft: #1b2e27;
-  --brand-ink: #9fd4bb;
-  --on-brand: #0f1513;
+  --brand: #ff6e7f;
+  --brand-hover: #ff8a97;
+  --brand-soft: #2e1418;
+  --brand-ink: #ffa8b3;
+  --on-brand: #1a0508;
 
-  --tier-5: #6fb394;
-  --tier-4: #4e8c6c;
-  --tier-3: #e3a84a;
-  --tier-2: #d98a4a;
-  --tier-1: #e07a66;
+  --tier-5: #ff6e7f;
+  --tier-4: #e0596c;
+  --tier-3: #b94a5b;
+  --tier-2: #8e3b48;
+  --tier-1: #632a34;
 
-  --amber: #e3a84a;
-  --amber-ink: #f0c888;
+  --amber: #e8b84b;
+  --amber-ink: #f5d68f;
 
-  --danger: #e07a66;
-  --danger-soft: #2c1d1a;
+  --danger: #ff9a8b;
+  --danger-soft: #2e1512;
 
-  --focus: #e8ede9;
-  --focus-halo: color-mix(in oklab, #6fb394 30%, transparent);
+  --focus: #f6f2f3;
+  --focus-halo: color-mix(in oklab, #ff6e7f 30%, transparent);
 
+  /* Drop shadows read as nothing on a dark ground; use a rim light. */
   --shadow-1: 0 0 0 1px rgb(255 255 255 / 0.06);
   --shadow-2: 0 0 0 1px rgb(255 255 255 / 0.08),
     0 16px 40px -20px rgb(0 0 0 / 0.8);
@@ -370,6 +373,43 @@ a {
 
 a:hover {
   text-decoration-color: currentColor;
+}
+
+/**
+ * Long unbroken text must wrap, not push the page sideways.
+ *
+ * Reviews are pasted prose: a URL, a hashtag, a long ID, or Arabic with no
+ * spaces will otherwise overflow its card and set the whole document
+ * scrolling horizontally. `anywhere` rather than `break-word` on user content
+ * because it also lowers the element's min-content width, which is what lets
+ * a flex or grid child actually shrink instead of forcing its container wide.
+ */
+p,
+li,
+td,
+th,
+h1,
+h2,
+h3,
+h4,
+blockquote,
+summary {
+  overflow-wrap: break-word;
+}
+
+.prose,
+.stamp,
+blockquote,
+.card {
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
+}
+
+/* Flex and grid children default to min-width:auto, which refuses to shrink
+   below their content. Text columns have to be allowed to. */
+.grid-cards > *,
+.page > * {
+  min-inline-size: 0;
 }
 
 /* Numbers must never shift width as they update. */
