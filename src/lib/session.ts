@@ -10,6 +10,23 @@ export const SESSION_COOKIE = "tellyrate_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_RENEW_AFTER_MS = SESSION_TTL_MS / 2;
 
+/**
+ * The cookie deliberately outlives the session it carries.
+ *
+ * The database row is the authority: `getCurrentUser` checks `expiresAt` on
+ * every request and deletes the row once it passes, so a stale cookie grants
+ * nothing. Giving the cookie the same 30 days would quietly break the sliding
+ * renewal below — the row would be extended to day 60 while the browser threw
+ * the cookie away on day 30, logging out exactly the people who kept using the
+ * site. The renewal cannot re-issue the cookie itself, because `cookies().set`
+ * is only allowed in a server action or route handler, and this runs during a
+ * page render.
+ *
+ * 400 days is the ceiling Chrome enforces on cookie lifetime; anything longer
+ * is silently clamped.
+ */
+const SESSION_COOKIE_MAX_AGE_SECONDS = 400 * 24 * 60 * 60;
+
 export type SessionUser = {
   id: string;
   username: string;
@@ -37,7 +54,7 @@ export async function createSession(userId: string): Promise<void> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_TTL_MS / 1000,
+    maxAge: SESSION_COOKIE_MAX_AGE_SECONDS,
   });
 }
 

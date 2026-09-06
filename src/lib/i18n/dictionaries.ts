@@ -999,7 +999,7 @@ const en = {
 
       accountTitle: "An account is a username and a password",
       accountP1:
-        "Signing up asks for a username and a password. That is the entire form. The row kept for you holds the username as you typed it, a case-folded copy of it so that two people cannot register names that differ only in capitalisation, a password hash, an optional hash of a single-use recovery code, a role, a flag saying whether the account is banned, and the date it was created.",
+        "Signing up asks for a username and a password. That is the entire form. The row kept for you holds the username as you typed it, a case-folded copy of it so that two people cannot register names that differ only in capitalisation, a password hash, an optional hash of a single-use recovery code and the date that code was used if it ever was, a role, a flag saying whether the account is banned, and the date it was created.",
       accountP2:
         "There is no email column in the database. Not blank — absent. The same goes for a real name, a phone number, a date of birth, a school, a graduation year and a profile photo. Nothing asks for them, so nothing can leak them, and no future change of ownership can quietly start using them.",
 
@@ -1019,7 +1019,7 @@ const en = {
 
       storageTitle: "Your browser’s local storage",
       storageP1:
-        "One key, tellyrate-theme, holding light or dark when you have chosen one. A small inline script reads it before the first paint so a dark-mode visitor never gets a white flash. It stays in your browser and is never sent to the server.",
+        "Two things. tellyrate-theme holds light or dark once you have chosen one; a small inline script reads it before the first paint so a dark-mode visitor never gets a white flash. And while you are writing a review, a draft of it is saved under tellyrate:draft:v1 followed by that hospital\u2019s name \u2014 your text and your ratings \u2014 so that signing in partway through does not lose what you wrote. The draft is kept for fourteen days, or until you post, and you can clear it at any time by clearing site data for this domain. Both stay in your browser and are never sent to the server.",
 
       addressesTitle: "IP addresses are never stored",
       addressesP1:
@@ -1035,7 +1035,7 @@ const en = {
       thirdPartiesP1:
         "There is no analytics, no tag manager, no advertising network, no A/B testing service, no session recorder, no error-reporting service, no embedded video, no social buttons and no map tiles. Fonts are served from this domain rather than a font CDN, which would otherwise hand your address to a third party on every page load.",
       thirdPartiesP2:
-        "That is not only a policy — the browser enforces it. Every response carries a Content Security Policy of default-src 'self' with connect-src 'self' and frame-ancestors 'none': if a tracker were ever added to this site, your browser would refuse to contact it. Responses also send Referrer-Policy: no-referrer, so following a link out of here does not tell the destination which facility page you were reading, and a Permissions-Policy that switches off camera, microphone, geolocation and interest-cohort advertising.",
+        "That is not only a policy — the browser enforces it. Every response carries a Content Security Policy of default-src 'self' with connect-src 'self' and frame-ancestors 'none': if a tracker were ever added to this site, your browser would refuse to contact it. The policy does permit inline scripts and styles, which the site needs in order to render a page before its JavaScript arrives \u2014 that allows code written into this site's own pages, never a request to anybody else's server. Responses also send Referrer-Policy: no-referrer, so following a link out of here does not tell the destination which facility page you were reading, and a Permissions-Policy that switches off camera, microphone, geolocation and interest-cohort advertising.",
 
       publicTitle: "What is public",
       publicP1:
@@ -2379,7 +2379,7 @@ const ar: Dictionary = {
 
       accountTitle: "الحساب اسم مستخدم وكلمة مرور",
       accountP1:
-        "إنشاء الحساب يطلب اسم مستخدم وكلمة مرور. هذا هو النموذج كله. والسجل المحفوظ لك يحمل اسم المستخدم كما كتبته، ونسخة موحّدة الحالة منه حتى لا يسجّل شخصان اسمين لا يختلفان إلا في حالة الأحرف، وبصمة كلمة المرور، وبصمة اختيارية لرمز استعادة يُستخدم مرة واحدة، ودورًا، وعلامة تقول ما إذا كان الحساب محظورًا، وتاريخ إنشائه.",
+        "إنشاء الحساب يطلب اسم مستخدم وكلمة مرور. هذا هو النموذج كله. والسجل المحفوظ لك يحمل اسم المستخدم كما كتبته، ونسخة موحّدة الحالة منه حتى لا يسجّل شخصان اسمين لا يختلفان إلا في حالة الأحرف، وبصمة كلمة المرور، وبصمة اختيارية لرمز استعادة يُستخدم مرة واحدة وتاريخ استخدامه إن استُخدم، ودورًا، وعلامة تقول ما إذا كان الحساب محظورًا، وتاريخ إنشائه.",
       accountP2:
         "لا يوجد عمود للبريد الإلكتروني في قاعدة البيانات. ليس فارغًا — بل غير موجود. وكذلك الاسم الحقيقي، ورقم الهاتف، وتاريخ الميلاد، والجامعة، وسنة التخرّج، والصورة الشخصية. لا شيء يطلبها، فلا شيء يمكن أن يسرّبها، ولا يمكن لأي تغيير مستقبلي في الملكية أن يبدأ باستخدامها بصمت.",
 
@@ -2399,7 +2399,7 @@ const ar: Dictionary = {
 
       storageTitle: "التخزين المحلي في متصفحك",
       storageP1:
-        "مفتاح واحد، tellyrate-theme، يحمل light أو dark حين تختار أحدهما. ويقرؤه سكربت صغير مضمَّن قبل أول رسم للصفحة، حتى لا يرى زائر الوضع الداكن ومضة بيضاء. ويبقى في متصفحك ولا يُرسَل إلى الخادم أبدًا.",
+        "شيئان. الأول tellyrate-theme، ويحمل light أو dark حين تختار أحدهما، ويقرؤه سكربت صغير مضمَّن قبل أول رسم للصفحة حتى لا يرى زائر الوضع الداكن ومضة بيضاء. والثاني مسودة مراجعتك أثناء كتابتها، وتُحفَظ تحت tellyrate:draft:v1 متبوعًا باسم المنشأة، وتشمل نصّك وتقييماتك، حتى لا يضيع ما كتبته إذا سجّلت الدخول في منتصف الكتابة. وتبقى المسودة أربعة عشر يومًا أو إلى أن تنشر مراجعتك، ويمكنك محوها متى شئت بمسح بيانات الموقع لهذا النطاق. وكلاهما يبقى في متصفحك ولا يُرسَل إلى الخادم أبدًا.",
 
       addressesTitle: "عناوين IP لا تُخزَّن أبدًا",
       addressesP1:
@@ -2415,7 +2415,7 @@ const ar: Dictionary = {
       thirdPartiesP1:
         "لا تحليلات، ولا مدير وسوم، ولا شبكة إعلانات، ولا خدمة اختبارات A/B، ولا مسجّل جلسات، ولا خدمة تقارير أخطاء، ولا فيديو مضمَّن، ولا أزرار تواصل اجتماعي، ولا بلاطات خرائط. والخطوط تُقدَّم من هذا النطاق لا من شبكة خطوط خارجية، إذ كانت ستسلّم عنوانك إلى طرف ثالث مع كل تحميل صفحة.",
       thirdPartiesP2:
-        "وهذه ليست سياسة فحسب — بل المتصفح يفرضها. فكل استجابة تحمل سياسة أمان محتوى default-src 'self' مع connect-src 'self' و frame-ancestors 'none': فلو أُضيف أداة تتبّع إلى هذا الموقع يومًا، لرفض متصفحك الاتصال بها. وترسل الاستجابات أيضًا Referrer-Policy: no-referrer، فاتباع رابط خارج من هنا لا يخبر الوجهة أي صفحة منشأة كنت تقرأ، إضافة إلى Permissions-Policy تُعطّل الكاميرا والميكروفون وتحديد الموقع والإعلانات القائمة على تجميع الاهتمامات.",
+        "وهذه ليست سياسة فحسب — بل المتصفح يفرضها. فكل استجابة تحمل سياسة أمان محتوى default-src 'self' مع connect-src 'self' و frame-ancestors 'none': فلو أُضيف أداة تتبّع إلى هذا الموقع يومًا، لرفض متصفحك الاتصال بها. وتسمح السياسة بالسكربتات والأنماط المضمَّنة، وهو ما يحتاجه الموقع ليعرض الصفحة قبل وصول الجافاسكربت، وهذا يبيح شيفرة مكتوبة داخل صفحات الموقع نفسه لا طلبًا إلى خادم أي جهة أخرى. وترسل الاستجابات أيضًا Referrer-Policy: no-referrer، فاتباع رابط خارج من هنا لا يخبر الوجهة أي صفحة منشأة كنت تقرأ، إضافة إلى Permissions-Policy تُعطّل الكاميرا والميكروفون وتحديد الموقع والإعلانات القائمة على تجميع الاهتمامات.",
 
       publicTitle: "ما هو علني",
       publicP1:
