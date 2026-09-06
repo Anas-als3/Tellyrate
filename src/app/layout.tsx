@@ -6,18 +6,18 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Hospirate — what a clinical rotation is really like",
+    default: "Hospirate — know where to train before you apply",
     template: "%s · Hospirate",
   },
   description:
-    "Anonymous reviews of hospitals and health facilities, written by the healthcare students who trained there. No email, no real name — just a username.",
+    "Anonymous reviews of Saudi hospitals and clinics by the healthcare students who did their training year there — so you know which ones are worth applying to. No email, no real name, just a username.",
   applicationName: "Hospirate",
   openGraph: {
     type: "website",
     siteName: "Hospirate",
     title: "Hospirate",
     description:
-      "Anonymous reviews of clinical training placements, by the students who did them.",
+      "Where Saudi healthcare students actually trained, and which hospitals are worth applying to.",
   },
   robots: { index: true, follow: true },
   // No verification tags, no analytics, no third-party anything.

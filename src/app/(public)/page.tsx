@@ -101,7 +101,7 @@ export default async function HomePage() {
         aria-labelledby="hero-heading"
         style={{ paddingBlock: "var(--space-2xl) var(--space-xl)" }}
       >
-        <span className="label">Anonymous reviews of clinical placements</span>
+        <span className="label">Anonymous reviews by healthcare students</span>
 
         <h1
           id="hero-heading"
@@ -110,7 +110,7 @@ export default async function HomePage() {
             maxInlineSize: "17ch",
           }}
         >
-          Find out what a rotation is really like.
+          Know where to train before you apply.
         </h1>
 
         <p
@@ -121,8 +121,9 @@ export default async function HomePage() {
             color: "var(--ink-2)",
           }}
         >
-          Students describe the supervision, the hands-on time and the way they
-          were treated at the hospitals and clinics where they trained.
+          Students who already did their training year describe the
+          supervision, the hands-on time and the way they were treated — so you
+          can pick the hospitals worth applying to.
         </p>
 
         {/* The hero is the search box. A plain GET form, so it works before any
