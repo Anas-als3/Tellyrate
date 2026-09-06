@@ -1,12 +1,21 @@
+import { Fragment } from "react";
+
 import { Stars } from "@/components/stars";
-import { VoteButtons, ReportControl } from "@/components/vote-buttons";
-import { CommentThread, type ThreadComment, type ThreadViewer } from "@/components/comment-thread";
 import {
-  RATING_AXES,
-  STUDENT_FIELD_LABELS,
-  TRAINEE_ROLE_SHORT,
-  rotationStamp,
-} from "@/lib/labels";
+  VoteButtons,
+  ReportControl,
+  type ReportStrings,
+  type VoteStrings,
+} from "@/components/vote-buttons";
+import {
+  CommentThread,
+  type ThreadComment,
+  type ThreadStrings,
+  type ThreadViewer,
+} from "@/components/comment-thread";
+import { RATING_AXES, rotationStamp } from "@/lib/labels";
+import { lookup, type Dictionary } from "@/lib/i18n/dictionaries";
+import { getT } from "@/lib/i18n/server";
 
 /**
  * One review, drawn as a chart entry.
@@ -41,7 +50,75 @@ export type ReviewCardReview = {
 /** Bodies past this length are folded; roughly a screenful on a phone. */
 const FOLD_AT = 900;
 
-export function ReviewCard({
+/** Must match `USERNAME_TOKEN` in comment-thread.tsx, which substitutes it. */
+const USERNAME_TOKEN = "{username}";
+
+/**
+ * Vote labels, finished on the server.
+ *
+ * The dictionary builds each one as a whole sentence around the noun, because
+ * "Mark this review helpful" and "ضع علامة أن المراجعة مفيدة" do not put the
+ * noun in the same place. Functions cannot be handed to a client component,
+ * so the sentences are built here and only their text crosses over.
+ *
+ * Exported because the facility page's own report control needs the same
+ * treatment, and this is the server module both sides already share.
+ */
+export function voteStrings(
+  t: Dictionary,
+  target: "review" | "comment",
+): VoteStrings {
+  const noun = target === "review" ? t.review.nounReview : t.review.nounComment;
+  return {
+    markHelpful: t.review.markHelpful(noun),
+    markUnhelpful: t.review.markUnhelpful(noun),
+    removeHelpful: t.review.removeHelpful,
+    removeUnhelpful: t.review.removeUnhelpful,
+    logInHelpful: t.review.logInToMarkHelpful(noun),
+    logInUnhelpful: t.review.logInToMarkUnhelpful(noun),
+    cannotVoteOwn: t.review.cannotVoteOwn(noun),
+  };
+}
+
+export function reportStrings(t: Dictionary): ReportStrings {
+  return {
+    report: t.review.report,
+    thanks: t.review.reportThanks,
+    reasonLabel: t.review.reportReasonLabel,
+    chooseReason: t.review.reportChooseReason,
+    reasons: t.labels.reportReason,
+    noteLabel: t.review.reportNoteLabel,
+    noteHint: t.review.reportNoteHint,
+    submit: t.review.reportSubmit,
+    submitting: t.review.reportSubmitting,
+  };
+}
+
+function threadStrings(t: Dictionary, commentCount: number): ThreadStrings {
+  return {
+    summary:
+      commentCount === 0 ? t.review.comments : t.review.commentsCount(commentCount),
+    empty: t.review.commentsCount(0),
+    logIn: t.nav.logIn,
+    logInSuffix: t.auth.createOneSuffix,
+    addComment: t.review.addComment,
+    addPlaceholder: t.review.addCommentPlaceholder,
+    reply: t.review.reply,
+    // Built with the token standing in for the name, so the client can drop a
+    // username into the slot the language actually puts it in.
+    replyTo: t.review.replyTo(USERNAME_TOKEN),
+    replyPlaceholder: t.review.replyPlaceholder,
+    post: t.review.postComment,
+    posting: t.review.postingComment,
+    remove: t.review.deleteComment,
+    removing: t.review.deletingComment,
+    authorDeleted: t.review.authorDeleted,
+    separator: t.common.separator,
+    vote: voteStrings(t, "comment"),
+  };
+}
+
+export async function ReviewCard({
   review,
   facilityReviewCount,
   age,
@@ -53,35 +130,40 @@ export function ReviewCard({
   review: ReviewCardReview;
   /** Drives how coarsely the rotation year is stamped. */
   facilityReviewCount: number;
-  /** Coarse posting age, computed on the server. */
+  /** Coarse posting age, already in the reader's language. */
   age: string;
   viewerVote?: number;
   viewer: ThreadViewer;
   comments: ThreadComment[];
   nextPath: string;
 }) {
+  const t = await getT();
   const isOwn = viewer !== null && review.author?.id === viewer.id;
 
-  const stamp = [
-    STUDENT_FIELD_LABELS[review.field] ?? "Healthcare",
-    TRAINEE_ROLE_SHORT[review.role] ?? "Trainee",
+  const stampParts = [
+    lookup(t.labels.studentField, review.field, t.labels.healthcareFallback),
+    lookup(t.labels.traineeRoleShort, review.role, t.labels.traineeFallback),
     review.department,
     rotationStamp(review.trainingYear, facilityReviewCount),
     // A review whose author deleted their account keeps its testimony and
     // loses its name, rather than vanishing and quietly rewriting the average.
-    `@${review.author?.username ?? "deleted"}`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+    `@${review.author?.username ?? t.review.authorDeleted}`,
+  ].filter((part): part is string => Boolean(part));
 
   const { head, tail } = splitBody(review.body);
 
   // Sub-scores are optional per review, so only the axes this reviewer
   // actually answered are shown — a missing axis is not a zero.
-  const subRatings: { label: string; value: number }[] = [];
+  const subRatings: { key: string; label: string; value: number }[] = [];
   for (const axis of RATING_AXES) {
     const value = review[axis.key];
-    if (value !== null) subRatings.push({ label: axis.label, value });
+    if (value !== null) {
+      subRatings.push({
+        key: axis.key,
+        label: t.labels.ratingAxis[axis.key].label,
+        value,
+      });
+    }
   }
 
   return (
@@ -95,15 +177,25 @@ export function ReviewCard({
       }}
     >
       <header className="stamp" style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-xs)", justifyContent: "space-between" }}>
-        <bdi dir="auto">{stamp}</bdi>
+        {/* Each field is isolated rather than joined into one string: the year
+            and the Latin username sit next to Arabic here, and a single run
+            would let the digits and the handle change places. */}
+        <span>
+          {stampParts.map((part, index) => (
+            <Fragment key={index}>
+              {index > 0 ? <span>{t.common.separator}</span> : null}
+              <bdi dir="auto">{part}</bdi>
+            </Fragment>
+          ))}
+        </span>
         <span style={{ color: "var(--ink-3)" }}>
           {age}
-          {review.editedAt ? " · edited" : ""}
+          {review.editedAt ? `${t.common.separator}${t.review.edited}` : ""}
         </span>
       </header>
 
       <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", flexWrap: "wrap" }}>
-        <Stars value={review.overall} size={17} />
+        <Stars value={review.overall} size={17} t={t} />
         {/* Stars already announces the value; this is the sighted reading. */}
         <span className="tnum" aria-hidden="true" style={{ fontWeight: 700 }}>
           {review.overall.toFixed(1)}
@@ -123,7 +215,7 @@ export function ReviewCard({
               className="btn btn--quiet btn--small"
               style={{ listStyle: "none", fontFamily: "var(--font-ui)" }}
             >
-              Read the rest
+              {t.review.readTheRest}
             </summary>
             <div style={{ marginBlockStart: "0.75em" }}>
               <Paragraphs text={tail} />
@@ -144,11 +236,11 @@ export function ReviewCard({
           }}
         >
           {subRatings.map((row) => (
-            <li key={row.label}>
+            <li key={row.key}>
               <span className="chip">
                 {row.label}
                 <strong className="tnum">{row.value}</strong>
-                <span className="sr-only">out of 5</span>
+                <span className="sr-only">{t.review.outOfFive}</span>
               </span>
             </li>
           ))}
@@ -173,6 +265,7 @@ export function ReviewCard({
             signedIn={viewer !== null}
             isOwn={isOwn}
             nextPath={nextPath}
+            strings={voteStrings(t, "review")}
           />
           <span style={{ marginInlineStart: "auto" }}>
             <ReportControl
@@ -180,6 +273,7 @@ export function ReviewCard({
               targetId={review.id}
               signedIn={viewer !== null}
               nextPath={nextPath}
+              strings={reportStrings(t)}
             />
           </span>
         </div>
@@ -189,6 +283,7 @@ export function ReviewCard({
           comments={comments}
           viewer={viewer}
           nextPath={nextPath}
+          strings={threadStrings(t, comments.length)}
         />
       </footer>
     </article>
@@ -201,6 +296,8 @@ function Paragraphs({ text }: { text: string }) {
     <>
       {paragraphs.map((paragraph, index) => (
         <p key={index} style={{ whiteSpace: "pre-wrap" }}>
+          {/* Testimony written in either script, inside an interface that may
+              be running in the other one. */}
           <bdi dir="auto">{paragraph.trim()}</bdi>
         </p>
       ))}
@@ -235,13 +332,20 @@ function splitBody(body: string): { head: string; tail: string | null } {
  * An exact posting date, next to a field and a small department, is enough to
  * identify one student. Bands are the most precision this site can honestly
  * offer without handing that away.
+ *
+ * Each band is a finished phrase from the dictionary rather than a number and
+ * a unit stuck together, because Arabic inflects the unit by the count.
  */
-export function coarseAge(date: Date, now: Date = new Date()): string {
+export function coarseAge(
+  date: Date,
+  t: Dictionary["review"],
+  now: Date = new Date(),
+): string {
   const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000);
-  if (days <= 7) return "this week";
-  if (days <= 31) return "this month";
-  if (days <= 182) return "in the past 6 months";
-  if (days <= 365) return "in the past year";
+  if (days <= 7) return t.ageThisWeek;
+  if (days <= 31) return t.ageThisMonth;
+  if (days <= 182) return t.agePastSixMonths;
+  if (days <= 365) return t.agePastYear;
   const years = Math.max(1, Math.round(days / 365));
-  return `over ${years} year${years === 1 ? "" : "s"} ago`;
+  return t.ageOverYears(years);
 }

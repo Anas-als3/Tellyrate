@@ -4,25 +4,45 @@ import { redirect } from "next/navigation";
 
 import { Stars } from "@/components/stars";
 import { prisma } from "@/lib/db";
+import {
+  formatNumber,
+  getDictionary,
+  lookup,
+  type Locale,
+} from "@/lib/i18n/dictionaries";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/session";
 
-export const metadata: Metadata = {
-  title: "Your account",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
 
-/** Month and year only — the same coarseness reviews are stamped with. */
-const MONTH_YEAR = new Intl.DateTimeFormat("en-GB", {
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
+  return {
+    title: t.account.metaTitle,
+    robots: { index: false, follow: false },
+  };
+}
 
-/** How a review that is not currently visible is described to its author. */
-const STATUS_NOTE: Record<string, string> = {
-  PENDING: "Awaiting moderation",
-  HIDDEN: "Hidden by a moderator",
-  REMOVED: "Removed by a moderator",
+/**
+ * Month and year only — the same coarseness reviews are stamped with.
+ *
+ * Arabic gets Arabic month names but a Gregorian calendar and Western digits,
+ * both of which have to be asked for: `ar-SA` defaults to the Umm al-Qura
+ * calendar and to Arabic-Indic digits, and a joining date silently rendered as
+ * a Hijri month would be read as a mistake rather than as a conversion.
+ */
+const MONTH_YEAR: Record<Locale, Intl.DateTimeFormat> = {
+  en: new Intl.DateTimeFormat("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }),
+  ar: new Intl.DateTimeFormat("ar-SA", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+    calendar: "gregory",
+    numberingSystem: "latn",
+  }),
 };
 
 const RECENT_LIMIT = 8;
@@ -35,7 +55,10 @@ export default async function AccountPage({
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/account")}`);
 
-  const params = await searchParams;
+  const [params, locale] = await Promise.all([searchParams, getLocale()]);
+  const t = getDictionary(locale);
+  const monthYear = MONTH_YEAR[locale];
+
   // Set by GET /logout, which will not sign anyone out on its own — a link
   // that mutates state gets followed by prefetchers and scanners.
   const confirmingSignOut = params.signout === "1";
@@ -60,12 +83,12 @@ export default async function AccountPage({
 
   return (
     <>
-      <nav className="tabs" aria-label="Account">
+      <nav className="tabs" aria-label={t.account.tabsLabel}>
         <Link className="tab" href="/account" aria-current="page">
-          Account
+          {t.account.tabAccount}
         </Link>
         <Link className="tab" href="/account/security">
-          Security
+          {t.account.tabSecurity}
         </Link>
       </nav>
 
@@ -81,16 +104,16 @@ export default async function AccountPage({
           aria-labelledby="signout-heading"
         >
           <h2 id="signout-heading" style={{ fontSize: "var(--step-1)" }}>
-            Sign out of this device?
+            {t.account.signOutHeading}
           </h2>
           <p style={{ color: "var(--ink-2)" }}>
-            Your other devices stay signed in. There is a{" "}
-            <Link href="/account/security">sign out everywhere</Link> button if
-            you need it.
+            {t.account.signOutBodyPrefix}
+            <Link href="/account/security">{t.account.signOutBodyLink}</Link>
+            {t.account.signOutBodySuffix}
           </p>
           <form method="post" action="/logout">
             <button type="submit" className="btn btn--primary">
-              Sign out
+              {t.account.signOut}
             </button>
           </form>
         </section>
@@ -103,16 +126,15 @@ export default async function AccountPage({
           gap: "var(--space-2xs)",
         }}
       >
-        <p className="label">Signed in as</p>
+        <p className="label">{t.account.signedInAs}</p>
         <h1 style={{ fontSize: "var(--step-3)" }}>
           <bdi dir="auto">{user.username}</bdi>
         </h1>
         <p className="hint">
-          This is the name that appears on everything you post, as{" "}
-          <span style={{ fontFamily: "var(--font-mono)" }}>
-            @{user.username}
-          </span>
-          . Joined {MONTH_YEAR.format(user.createdAt)}.
+          {t.account.usernameNote(
+            user.username,
+            monthYear.format(user.createdAt),
+          )}
         </p>
       </header>
 
@@ -124,35 +146,31 @@ export default async function AccountPage({
           gap: "var(--space-xl)",
           flexWrap: "wrap",
         }}
-        aria-label="Your contributions"
+        aria-label={t.account.contributions}
       >
         <div>
-          <p className="label">Reviews</p>
+          <p className="label">{t.account.reviews}</p>
           <p className="tnum" style={{ fontSize: "var(--step-3)" }}>
-            {reviewCount}
+            {formatNumber(reviewCount)}
           </p>
         </div>
         <div>
-          <p className="label">Comments</p>
+          <p className="label">{t.account.comments}</p>
           <p className="tnum" style={{ fontSize: "var(--step-3)" }}>
-            {commentCount}
+            {formatNumber(commentCount)}
           </p>
         </div>
       </section>
 
       <section
         className="notice"
-        aria-label="What this account holds"
+        aria-label={t.account.holdsLabel}
         style={{ display: "flex", flexDirection: "column", gap: "var(--space-2xs)" }}
       >
         <p>
-          <strong>We hold no email, no name, and no school for this account.</strong>
+          <strong>{t.account.holdsHeading}</strong>
         </p>
-        <p>
-          A username, a password hash, the date you joined, and what you have
-          posted — that is the whole record. Nothing here can be used to send
-          you anything, because there is nowhere to send it.
-        </p>
+        <p>{t.account.holdsBody}</p>
       </section>
 
       <section
@@ -172,11 +190,11 @@ export default async function AccountPage({
           }}
         >
           <h2 id="reviews-heading" style={{ fontSize: "var(--step-2)" }}>
-            Your reviews
+            {t.account.yourReviews}
           </h2>
           {reviewCount > RECENT_LIMIT ? (
             <span className="hint tnum">
-              {RECENT_LIMIT} most recent of {reviewCount}
+              {t.account.mostRecentOf(RECENT_LIMIT, reviewCount)}
             </span>
           ) : null}
         </div>
@@ -186,9 +204,9 @@ export default async function AccountPage({
             className="card"
             style={{ padding: "var(--space-m)", color: "var(--ink-2)" }}
           >
-            You have not written one yet.{" "}
-            <Link href="/facilities">Find the place you trained</Link> and say
-            what it was actually like.
+            {t.account.noReviewsPrefix}
+            <Link href="/facilities">{t.account.noReviewsLink}</Link>
+            {t.account.noReviewsSuffix}
           </p>
         ) : (
           <ul
@@ -220,13 +238,17 @@ export default async function AccountPage({
                     flexWrap: "wrap",
                   }}
                 >
-                  <Stars value={review.overall} size={14} />
+                  <Stars value={review.overall} size={14} t={t} />
                   <span className="stamp" style={{ border: 0, padding: 0 }}>
-                    {MONTH_YEAR.format(review.createdAt)}
+                    {monthYear.format(review.createdAt)}
                   </span>
                   {review.status !== "PUBLISHED" ? (
                     <span className="chip chip--warn">
-                      {STATUS_NOTE[review.status] ?? "Not visible"}
+                      {lookup(
+                        t.labels.reviewStatus,
+                        review.status,
+                        t.labels.notVisible,
+                      )}
                     </span>
                   ) : null}
                 </div>
@@ -257,15 +279,15 @@ export default async function AccountPage({
           borderBlockStart: "1px solid var(--line)",
           paddingBlockStart: "var(--space-m)",
         }}
-        aria-label="Account actions"
+        aria-label={t.account.actionsLabel}
       >
         <Link className="btn" href="/account/security">
-          Password and account
+          {t.account.passwordAndAccount}
         </Link>
         {/* A plain form post: signing out has to work with scripting off. */}
         <form method="post" action="/logout">
           <button type="submit" className="btn btn--quiet">
-            Sign out
+            {t.account.signOut}
           </button>
         </form>
       </section>

@@ -1,9 +1,17 @@
+import { getT } from "@/lib/i18n/server";
+
 /**
  * The loading state mirrors the real page's blocks at their real sizes, so
  * nothing jumps when the content arrives. It is decorative: screen readers are
  * told the page is busy once, rather than reading a wall of empty boxes.
+ *
+ * The skeleton itself needs no mirroring — every box is sized with `inlineSize`
+ * and laid out by the same grid the real page uses, so it turns round with the
+ * document. Only the one spoken line has to be translated.
  */
-export default function FacilityLoading() {
+export default async function FacilityLoading() {
+  const t = await getT();
+
   return (
     <div
       className="page"
@@ -11,7 +19,7 @@ export default function FacilityLoading() {
       aria-busy="true"
     >
       <span className="sr-only" role="status">
-        Loading facility
+        {t.facility.loadingStatus}
       </span>
 
       <div aria-hidden="true" style={{ display: "grid", gap: "var(--space-l)" }}>

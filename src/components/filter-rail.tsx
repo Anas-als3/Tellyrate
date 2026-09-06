@@ -7,6 +7,8 @@ import {
   type FacilityQuery,
   type FilterFamily,
 } from "@/lib/facility-query";
+import { formatNumber, type Dictionary } from "@/lib/i18n/dictionaries";
+import { getT } from "@/lib/i18n/server";
 
 /**
  * The facet rail.
@@ -17,6 +19,10 @@ import {
  * cost is that only one value per family can be selected, which for a
  * directory this size is the right trade — multi-select facets would multiply
  * the crawlable surface without helping anyone find a hospital.
+ *
+ * `t` is threaded down as a prop rather than awaited in each part: the rail is
+ * rendered twice per page (see the note on the two copies below), and the
+ * dictionary should be looked up once for both.
  */
 
 export type FilterOption = {
@@ -34,20 +40,33 @@ export type FilterFacets = {
   ratings: FilterOption[];
 };
 
-/** Labels for the "no filter" row at the top of each family. */
-const ANY_LABELS: Record<FilterFamily, string> = {
-  city: "Any city",
-  country: "Any country",
-  kind: "Any kind",
-  min: "Any rating",
-};
+/** The "no filter" row at the top of each family. */
+function anyLabel(t: Dictionary, family: FilterFamily): string {
+  switch (family) {
+    case "city":
+      return t.facilities.anyCity;
+    case "country":
+      return t.facilities.anyCountry;
+    case "kind":
+      return t.facilities.anyKind;
+    case "min":
+      return t.facilities.anyRating;
+  }
+}
 
-const GROUP_TITLES: Record<FilterFamily, string> = {
-  city: "City",
-  country: "Country",
-  kind: "Kind",
-  min: "Minimum rating",
-};
+/** Written as switches so a new filter family is a compile error, not a blank. */
+function groupTitle(t: Dictionary, family: FilterFamily): string {
+  switch (family) {
+    case "city":
+      return t.facilities.cityFamily;
+    case "country":
+      return t.facilities.countryFamily;
+    case "kind":
+      return t.facilities.kindFamily;
+    case "min":
+      return t.facilities.ratingFamily;
+  }
+}
 
 function Marker({ active }: { active: boolean }) {
   return (
@@ -66,15 +85,20 @@ function Marker({ active }: { active: boolean }) {
 }
 
 function FilterOptionLink({
+  t,
   href,
   label,
   count,
   active,
+  /** True for the "Any city" row, which is a state rather than a filter. */
+  isAny = false,
 }: {
+  t: Dictionary;
   href: string;
   label: string;
   count?: number;
   active: boolean;
+  isAny?: boolean;
 }) {
   return (
     <Link
@@ -114,24 +138,31 @@ function FilterOptionLink({
             aria-hidden="true"
             style={{ color: "var(--ink-3)", fontSize: "var(--step--2)" }}
           >
-            {count}
+            {formatNumber(count)}
           </span>
-          <span className="sr-only">{count} facilities</span>
+          <span className="sr-only">{t.common.facilityCount(count)}</span>
         </>
       ) : null}
 
-      {active ? <span className="sr-only">— selected, activate to remove</span> : null}
+      {/* Only the selected *filter* offers removal. Saying it on "Any city",
+          which is what a cleared family already looks like, would promise a
+          screen-reader user an action that does nothing. */}
+      {active && !isAny ? (
+        <span className="sr-only">{t.facilities.removeFilter}</span>
+      ) : null}
     </Link>
   );
 }
 
 function FilterGroup({
+  t,
   base,
   query,
   family,
   options,
   footer,
 }: {
+  t: Dictionary;
   base: string;
   query: FacilityQuery;
   family: FilterFamily;
@@ -152,14 +183,16 @@ function FilterGroup({
   return (
     <div style={{ display: "grid", gap: "var(--space-2xs)" }}>
       <h2 className="label" style={{ margin: 0 }}>
-        {GROUP_TITLES[family]}
+        {groupTitle(t, family)}
       </h2>
       <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
         <li>
           <FilterOptionLink
+            t={t}
             href={buildHref(base, query, familyOverride(family, undefined))}
-            label={ANY_LABELS[family]}
+            label={anyLabel(t, family)}
             active={current === undefined}
+            isAny
           />
         </li>
         {visible.map((option) => {
@@ -167,6 +200,7 @@ function FilterGroup({
           return (
             <li key={option.value}>
               <FilterOptionLink
+                t={t}
                 href={buildHref(
                   base,
                   query,
@@ -186,10 +220,12 @@ function FilterGroup({
 }
 
 function FilterGroups({
+  t,
   base,
   query,
   facets,
 }: {
+  t: Dictionary;
   base: string;
   query: FacilityQuery;
   facets: FilterFacets;
@@ -197,6 +233,7 @@ function FilterGroups({
   return (
     <div style={{ display: "grid", gap: "var(--space-l)" }}>
       <FilterGroup
+        t={t}
         base={base}
         query={query}
         family="city"
@@ -207,20 +244,32 @@ function FilterGroups({
             className="hint"
             style={{ paddingInlineStart: "var(--space-2xs)" }}
           >
-            Browse all cities
+            {t.search.browseByCity}
           </Link>
         }
       />
       {/* No country group: the site covers Saudi Arabia only, so a filter with
           one option is noise. The `country` URL param still parses, so links
           keep working if the scope ever widens. */}
-      <FilterGroup base={base} query={query} family="kind" options={facets.kinds} />
-      <FilterGroup base={base} query={query} family="min" options={facets.ratings} />
+      <FilterGroup
+        t={t}
+        base={base}
+        query={query}
+        family="kind"
+        options={facets.kinds}
+      />
+      <FilterGroup
+        t={t}
+        base={base}
+        query={query}
+        family="min"
+        options={facets.ratings}
+      />
     </div>
   );
 }
 
-export function FilterRail({
+export async function FilterRail({
   base,
   query,
   facets,
@@ -229,7 +278,10 @@ export function FilterRail({
   query: FacilityQuery;
   facets: FilterFacets;
 }) {
-  const groups = <FilterGroups base={base} query={query} facets={facets} />;
+  const t = await getT();
+  const groups = (
+    <FilterGroups t={t} base={base} query={query} facets={facets} />
+  );
   const activeCount = activeFamilies(query).length;
 
   return (
@@ -241,7 +293,7 @@ export function FilterRail({
           hidden copy from the accessibility tree, so nothing is announced
           twice. */}
       <aside
-        aria-label="Filters"
+        aria-label={t.facilities.filtersHeading}
         className="hidden lg:block"
         style={{
           position: "sticky",
@@ -260,11 +312,11 @@ export function FilterRail({
         style={{ padding: "var(--space-s) var(--space-m)" }}
       >
         <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-          Filters
+          {t.facilities.showFilters}
           {activeCount > 0 ? (
             <span className="tnum" style={{ color: "var(--ink-3)" }}>
               {" "}
-              ({activeCount} applied)
+              ({formatNumber(activeCount)})
             </span>
           ) : null}
         </summary>

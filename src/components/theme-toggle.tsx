@@ -5,6 +5,16 @@ import { useSyncExternalStore } from "react";
 type Theme = "light" | "dark";
 
 /** Must match the key the pre-paint script in src/app/layout.tsx reads. */
+/**
+ * Passed in rather than read from `getT()`: this is a client component, and
+ * `@/lib/i18n/server` must not enter the client bundle.
+ */
+export type ThemeStrings = {
+  switchUnknown: string;
+  switchToLight: string;
+  switchToDark: string;
+};
+
 const STORAGE_KEY = "tellyrate-theme";
 
 /**
@@ -54,7 +64,7 @@ function getServerSnapshot(): null {
   return null;
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ strings }: { strings: ThemeStrings }) {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function toggle() {
@@ -73,8 +83,10 @@ export function ThemeToggle() {
 
   const label =
     theme === null
-      ? "Switch colour theme"
-      : `Switch to ${theme === "dark" ? "light" : "dark"} theme`;
+      ? strings.switchUnknown
+      : theme === "dark"
+        ? strings.switchToLight
+        : strings.switchToDark;
 
   return (
     <button

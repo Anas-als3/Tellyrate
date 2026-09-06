@@ -4,7 +4,6 @@ import { useActionState, useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
 import { voteOnCommentAction, voteOnReviewAction } from "@/lib/actions/votes";
 import { submitReportAction } from "@/lib/actions/reports";
-import { REPORT_REASON_LABELS } from "@/lib/labels";
 
 /**
  * The two interactive controls in a review's action row.
@@ -12,7 +11,41 @@ import { REPORT_REASON_LABELS } from "@/lib/labels";
  * They live in one file because they are the only client islands inside an
  * otherwise server-rendered review card: keeping them together keeps the card
  * itself — the part search engines and readers care about — out of the bundle.
+ *
+ * Their wording arrives already finished, as plain strings. Functions cannot
+ * cross the server/client boundary, so the dictionary's sentence builders are
+ * called on the server and only the result is sent — see `voteStrings` and
+ * `reportStrings` in review-card.tsx. That also keeps both dictionaries out of
+ * the client bundle.
  */
+
+/**
+ * Every label is pre-bound to the thing being voted on, because Arabic does
+ * not put the noun where English does: "Mark this review helpful" is not
+ * "Mark this" + noun + "helpful" in any language but English.
+ */
+export type VoteStrings = {
+  markHelpful: string;
+  markUnhelpful: string;
+  removeHelpful: string;
+  removeUnhelpful: string;
+  logInHelpful: string;
+  logInUnhelpful: string;
+  cannotVoteOwn: string;
+};
+
+export type ReportStrings = {
+  report: string;
+  thanks: string;
+  reasonLabel: string;
+  chooseReason: string;
+  /** Enum value → label, in the order the options should be offered. */
+  reasons: Record<string, string>;
+  noteLabel: string;
+  noteHint: string;
+  submit: string;
+  submitting: string;
+};
 
 type VoteState = {
   /** The viewer's own vote: 1, -1, or 0 for none. */
@@ -48,6 +81,7 @@ export function VoteButtons({
   signedIn,
   isOwn = false,
   nextPath,
+  strings,
 }: {
   target: "review" | "comment";
   id: string;
@@ -59,9 +93,8 @@ export function VoteButtons({
   isOwn?: boolean;
   /** Where to return a signed-out visitor after logging in. */
   nextPath: string;
+  strings: VoteStrings;
 }) {
-  const noun = target === "review" ? "review" : "comment";
-
   // Signed out, the buttons stay visible and lead somewhere useful. Hiding
   // them would misrepresent the review as unvotable; a dead button would be
   // worse still.
@@ -72,12 +105,12 @@ export function VoteButtons({
         <Link className="btn btn--quiet btn--small" href={href}>
           <ThumbIcon />
           <span className="tnum">{likeCount}</span>
-          <span className="sr-only">Log in to mark this {noun} helpful</span>
+          <span className="sr-only">{strings.logInHelpful}</span>
         </Link>
         <Link className="btn btn--quiet btn--small" href={href}>
           <ThumbIcon down />
           <span className="tnum">{dislikeCount}</span>
-          <span className="sr-only">Log in to mark this {noun} unhelpful</span>
+          <span className="sr-only">{strings.logInUnhelpful}</span>
         </Link>
       </span>
     );
@@ -91,7 +124,7 @@ export function VoteButtons({
       dislikeCount={dislikeCount}
       viewerVote={viewerVote}
       isOwn={isOwn}
-      noun={noun}
+      strings={strings}
     />
   );
 }
@@ -103,7 +136,7 @@ function LiveVoteButtons({
   dislikeCount,
   viewerVote,
   isOwn,
-  noun,
+  strings,
 }: {
   target: "review" | "comment";
   id: string;
@@ -111,7 +144,7 @@ function LiveVoteButtons({
   dislikeCount: number;
   viewerVote: number;
   isOwn: boolean;
-  noun: string;
+  strings: VoteStrings;
 }) {
   const base: VoteState = {
     value: viewerVote === 1 ? 1 : viewerVote === -1 ? -1 : 0,
@@ -125,7 +158,7 @@ function LiveVoteButtons({
 
   function cast(value: 1 | -1) {
     if (isOwn) {
-      setError(`You cannot vote on your own ${noun}.`);
+      setError(strings.cannotVoteOwn);
       return;
     }
 
@@ -154,7 +187,7 @@ function LiveVoteButtons({
         <ThumbIcon />
         <span className="tnum">{state.likeCount}</span>
         <span className="sr-only">
-          {state.value === 1 ? `Remove your helpful mark` : `Mark this ${noun} helpful`}
+          {state.value === 1 ? strings.removeHelpful : strings.markHelpful}
         </span>
       </button>
 
@@ -170,9 +203,7 @@ function LiveVoteButtons({
         <ThumbIcon down />
         <span className="tnum">{state.dislikeCount}</span>
         <span className="sr-only">
-          {state.value === -1
-            ? `Remove your unhelpful mark`
-            : `Mark this ${noun} unhelpful`}
+          {state.value === -1 ? strings.removeUnhelpful : strings.markUnhelpful}
         </span>
       </button>
 
@@ -203,6 +234,8 @@ function ThumbIcon({ down = false }: { down?: boolean }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      // Only the up/down flip is meaningful. A thumb is not a directional
+      // glyph, so it is left alone in Arabic rather than mirrored.
       style={{ transform: down ? "rotate(180deg)" : undefined, flex: "none" }}
     >
       <path d="M7 21V10L12.2 2.9a1.4 1.4 0 0 1 2.5.9V9h4.4a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 17.7 20H7Z" />
@@ -223,11 +256,13 @@ export function ReportControl({
   targetId,
   signedIn,
   nextPath,
+  strings,
 }: {
   targetType: "review" | "comment" | "facility";
   targetId: string;
   signedIn: boolean;
   nextPath: string;
+  strings: ReportStrings;
 }) {
   const [state, formAction, isPending] = useActionState(submitReportAction, {});
 
@@ -238,7 +273,7 @@ export function ReportControl({
         href={`/login?next=${encodeURIComponent(nextPath)}`}
         style={{ color: "var(--ink-3)" }}
       >
-        Report
+        {strings.report}
       </Link>
     );
   }
@@ -252,7 +287,7 @@ export function ReportControl({
         className="btn btn--quiet btn--small"
         style={{ color: "var(--ink-3)", listStyle: "none" }}
       >
-        Report
+        {strings.report}
       </summary>
 
       <div
@@ -269,8 +304,7 @@ export function ReportControl({
       >
         {state.ok ? (
           <p className="notice" role="status">
-            Thanks — a moderator will take a look. Nobody is told who reported
-            this.
+            {strings.thanks}
           </p>
         ) : (
           <form action={formAction} style={{ display: "grid", gap: "var(--space-s)" }}>
@@ -279,7 +313,7 @@ export function ReportControl({
 
             <div className="field">
               <label className="label" htmlFor={`report-reason-${targetId}`}>
-                Why are you reporting this?
+                {strings.reasonLabel}
               </label>
               <select
                 className="select"
@@ -289,9 +323,11 @@ export function ReportControl({
                 required
               >
                 <option value="" disabled>
-                  Choose a reason
+                  {strings.chooseReason}
                 </option>
-                {Object.entries(REPORT_REASON_LABELS).map(([value, label]) => (
+                {/* The values are the schema's enum members and never change
+                    with the language; only the labels do. */}
+                {Object.entries(strings.reasons).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -301,7 +337,7 @@ export function ReportControl({
 
             <div className="field">
               <label className="label" htmlFor={`report-note-${targetId}`}>
-                Anything else? (optional)
+                {strings.noteLabel}
               </label>
               <textarea
                 className="input"
@@ -311,10 +347,7 @@ export function ReportControl({
                 maxLength={500}
                 style={{ minBlockSize: "auto", fontFamily: "var(--font-ui)" }}
               />
-              <span className="hint">
-                Do not include anyone&rsquo;s name — not yours, not a staff
-                member&rsquo;s.
-              </span>
+              <span className="hint">{strings.noteHint}</span>
             </div>
 
             {state.error ? (
@@ -325,7 +358,7 @@ export function ReportControl({
 
             <div>
               <button className="btn btn--small" type="submit" disabled={isPending}>
-                {isPending ? "Sending…" : "Send report"}
+                {isPending ? strings.submitting : strings.submit}
               </button>
             </div>
           </form>

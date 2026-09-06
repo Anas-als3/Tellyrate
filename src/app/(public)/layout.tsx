@@ -34,7 +34,12 @@ export default async function PublicLayout({
     >
       {/* The header is a client component, so it is handed the strings it
           needs rather than reaching for the server-only dictionary itself. */}
-      <SiteHeader locale={locale} nav={t.nav} language={t.common.language} />
+      <SiteHeader
+        locale={locale}
+        nav={t.nav}
+        language={t.common.language}
+        theme={t.common.theme}
+      />
       {/* The root layout's skip link points at this id. */}
       <main id="main" style={{ flex: "1 0 auto" }}>
         {children}

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { getT } from "@/lib/i18n/server";
+
 /**
  * Content and footer note share one measure, so the note is not stranded
  * against the edge of a much wider page.
@@ -24,9 +26,11 @@ const column: React.CSSProperties = {
  * about a hospital, and mixing the directory's navigation into it invites the
  * mistake of thinking the two are connected.
  */
-export default function AccountLayout({
+export default async function AccountLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const t = await getT();
+
   return (
     <div
       style={{
@@ -61,10 +65,10 @@ export default function AccountLayout({
               textDecoration: "none",
             }}
           >
-            Tellyrate
+            {t.common.siteName}
           </Link>
           <Link href="/facilities" className="btn btn--quiet btn--small">
-            Browse facilities
+            {t.account.layoutBrowse}
           </Link>
         </div>
       </header>
@@ -93,8 +97,9 @@ export default function AccountLayout({
           {/* The page itself already states what is held; the footer just
               points at the longer answers. */}
           <p className="hint" style={measure}>
-            <Link href="/privacy">What we store</Link> ·{" "}
-            <Link href="/guidelines">Posting guidelines</Link>
+            <Link href="/privacy">{t.account.layoutStore}</Link>
+            {t.common.separator}
+            <Link href="/guidelines">{t.account.layoutGuidelines}</Link>
           </p>
         </div>
       </footer>

@@ -7,7 +7,12 @@ import {
   createFacilityAction,
   type FacilityActionState,
 } from "@/lib/actions/facilities";
-import { FACILITY_KINDS, FACILITY_KIND_LABELS } from "@/lib/labels";
+import {
+  getDictionary,
+  lookup,
+  type Locale,
+} from "@/lib/i18n/dictionaries";
+import { FACILITY_KINDS } from "@/lib/labels";
 
 /**
  * "Add a facility", which is really "search for the facility, and add one only
@@ -18,6 +23,10 @@ import { FACILITY_KINDS, FACILITY_KIND_LABELS } from "@/lib/labels";
  * is about to create a duplicate is the only moment you can cheaply stop it.
  * The disabled button here is a courtesy; the real enforcement is the signed
  * token the server demands, minted only by an actual search.
+ *
+ * The dictionary is read here rather than handed down as props: the counts in
+ * "3 places match" are only known after a fetch that happens on this side of
+ * the boundary, and a plural function cannot be serialised across it.
  */
 
 const MIN_QUERY = 2;
@@ -52,16 +61,37 @@ export type SearchCity = {
 
 const INITIAL_STATE: FacilityActionState = { status: "idle" };
 
+/**
+ * Text that came back from a server action.
+ *
+ * Those actions still answer in English and their strings have no dictionary
+ * keys, so on an Arabic page this is foreign text inside a native sentence.
+ * Tagging it lets a screen reader switch voice, and `bdi` keeps its trailing
+ * punctuation from jumping to the wrong end of the line.
+ */
+function Server({ locale, text }: { locale: Locale; text: string }) {
+  if (locale === "en") return <>{text}</>;
+  return (
+    <bdi lang="en" dir="ltr">
+      {text}
+    </bdi>
+  );
+}
+
 export function FacilitySearch({
   cities,
+  locale,
   initialQuery = "",
   signedIn,
 }: {
   cities: SearchCity[];
+  locale: Locale;
   initialQuery?: string;
   signedIn: boolean;
 }) {
   const router = useRouter();
+  const t = getDictionary(locale);
+  const add = t.facilities.addPage;
 
   const [query, setQuery] = useState(initialQuery);
   const [citySlug, setCitySlug] = useState("");
@@ -84,6 +114,8 @@ export function FacilitySearch({
 
   const trimmed = query.trim();
   const searchNext = encodeURIComponent("/facilities/new");
+  // The one arrow on this screen points onward, which is leftward in Arabic.
+  const forward = locale === "ar" ? "←" : "→";
 
   // Derived rather than stored: what is on screen is a function of the last
   // completed search and what is in the box right now, and holding that in
@@ -165,7 +197,7 @@ export function FacilitySearch({
         style={{ display: "grid", gap: "var(--space-s)" }}
       >
         <h2 id="search-heading" style={{ fontSize: "var(--step-2)" }}>
-          What&rsquo;s the facility called?
+          {add.searchLabel}
         </h2>
 
         <div
@@ -178,23 +210,26 @@ export function FacilitySearch({
         >
           <div className="field">
             <label className="label" htmlFor="facility-query">
-              Name
+              {t.facilities.searchFieldLabel}
             </label>
             <input
               id="facility-query"
               className="input"
               type="search"
+              // Facility names are as often Arabic as Latin, so the box
+              // follows whatever is typed into it rather than the interface.
+              dir="auto"
               autoComplete="off"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="King Fahad Medical City"
+              placeholder={add.searchPlaceholder}
               aria-describedby="search-status"
             />
           </div>
 
           <div className="field">
             <label className="label" htmlFor="facility-city-filter">
-              City
+              {add.cityFilterLabel}
             </label>
             <select
               id="facility-city-filter"
@@ -202,7 +237,7 @@ export function FacilitySearch({
               value={citySlug}
               onChange={(event) => setCitySlug(event.target.value)}
             >
-              <option value="">Everywhere</option>
+              <option value="">{add.everywhere}</option>
               {cities.map((city) => (
                 <option key={city.slug} value={city.slug}>
                   {city.name}
@@ -214,20 +249,20 @@ export function FacilitySearch({
 
         <p id="search-status" className="hint" role="status">
           {tooShort
-            ? "Type at least two letters. Almost every hospital and clinic in the country is already here."
+            ? add.typeMore
             : searching
-              ? "Searching…"
+              ? add.searching
               : searchFailed
-                ? "Search is not responding. Try again in a moment."
+                ? add.searchFailed
                 : shown.length > 0
-                  ? `${shown.length} ${shown.length === 1 ? "place" : "places"} match “${result?.query ?? trimmed}”.`
-                  : `Nothing here matches “${result?.query ?? trimmed}”.`}
+                  ? add.matches(shown.length, result?.query ?? trimmed)
+                  : add.noMatches(result?.query ?? trimmed)}
         </p>
 
         {shown.length > 0 ? (
           <div style={{ display: "grid", gap: "var(--space-xs)" }}>
             <h3 className="label" style={{ fontSize: "var(--step--2)" }}>
-              Did you mean one of these?
+              {t.facilities.resultsHeading}
             </h3>
             <ul
               style={{
@@ -274,15 +309,19 @@ export function FacilitySearch({
                       style={{ display: "flex", gap: "var(--space-2xs)" }}
                     >
                       <span>
-                        {FACILITY_KIND_LABELS[candidate.kind] ?? "Facility"}
+                        {lookup(
+                          t.labels.facilityKind,
+                          candidate.kind,
+                          t.labels.facilityFallback,
+                        )}
                       </span>
                       <span aria-hidden="true">·</span>
                       <span>{candidate.city.name}</span>
                       <span aria-hidden="true">·</span>
                       <span>
                         {candidate.reviewCount === 0
-                          ? "no reviews yet"
-                          : `${candidate.reviewCount} ${candidate.reviewCount === 1 ? "review" : "reviews"}`}
+                          ? t.common.noReviewsYet
+                          : t.common.reviewCount(candidate.reviewCount)}
                       </span>
                     </span>
                   </div>
@@ -290,9 +329,11 @@ export function FacilitySearch({
                   <Link
                     className="btn btn--small"
                     href={`/facilities/${candidate.slug}/review`}
+                    // Five identical "Review it" links in a row are useless in
+                    // a links list; the name is what tells them apart.
+                    aria-label={`${add.reviewIt}${t.common.separator}${candidate.name}`}
                   >
-                    This is it →
-                    <span className="sr-only"> — review {candidate.name}</span>
+                    {add.reviewIt} <span aria-hidden="true">{forward}</span>
                   </Link>
                 </li>
               ))}
@@ -313,12 +354,11 @@ export function FacilitySearch({
                 window.setTimeout(() => nameRef.current?.focus(), 0);
               }}
             >
-              None of these — add it
+              {add.noneOfThese}
             </button>
             {!searchRan ? (
               <p className="hint" style={{ marginBlockStart: "var(--space-2xs)" }}>
-                Search first. Adding a place that is already listed splits its
-                reviews in two.
+                {add.searchFirst}
               </p>
             ) : null}
           </div>
@@ -334,26 +374,25 @@ export function FacilitySearch({
         >
           <div>
             <h2 id="create-heading" style={{ fontSize: "var(--step-2)" }}>
-              Add it to Tellyrate
+              {add.createHeading}
             </h2>
             <p className="hint" style={{ marginBlockStart: "var(--space-2xs)" }}>
-              New places stay off the directory listings until they have their
-              first review, so nothing appears that nobody has been to.
+              {add.createHint}
             </p>
           </div>
 
           <div ref={alertRef} tabIndex={-1} style={{ outline: "none" }}>
             {state.status === "error" ? (
               <p className="notice notice--danger" role="alert">
-                {state.message}
+                <Server locale={locale} text={state.message} />
               </p>
             ) : null}
 
             {state.status === "auth" ? (
               <div className="notice notice--warn" role="alert">
-                <strong>You need an account to add a place.</strong>
+                <strong>{add.needAccount}</strong>
                 <p style={{ marginBlockStart: "var(--space-2xs)" }}>
-                  {state.message}
+                  <Server locale={locale} text={state.message} />
                 </p>
                 <p
                   style={{
@@ -366,13 +405,13 @@ export function FacilitySearch({
                     className="btn btn--primary btn--small"
                     href={`/signup?next=${searchNext}`}
                   >
-                    Create an account
+                    {add.createOne}
                   </Link>
                   <Link
                     className="btn btn--small"
                     href={`/login?next=${searchNext}`}
                   >
-                    Sign in
+                    {add.signIn}
                   </Link>
                 </p>
               </div>
@@ -380,7 +419,9 @@ export function FacilitySearch({
 
             {state.status === "duplicate" ? (
               <div className="notice notice--warn" role="alert">
-                <strong>{state.message}</strong>
+                <strong>
+                  <Server locale={locale} text={state.message} />
+                </strong>
                 <p style={{ marginBlockStart: "var(--space-2xs)" }}>
                   <bdi dir="auto">{state.facility.name}</bdi>
                   {state.facility.nameLocal ? (
@@ -389,9 +430,11 @@ export function FacilitySearch({
                       <bdi dir="auto">{state.facility.nameLocal}</bdi>
                     </>
                   ) : null}{" "}
-                  in {state.facility.cityName}, with{" "}
-                  <span className="tnum">{state.facility.reviewCount}</span>{" "}
-                  {state.facility.reviewCount === 1 ? "review" : "reviews"}.
+                  {add.duplicateIn(state.facility.cityName)}{" "}
+                  <span className="tnum">
+                    {t.common.reviewCount(state.facility.reviewCount)}
+                  </span>
+                  .
                 </p>
                 <p
                   style={{
@@ -404,13 +447,13 @@ export function FacilitySearch({
                     className="btn btn--primary btn--small"
                     href={`/facilities/${state.facility.slug}/review`}
                   >
-                    That&rsquo;s the one — review it
+                    {add.thatsTheOne}
                   </Link>
                   <Link
                     className="btn btn--small"
                     href={`/facilities/${state.facility.slug}`}
                   >
-                    Look at it first
+                    {add.lookFirst}
                   </Link>
                 </p>
               </div>
@@ -418,17 +461,19 @@ export function FacilitySearch({
 
             {state.status === "created" ? (
               <p className="notice" role="status">
-                {state.message} Taking you to its review page…
+                <Server locale={locale} text={state.message} /> {add.createdRedirect}
               </p>
             ) : null}
           </div>
 
           {!signedIn ? (
             <p className="notice">
-              You will need an account to save this — a username and a password,
-              no email.{" "}
-              <Link href={`/login?next=${searchNext}`}>Sign in</Link> or{" "}
-              <Link href={`/signup?next=${searchNext}`}>create one</Link>.
+              {add.needAccountToSave}{" "}
+              <Link href={`/login?next=${searchNext}`}>
+                {t.reviewForm.signIn}
+              </Link>
+              {add.or}
+              <Link href={`/signup?next=${searchNext}`}>{add.createOne}</Link>.
             </p>
           ) : null}
 
@@ -438,7 +483,7 @@ export function FacilitySearch({
 
             <div className="field">
               <label className="label" htmlFor="facility-name">
-                Name — required
+                {add.nameLabel}
               </label>
               <input
                 ref={nameRef}
@@ -446,6 +491,7 @@ export function FacilitySearch({
                 name="name"
                 className="input"
                 type="text"
+                dir="auto"
                 required
                 minLength={2}
                 maxLength={120}
@@ -453,7 +499,9 @@ export function FacilitySearch({
                 aria-invalid={fieldErrors.name ? true : undefined}
               />
               {fieldErrors.name ? (
-                <p className="error-text">{fieldErrors.name}</p>
+                <p className="error-text">
+                  <Server locale={locale} text={fieldErrors.name} />
+                </p>
               ) : null}
             </div>
 
@@ -466,7 +514,7 @@ export function FacilitySearch({
             >
               <div className="field">
                 <label className="label" htmlFor="facility-city">
-                  City — required
+                  {add.cityLabel}
                 </label>
                 <select
                   id="facility-city"
@@ -477,22 +525,26 @@ export function FacilitySearch({
                   aria-invalid={fieldErrors.citySlug ? true : undefined}
                 >
                   <option value="" disabled>
-                    Choose a city
+                    {add.chooseCity}
                   </option>
                   {cities.map((city) => (
                     <option key={city.slug} value={city.slug}>
-                      {city.name}, {city.country}
+                      {city.name}
+                      {t.common.separator}
+                      {city.country}
                     </option>
                   ))}
                 </select>
                 {fieldErrors.citySlug ? (
-                  <p className="error-text">{fieldErrors.citySlug}</p>
+                  <p className="error-text">
+                    <Server locale={locale} text={fieldErrors.citySlug} />
+                  </p>
                 ) : null}
               </div>
 
               <div className="field">
                 <label className="label" htmlFor="facility-kind">
-                  Kind — required
+                  {add.kindLabel}
                 </label>
                 <select
                   id="facility-kind"
@@ -503,23 +555,29 @@ export function FacilitySearch({
                   aria-invalid={fieldErrors.kind ? true : undefined}
                 >
                   <option value="" disabled>
-                    Choose one
+                    {add.chooseKind}
                   </option>
                   {FACILITY_KINDS.map((kind) => (
                     <option key={kind} value={kind}>
-                      {FACILITY_KIND_LABELS[kind]}
+                      {lookup(
+                        t.labels.facilityKind,
+                        kind,
+                        t.labels.facilityFallback,
+                      )}
                     </option>
                   ))}
                 </select>
                 {fieldErrors.kind ? (
-                  <p className="error-text">{fieldErrors.kind}</p>
+                  <p className="error-text">
+                    <Server locale={locale} text={fieldErrors.kind} />
+                  </p>
                 ) : null}
               </div>
             </div>
 
             <div className="field">
               <label className="label" htmlFor="facility-name-local">
-                Name in its own script — optional
+                {add.nameLocalLabel}
               </label>
               <input
                 id="facility-name-local"
@@ -528,20 +586,20 @@ export function FacilitySearch({
                 type="text"
                 dir="auto"
                 maxLength={120}
-                placeholder="مدينة الملك فهد الطبية"
+                placeholder={add.nameLocalPlaceholder}
                 aria-invalid={fieldErrors.nameLocal ? true : undefined}
               />
-              <p className="hint">
-                Helps the next person find it in whichever language they search.
-              </p>
+              <p className="hint">{add.nameLocalHint}</p>
               {fieldErrors.nameLocal ? (
-                <p className="error-text">{fieldErrors.nameLocal}</p>
+                <p className="error-text">
+                  <Server locale={locale} text={fieldErrors.nameLocal} />
+                </p>
               ) : null}
             </div>
 
             <div className="field">
               <label className="label" htmlFor="facility-address">
-                Street or district — optional
+                {add.addressLabel}
               </label>
               <input
                 id="facility-address"
@@ -553,34 +611,35 @@ export function FacilitySearch({
                 aria-invalid={fieldErrors.address ? true : undefined}
               />
               {fieldErrors.address ? (
-                <p className="error-text">{fieldErrors.address}</p>
+                <p className="error-text">
+                  <Server locale={locale} text={fieldErrors.address} />
+                </p>
               ) : null}
             </div>
 
             <div className="field">
               <label className="label" htmlFor="facility-website">
-                Website — optional
+                {t.facility.website} — {t.common.optional}
               </label>
               <input
                 id="facility-website"
                 name="website"
                 className="input"
                 type="url"
+                // A URL has no right-to-left reading, and letting it inherit
+                // the page direction puts the scheme on the wrong side.
+                dir="ltr"
                 inputMode="url"
                 maxLength={300}
                 placeholder="hospital.example.sa"
                 aria-invalid={fieldErrors.website ? true : undefined}
               />
               {fieldErrors.website ? (
-                <p className="error-text">{fieldErrors.website}</p>
+                <p className="error-text">
+                  <Server locale={locale} text={fieldErrors.website} />
+                </p>
               ) : null}
             </div>
-
-            <p className="hint">
-              We ask for nothing about you here — no phone number, no email, no
-              contact person. A facility record is about a building, not a
-              person.
-            </p>
 
             <div style={{ display: "flex", gap: "var(--space-s)", flexWrap: "wrap" }}>
               <button
@@ -588,23 +647,18 @@ export function FacilitySearch({
                 className="btn btn--primary"
                 disabled={pending || !searchToken}
               >
-                {pending ? "Adding…" : "Add this place"}
+                {pending ? add.submitting : add.submit}
               </button>
               <button
                 type="button"
                 className="btn btn--quiet"
                 onClick={() => setStep("search")}
               >
-                Back to search
+                {t.common.back}
               </button>
             </div>
 
-            {!searchToken ? (
-              <p className="hint">
-                Your search expired while this was open. Change the name above to
-                run it again.
-              </p>
-            ) : null}
+            {!searchToken ? <p className="hint">{add.searchFirst}</p> : null}
           </form>
         </section>
       ) : null}

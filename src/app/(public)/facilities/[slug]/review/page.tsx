@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { ReviewForm } from "@/components/review-form";
 import { prisma } from "@/lib/db";
-import { FACILITY_KIND_LABELS } from "@/lib/labels";
+import { getDictionary, lookup } from "@/lib/i18n/dictionaries";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { getFacilityBySlug } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
 
@@ -29,12 +30,14 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const facility = await loadFacility(slug);
+  const [facility, t] = await Promise.all([loadFacility(slug), getT()]);
 
   return {
-    title: facility ? `Review ${facility.name}` : "Write a review",
+    title: facility
+      ? t.reviewForm.metaTitleFor(facility.name)
+      : t.reviewForm.metaTitle,
     description: facility
-      ? `Write an anonymous review of training at ${facility.name}.`
+      ? t.reviewForm.metaDescriptionFor(facility.name)
       : undefined,
     // A form has nothing to index, and keeping it out of search results means
     // one fewer way for a review to be found by its author's own words.
@@ -45,12 +48,15 @@ export async function generateMetadata({
 export default async function WriteReviewPage({ params }: PageProps) {
   const { slug } = await params;
 
-  const [facility, user] = await Promise.all([
+  const [facility, user, locale] = await Promise.all([
     loadFacility(slug),
     getCurrentUser(),
+    getLocale(),
   ]);
 
   if (!facility) notFound();
+
+  const t = getDictionary(locale);
 
   const existing = user
     ? await prisma.review.findFirst({
@@ -75,35 +81,44 @@ export default async function WriteReviewPage({ params }: PageProps) {
     : null;
 
   const next = encodeURIComponent(`/facilities/${facility.slug}/review`);
+  // "Back" points against the reading direction, so the glyph has to turn too.
+  const backArrow = locale === "ar" ? "→" : "←";
 
   return (
     // The `(public)` layout owns the `<main>` landmark; this is just the page.
     <div className="page" style={{ paddingBlock: "var(--space-xl)" }}>
       <div style={{ maxInlineSize: "56rem", marginInline: "auto" }}>
         <nav
-          aria-label="Breadcrumb"
+          aria-label={t.facility.breadcrumb}
           style={{ marginBlockEnd: "var(--space-m)", fontSize: "var(--step--1)" }}
         >
           <Link href={`/facilities/${facility.slug}`}>
-            ← Back to <bdi dir="auto">{facility.name}</bdi>
+            <span aria-hidden="true">{backArrow}</span> {t.common.back}
+            {t.common.separator}
+            <bdi dir="auto">{facility.name}</bdi>
           </Link>
         </nav>
 
         <header style={{ display: "grid", gap: "var(--space-2xs)" }}>
           <p className="label">
-            {existing ? "Edit your review" : "Write a review"}
+            {existing ? t.facility.editYourReview : t.facility.writeReview}
           </p>
           <h1 style={{ fontSize: "var(--step-3)" }}>
             <bdi dir="auto">{facility.name}</bdi>
           </h1>
           <p className="hint">
-            {FACILITY_KIND_LABELS[facility.kind] ?? "Facility"} ·{" "}
+            {lookup(
+              t.labels.facilityKind,
+              facility.kind,
+              t.labels.facilityFallback,
+            )}
+            {t.common.separator}
             <Link href={`/cities/${facility.city.slug}`}>
               {facility.city.name}
             </Link>
             {facility.nameLocal ? (
               <>
-                {" · "}
+                {t.common.separator}
                 <bdi dir="auto">{facility.nameLocal}</bdi>
               </>
             ) : null}
@@ -118,40 +133,35 @@ export default async function WriteReviewPage({ params }: PageProps) {
           }}
         >
           {facility.status === "PENDING" ? (
-            <p className="notice">
-              This place was added by a student and is not in the directory
-              listings yet. The first review is what puts it there.
-            </p>
+            <p className="notice">{t.facilities.addPage.createHint}</p>
           ) : null}
 
           {existing ? (
             <p className="notice notice--warn">
-              You have already reviewed this placement — one review per person
-              per place, so the average stays honest. Trained there twice?
-              Update what you wrote below.
+              {t.static.guidelines.oneReviewP1}
             </p>
           ) : null}
 
           {!user ? (
             <p className="notice">
-              You can write this now without an account. We&rsquo;ll ask you to
-              sign in when you post, and what you have typed stays on this
-              device in the meantime.{" "}
-              <Link href={`/login?next=${next}`}>Sign in</Link> or{" "}
-              <Link href={`/signup?next=${next}`}>create an account</Link> —
-              username and password, nothing else.
+              {t.reviewForm.signedOutNote}{" "}
+              <Link href={`/login?next=${next}`}>{t.reviewForm.signIn}</Link>
+              {t.facilities.addPage.or}
+              <Link href={`/signup?next=${next}`}>
+                {t.facilities.addPage.createOne}
+              </Link>
+              {t.facilities.addPage.signedOutSuffix}
             </p>
           ) : null}
 
           <p className="prose" style={{ color: "var(--ink-2)" }}>
-            Write it for the student who has this placement next term. What the
-            days were actually like, what you were trusted to do, what you wish
-            somebody had told you.
+            {t.home.noReviewsHint}
           </p>
         </div>
 
         <ReviewForm
           facility={{ slug: facility.slug, name: facility.name }}
+          locale={locale}
           username={user?.username ?? null}
           mode={existing ? "edit" : "create"}
           reviewId={existing?.id}

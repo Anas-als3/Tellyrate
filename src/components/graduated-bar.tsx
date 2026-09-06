@@ -1,3 +1,5 @@
+import type { Dictionary } from "@/lib/i18n/dictionaries";
+
 /**
  * The graduated bar — the site's signature element.
  *
@@ -5,6 +7,10 @@
  * down the side of an IV bag. Used for rating distributions, sub-rating
  * breakdowns and field breakdowns, so the same shape means "a proportion"
  * everywhere on the site.
+ *
+ * The fill is anchored with `inset-inline-start`, so in Arabic the bar grows
+ * from the right without a single rule changing. Nothing here may be given a
+ * physical edge.
  */
 
 /** Colour a score by band, so a 2-star average never renders in the same green as a 5. */
@@ -58,10 +64,12 @@ export function GraduatedBar({
 export function RatingDistribution({
   counts,
   total,
+  t,
 }: {
   /** Index 0 is one star, index 4 is five stars. */
   counts: number[];
   total: number;
+  t: Dictionary;
 }) {
   return (
     <table
@@ -71,7 +79,7 @@ export function RatingDistribution({
         fontSize: "var(--step--1)",
       }}
     >
-      <caption className="sr-only">Distribution of ratings</caption>
+      <caption className="sr-only">{t.facility.distributionHeading}</caption>
       <tbody>
         {[5, 4, 3, 2, 1].map((star) => {
           const count = counts[star - 1] ?? 0;
@@ -85,11 +93,14 @@ export function RatingDistribution({
                   fontWeight: 500,
                   color: "var(--ink-3)",
                   padding: "3px 0",
+                  // A hint, not a cap: Arabic spells the row out as a word
+                  // ("نجمة واحدة") rather than a numeral plus "stars", and
+                  // auto table layout widens the column to fit it.
                   inlineSize: "4.5rem",
                   whiteSpace: "nowrap",
                 }}
               >
-                {star} {star === 1 ? "star" : "stars"}
+                {t.facility.starsRow(star)}
               </th>
               <td style={{ padding: "3px var(--space-xs)", inlineSize: "100%" }}>
                 <GraduatedBar percent={percent} tier={star} />
@@ -121,10 +132,12 @@ export function SubRating({
   label,
   value,
   count,
+  t,
 }: {
   label: string;
   value: number | null;
   count: number;
+  t: Dictionary;
 }) {
   if (value === null || count === 0) {
     return (
@@ -140,7 +153,7 @@ export function SubRating({
             {label}
           </span>
           <span style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}>
-            Not rated yet
+            {t.facility.notRatedYet}
           </span>
         </div>
         <GraduatedBar percent={0} tier="var(--surface-3)" />
@@ -165,9 +178,15 @@ export function SubRating({
           className="tnum"
           style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}
         >
-          <strong style={{ color: "var(--ink)" }}>{value.toFixed(1)}</strong>{" "}
-          <span className="sr-only">out of 5, from </span>
-          {count} {count === 1 ? "rating" : "ratings"}
+          {/* One sentence for a screen reader rather than three fragments
+              stitched around a numeral, which is unorderable in Arabic. */}
+          <span className="sr-only">
+            {t.common.outOfFiveFrom(value.toFixed(1), count)}
+          </span>
+          <span aria-hidden="true">
+            <strong style={{ color: "var(--ink)" }}>{value.toFixed(1)}</strong>{" "}
+            {t.common.ratingCount(count)}
+          </span>
         </span>
       </div>
       <GraduatedBar percent={(value / 5) * 100} tier={value} />

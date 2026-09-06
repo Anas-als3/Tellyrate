@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PAGE_SIZE, listCities, listFacilities } from "@/lib/queries";
-import { COUNTRY_NAMES } from "@/lib/labels";
 import { MAX_QUERY_LENGTH, parseFacilityQuery } from "@/lib/facility-query";
+import { formatNumber, lookup, type Dictionary } from "@/lib/i18n/dictionaries";
+import { getT } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { EmptyState } from "@/components/empty-state";
 
@@ -18,20 +19,21 @@ export async function generateMetadata({
 }: {
   searchParams: SearchParams;
 }): Promise<Metadata> {
+  const t = await getT();
   const { q } = parseFacilityQuery(await searchParams);
   return {
-    title: q ? `Search: ${q}` : "Search",
+    title: q ? t.search.metaTitleFor(q) : t.search.metaTitle,
     robots: { index: false, follow: true },
   };
 }
 
-function SearchForm({ value }: { value: string }) {
+function SearchForm({ value, t }: { value: string; t: Dictionary }) {
   return (
     <form
       action="/search"
       method="get"
       role="search"
-      aria-label="Search facilities and cities"
+      aria-label={t.search.formLabel}
       style={{
         display: "flex",
         flexWrap: "wrap",
@@ -40,18 +42,21 @@ function SearchForm({ value }: { value: string }) {
       }}
     >
       <label style={{ flex: "1 1 20rem", minInlineSize: 0 }}>
-        <span className="sr-only">Search facilities and cities</span>
+        <span className="sr-only">{t.search.formLabel}</span>
+        {/* Half the directory is named in Arabic and half in transliteration,
+            so the field has to follow what is typed rather than the page. */}
         <input
           className="input"
           type="search"
           name="q"
+          dir="auto"
           defaultValue={value}
           maxLength={MAX_QUERY_LENGTH}
-          placeholder="A hospital, a clinic, or a city"
+          placeholder={t.search.placeholder}
         />
       </label>
       <button className="btn btn--primary" type="submit">
-        Search
+        {t.search.submit}
       </button>
     </form>
   );
@@ -62,6 +67,7 @@ export default async function SearchPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const t = await getT();
   // Reading costs nothing and is never gated, so no rate limit here — a
   // throttle on search would only ever punish someone browsing.
   const { q } = parseFacilityQuery(await searchParams);
@@ -69,18 +75,17 @@ export default async function SearchPage({
   if (!q) {
     return (
       <div className="page" style={{ paddingBlock: "var(--space-xl)" }}>
-        <h1 style={{ fontSize: "var(--step-3)" }}>Search</h1>
+        <h1 style={{ fontSize: "var(--step-3)" }}>{t.search.heading}</h1>
         <p className="hint" style={{ maxInlineSize: "var(--measure)" }}>
-          Look for a hospital, clinic or health centre by name, or for a city to
-          see everywhere students trained there.
+          {t.search.lede}
         </p>
-        <SearchForm value="" />
+        <SearchForm value="" t={t} />
         <p style={{ marginBlockStart: "var(--space-l)" }}>
           <Link className="btn" href="/facilities">
-            Browse all facilities
+            {t.search.browseAll}
           </Link>{" "}
           <Link className="btn btn--quiet" href="/cities">
-            Browse by city
+            {t.search.browseByCity}
           </Link>
         </p>
       </div>
@@ -98,31 +103,31 @@ export default async function SearchPage({
     <div className="page" style={{ paddingBlock: "var(--space-xl)" }}>
       <header>
         <h1 style={{ fontSize: "var(--step-3)" }}>
-          Results for <bdi dir="auto">“{q}”</bdi>
+          {/* The heading is mostly the reader's own words, so it takes its
+              direction from them — an Arabic query on an English page reads
+              right-to-left inside a left-to-right line. */}
+          <bdi dir="auto">{t.search.resultsFor(q)}</bdi>
         </h1>
-        <SearchForm value={q} />
+        <SearchForm value={q} t={t} />
       </header>
 
       <p role="status" className="sr-only">
         {nothingFound
-          ? `Nothing found for ${q}.`
-          : `${facilityResult.total} ${facilityResult.total === 1 ? "facility" : "facilities"} and ${cities.length} ${cities.length === 1 ? "city" : "cities"} match ${q}.`}
+          ? t.search.statusNothing(q)
+          : t.search.status(facilityResult.total, cities.length, q)}
       </p>
 
       {nothingFound ? (
         <div style={{ marginBlockStart: "var(--space-xl)" }}>
           <EmptyState
-            title={`Nothing found for “${q}”`}
+            title={t.search.emptyTitle(q)}
             primary={{
               href: `/facilities/new?name=${encodeURIComponent(q)}`,
-              label: "Add this facility",
+              label: t.search.addThisFacility,
             }}
-            secondary={{ href: "/facilities", label: "Browse all facilities" }}
+            secondary={{ href: "/facilities", label: t.search.browseAll }}
           >
-            <p>
-              Try a shorter name, or the city instead. If the place you trained
-              in is genuinely missing, adding it takes about a minute.
-            </p>
+            <p>{t.search.emptyBody}</p>
           </EmptyState>
         </div>
       ) : null}
@@ -141,7 +146,7 @@ export default async function SearchPage({
               marginBlockEnd: "var(--space-m)",
             }}
           >
-            Cities
+            {t.search.citiesHeading}
           </h2>
           <ul
             className="grid-cards"
@@ -167,9 +172,11 @@ export default async function SearchPage({
                     className="tnum"
                     style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}
                   >
-                    {COUNTRY_NAMES[city.countryCode] ?? city.country} ·{" "}
-                    {city.facilityCount}{" "}
-                    {city.facilityCount === 1 ? "facility" : "facilities"}
+                    <bdi dir="auto">
+                      {lookup(t.labels.country, city.countryCode, city.country)}
+                    </bdi>
+                    {t.common.separator}
+                    {t.common.facilityCount(city.facilityCount)}
                   </span>
                 </Link>
               </li>
@@ -195,15 +202,17 @@ export default async function SearchPage({
             }}
           >
             <h2 id="search-facilities" style={{ fontSize: "var(--step-1)" }}>
-              Facilities{" "}
-              <span className="tnum hint">({facilityResult.total})</span>
+              {t.search.facilitiesHeading}{" "}
+              <span className="tnum hint">
+                ({formatNumber(facilityResult.total)})
+              </span>
             </h2>
             {facilityResult.total > PAGE_SIZE ? (
               <Link
                 className="hint"
                 href={`/facilities?q=${encodeURIComponent(q)}`}
               >
-                All results, with filters
+                {t.search.allResultsWithFilters}
               </Link>
             ) : null}
           </div>
@@ -221,7 +230,7 @@ export default async function SearchPage({
 
           <p style={{ marginBlockStart: "var(--space-l)" }}>
             <Link className="btn" href={`/facilities?q=${encodeURIComponent(q)}`}>
-              Refine these results
+              {t.search.refineResults}
             </Link>
           </p>
         </section>

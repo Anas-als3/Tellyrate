@@ -11,15 +11,22 @@ import {
   isReviewSortKey,
   type ReviewSortKey,
 } from "@/lib/ranking";
+import { RATING_AXES } from "@/lib/labels";
 import {
-  COUNTRY_NAMES,
-  FACILITY_KIND_LABELS,
-  RATING_AXES,
-} from "@/lib/labels";
+  getDictionary,
+  lookup,
+  type Dictionary,
+  type Locale,
+} from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/server";
 import { Stars } from "@/components/stars";
 import { RatingDistribution, SubRating } from "@/components/graduated-bar";
 import { FacilityCard } from "@/components/facility-card";
-import { ReviewCard, coarseAge } from "@/components/review-card";
+import {
+  ReviewCard,
+  coarseAge,
+  reportStrings,
+} from "@/components/review-card";
 import { ReportControl } from "@/components/vote-buttons";
 import type { ThreadComment, ThreadViewer } from "@/components/comment-thread";
 
@@ -36,6 +43,26 @@ import type { ThreadComment, ThreadViewer } from "@/components/comment-thread";
 
 const DEFAULT_REVIEW_SORT: ReviewSortKey = "helpful";
 
+/**
+ * Arabic has its own comma, and the Latin one reads as a typo in Arabic text.
+ * Used where the page joins values the dictionary cannot join for it — an
+ * address, a place, a coordinate pair.
+ */
+const LIST_COMMA: Record<Locale, string> = { en: ", ", ar: "، " };
+
+/**
+ * `←` and `→` are bidi-neutral: the algorithm decides where they sit but never
+ * turns them round, so "the previous page" has to be picked rather than
+ * mirrored. Same for the arrow that marks a link as leaving the site.
+ */
+function arrowsFor(rtl: boolean) {
+  return {
+    back: rtl ? "→" : "←",
+    forward: rtl ? "←" : "→",
+    external: rtl ? "↖" : "↗",
+  };
+}
+
 /** Deduplicate the lookup between `generateMetadata` and the render. */
 const loadFacility = cache(async (slug: string) => getFacilityBySlug(slug));
 
@@ -50,29 +77,50 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const locale = await getLocale();
+  const t = getDictionary(locale);
   const facility = await loadFacility(slug);
 
   if (!facility) {
-    return { title: "Facility not found", robots: { index: false, follow: true } };
+    return {
+      title: t.facility.notFoundTitle,
+      robots: { index: false, follow: true },
+    };
   }
 
-  const kind = (FACILITY_KIND_LABELS[facility.kind] ?? "Facility").toLowerCase();
-  const country =
-    COUNTRY_NAMES[facility.city.countryCode] ?? facility.city.country;
-  const place = `${facility.city.name}, ${country}`;
+  // Lower-casing is a no-op in Arabic, which has no case at all, so the same
+  // call serves both languages.
+  const kind = lookup(
+    t.labels.facilityKind,
+    facility.kind,
+    t.labels.facilityFallback,
+  ).toLowerCase();
+  const country = lookup(
+    t.labels.country,
+    facility.city.countryCode,
+    facility.city.country,
+  );
+  const place = `${facility.city.name}${LIST_COMMA[locale]}${country}`;
+  const title = t.facility.titleWithCity(facility.name, facility.city.name);
 
   const description =
     facility.reviewCount > 0
-      ? `${facility.name} is a ${kind} in ${place}, rated ${facility.ratingAvg.toFixed(1)} out of 5 across ${facility.reviewCount} anonymous ${facility.reviewCount === 1 ? "review" : "reviews"} by healthcare students who trained there — supervision, hands-on experience, workload and how students are treated.`
-      : `${facility.name} is a ${kind} in ${place}. No student reviews yet. If you did a rotation, an internship or summer training here, write the first one — anonymously.`;
+      ? t.facility.metaRated(
+          facility.name,
+          kind,
+          place,
+          facility.ratingAvg.toFixed(1),
+          facility.reviewCount,
+        )
+      : t.facility.metaUnrated(facility.name, kind, place);
 
   return {
-    title: `${facility.name} — ${facility.city.name}`,
+    title,
     description,
     alternates: { canonical: `/facilities/${facility.slug}` },
     openGraph: {
       type: "website",
-      title: `${facility.name} — ${facility.city.name}`,
+      title,
       description,
       url: `/facilities/${facility.slug}`,
     },
@@ -82,6 +130,11 @@ export async function generateMetadata({
 export default async function FacilityPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const sp = await searchParams;
+
+  const locale = await getLocale();
+  const t = getDictionary(locale);
+  const arrows = arrowsFor(locale === "ar");
+  const comma = LIST_COMMA[locale];
 
   const facility = await loadFacility(slug);
   if (!facility) notFound();
@@ -197,7 +250,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
       id: row.id,
       parentId: row.parentId,
       body: row.body,
-      age: coarseAge(row.createdAt, now),
+      age: coarseAge(row.createdAt, t.review, now),
       likeCount: row.likeCount,
       dislikeCount: row.dislikeCount,
       viewerVote: row.votes[0]?.value ?? 0,
@@ -230,14 +283,22 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
     safety: axisTotals._count.safety,
   };
 
-  const kindLabel = FACILITY_KIND_LABELS[facility.kind] ?? "Facility";
-  const country =
-    COUNTRY_NAMES[facility.city.countryCode] ?? facility.city.country;
+  const kindLabel = lookup(
+    t.labels.facilityKind,
+    facility.kind,
+    t.labels.facilityFallback,
+  );
+  const country = lookup(
+    t.labels.country,
+    facility.city.countryCode,
+    facility.city.country,
+  );
   const rated = facility.reviewCount > 0;
   const canonicalPath = reviewsPath(facility.slug, sort, page);
   const writeHref = `/facilities/${facility.slug}/review`;
   const osmHref = openStreetMapHref(facility);
   const websiteHref = safeExternalHref(facility.website);
+  const writeLabel = ownReview ? t.facility.editYourReview : t.facility.writeReview;
 
   return (
     <div className="page" style={{ paddingBlock: "var(--space-l) var(--space-3xl)" }}>
@@ -245,10 +306,13 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
         type="application/ld+json"
         // Structured data is how a directory gets found at all; the escape
         // stops a review body from closing this script element.
-        dangerouslySetInnerHTML={{ __html: structuredData(facility, reviews) }}
+        dangerouslySetInnerHTML={{ __html: structuredData(facility, reviews, t) }}
       />
 
-      <nav aria-label="Breadcrumb" style={{ marginBlockEnd: "var(--space-m)" }}>
+      <nav
+        aria-label={t.facility.breadcrumb}
+        style={{ marginBlockEnd: "var(--space-m)" }}
+      >
         <ol
           className="label"
           style={{
@@ -301,16 +365,14 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             <bdi dir="auto">{facility.city.name}</bdi>
           </Link>
           {facility.status === "PENDING" ? (
-            <span className="chip chip--warn">
-              Added by a user — not yet verified
-            </span>
+            <span className="chip chip--warn">{t.facility.pendingBadge}</span>
           ) : null}
           <Link
             className="btn btn--primary hidden lg:inline-flex"
             href={writeHref}
             style={{ marginInlineStart: "auto" }}
           >
-            {ownReview ? "Edit your review" : "Write a review"}
+            {writeLabel}
           </Link>
         </div>
       </header>
@@ -328,7 +390,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             style={{ padding: "var(--space-l)", display: "grid", gap: "var(--space-m)" }}
           >
             <h2 id="score-heading" className="sr-only">
-              Student rating
+              {t.facility.scoreHeading}
             </h2>
 
             {rated ? (
@@ -357,13 +419,12 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                   >
                     {facility.ratingAvg.toFixed(1)}
                   </span>
-                  <Stars value={facility.ratingAvg} size={18} />
+                  <Stars value={facility.ratingAvg} size={18} t={t} />
                   <span
                     className="tnum"
                     style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}
                   >
-                    {facility.reviewCount}{" "}
-                    {facility.reviewCount === 1 ? "review" : "reviews"}
+                    {t.common.reviewCount(facility.reviewCount)}
                   </span>
                 </div>
 
@@ -371,20 +432,19 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                   <RatingDistribution
                     counts={distributionCounts}
                     total={facility.reviewCount}
+                    t={t}
                   />
                 </div>
               </div>
             ) : (
               <div style={{ display: "grid", gap: "var(--space-xs)" }}>
-                <p className="label">Not rated yet</p>
+                <p className="label">{t.facility.notRatedYet}</p>
                 <p style={{ maxInlineSize: "var(--measure)", color: "var(--ink-2)" }}>
-                  Nobody has reviewed this {kindLabel.toLowerCase()} yet. If you
-                  trained here, yours would be the first — and the only account
-                  anyone gets of what the placement is actually like.
+                  {t.facility.notRatedBody(kindLabel.toLowerCase())}
                 </p>
                 <div>
                   <Link className="btn btn--primary" href={writeHref}>
-                    Write the first review
+                    {t.facility.writeFirstReview}
                   </Link>
                 </div>
               </div>
@@ -399,12 +459,15 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                 paddingBlockStart: "var(--space-m)",
               }}
             >
+              {/* The axis keys and their order come from the schema-facing
+                  list; only the wording comes from the dictionary. */}
               {RATING_AXES.map((axis) => (
                 <SubRating
                   key={axis.key}
-                  label={axis.label}
+                  label={t.labels.ratingAxis[axis.key].label}
                   value={facility[axis.avgKey]}
                   count={axisCount[axis.key] ?? 0}
+                  t={t}
                 />
               ))}
             </div>
@@ -422,22 +485,20 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
           >
             <h2 id="reviews-heading" style={{ fontSize: "var(--step-2)" }}>
               {rated
-                ? `${facility.reviewCount} ${facility.reviewCount === 1 ? "review" : "reviews"}`
-                : "Reviews"}
+                ? t.facility.reviewsHeadingCount(facility.reviewCount)
+                : t.facility.reviewsHeading}
             </h2>
 
             {reviewPage.total > 1 ? (
-              <nav className="tabs" aria-label="Sort reviews">
-                {(
-                  Object.entries(REVIEW_SORT_OPTIONS) as [ReviewSortKey, string][]
-                ).map(([key, label]) => (
+              <nav className="tabs" aria-label={t.facility.sortReviews}>
+                {(Object.keys(REVIEW_SORT_OPTIONS) as ReviewSortKey[]).map((key) => (
                   <Link
                     key={key}
                     className="tab"
                     href={reviewsHref(facility.slug, key, 1)}
                     aria-current={key === sort ? "page" : undefined}
                   >
-                    {label}
+                    {t.labels.reviewSort[key]}
                   </Link>
                 ))}
               </nav>
@@ -446,13 +507,13 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             {reviews.length === 0 ? (
               <p className="notice">
                 {reviewPage.total === 0
-                  ? "No reviews yet."
-                  : "No reviews on this page."}{" "}
+                  ? t.facility.noReviewsYet
+                  : t.facility.noReviewsOnPage}{" "}
                 {reviewPage.total === 0 ? (
-                  <Link href={writeHref}>Write the first one.</Link>
+                  <Link href={writeHref}>{t.facility.writeTheFirstOne}</Link>
                 ) : (
                   <Link href={reviewsHref(facility.slug, sort, 1)}>
-                    Back to the first page.
+                    {t.facility.backToFirstPage}
                   </Link>
                 )}
               </p>
@@ -471,7 +532,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                     <ReviewCard
                       review={review}
                       facilityReviewCount={facility.reviewCount}
-                      age={coarseAge(review.createdAt, now)}
+                      age={coarseAge(review.createdAt, t.review, now)}
                       viewerVote={viewerVoteOf(review)}
                       viewer={threadViewer}
                       comments={commentsByReview.get(review.id) ?? []}
@@ -484,7 +545,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
 
             {reviewPage.pageCount > 1 ? (
               <nav
-                aria-label="Review pages"
+                aria-label={t.facility.reviewPages}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -498,14 +559,15 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                     href={reviewsHref(facility.slug, sort, page - 1)}
                     rel="prev"
                   >
-                    ← Newer page
+                    <span aria-hidden="true">{arrows.back}</span>{" "}
+                    {t.facility.newerPage}
                   </Link>
                 ) : (
                   <span />
                 )}
 
                 <span className="tnum" style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}>
-                  Page {page} of {reviewPage.pageCount}
+                  {t.common.pageOf(page, reviewPage.pageCount)}
                 </span>
 
                 {page < reviewPage.pageCount ? (
@@ -514,7 +576,8 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                     href={reviewsHref(facility.slug, sort, page + 1)}
                     rel="next"
                   >
-                    Older page →
+                    {t.facility.olderPage}{" "}
+                    <span aria-hidden="true">{arrows.forward}</span>
                   </Link>
                 ) : (
                   <span />
@@ -545,7 +608,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
               href={writeHref}
               style={{ inlineSize: "100%" }}
             >
-              {ownReview ? "Edit your review" : "Write a review"}
+              {writeLabel}
             </Link>
           </div>
         </div>
@@ -557,36 +620,41 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             style={{ padding: "var(--space-m)", display: "grid", gap: "var(--space-xs)" }}
           >
             <h2 id="where-heading" className="label" style={{ fontSize: "var(--step--2)" }}>
-              Where it is
+              {t.facility.whereHeading}
             </h2>
 
             <dl style={{ display: "grid", gap: "var(--space-xs)", margin: 0 }}>
               <div>
-                <dt className="hint">Address</dt>
+                <dt className="hint">{t.facility.address}</dt>
                 <dd style={{ margin: 0 }}>
                   <bdi dir="auto">
                     {[facility.address, facility.postcode, facility.city.name]
                       .filter(Boolean)
-                      .join(", ") || facility.city.name}
+                      .join(comma) || facility.city.name}
                   </bdi>
                 </dd>
               </div>
 
               {facility.lat !== null && facility.lon !== null ? (
                 <div>
-                  <dt className="hint">Coordinates</dt>
+                  <dt className="hint">{t.facility.coordinates}</dt>
+                  {/* Pinned left-to-right: a comma with a space after it is a
+                      neutral run, and in Arabic the bidi algorithm would swap
+                      the latitude and the longitude round. */}
                   <dd className="tnum" style={{ margin: 0 }}>
-                    {facility.lat.toFixed(5)}, {facility.lon.toFixed(5)}
+                    <bdi dir="ltr">
+                      {facility.lat.toFixed(5)}, {facility.lon.toFixed(5)}
+                    </bdi>
                   </dd>
                 </div>
               ) : null}
 
               {facility.phone ? (
                 <div>
-                  <dt className="hint">Phone</dt>
+                  <dt className="hint">{t.facility.phone}</dt>
                   <dd style={{ margin: 0 }}>
                     <a href={`tel:${facility.phone.replace(/\s+/g, "")}`}>
-                      <bdi dir="auto">{facility.phone}</bdi>
+                      <bdi dir="ltr">{facility.phone}</bdi>
                     </a>
                   </dd>
                 </div>
@@ -594,14 +662,15 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
 
               {websiteHref ? (
                 <div>
-                  <dt className="hint">Website</dt>
+                  <dt className="hint">{t.facility.website}</dt>
                   <dd style={{ margin: 0, overflowWrap: "anywhere" }}>
                     <a
                       href={websiteHref}
                       rel="noopener noreferrer nofollow"
                       target="_blank"
                     >
-                      {displayHost(websiteHref)} ↗
+                      <bdi dir="ltr">{displayHost(websiteHref)}</bdi>{" "}
+                      <span aria-hidden="true">{arrows.external}</span>
                     </a>
                   </dd>
                 </div>
@@ -611,15 +680,13 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             {osmHref ? (
               <p style={{ marginBlockStart: "var(--space-2xs)" }}>
                 <a href={osmHref} rel="noopener noreferrer" target="_blank">
-                  Open in OpenStreetMap ↗
+                  {t.facility.openInOsm}{" "}
+                  <span aria-hidden="true">{arrows.external}</span>
                 </a>
               </p>
             ) : null}
 
-            <p className="hint">
-              No map is embedded here on purpose — loading tiles would tell
-              another company which facility you were reading about.
-            </p>
+            <p className="hint">{t.facility.noMapNote}</p>
           </section>
 
           <section
@@ -628,18 +695,16 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             style={{ padding: "var(--space-m)", display: "grid", gap: "var(--space-xs)" }}
           >
             <h2 id="flag-heading" className="label" style={{ fontSize: "var(--step--2)" }}>
-              Something wrong here?
+              {t.facility.flagHeading}
             </h2>
-            <p className="hint">
-              Wrong name, closed down, or the same place listed twice? Tell a
-              moderator.
-            </p>
+            <p className="hint">{t.facility.flagBody}</p>
             <div>
               <ReportControl
                 targetType="facility"
                 targetId={facility.id}
                 signedIn={viewer !== null}
                 nextPath={canonicalPath}
+                strings={reportStrings(t)}
               />
             </div>
           </section>
@@ -660,11 +725,18 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
               gap: "var(--space-s)",
             }}
           >
+            {/* The whole sentence is isolated rather than the city name alone:
+                the dictionary decides where the name goes, and `dir="auto"`
+                then lets a Latin city sit inside an Arabic heading — or the
+                reverse — without either reordering the other. */}
             <h2 id="nearby-heading" style={{ fontSize: "var(--step-2)" }}>
-              More in <bdi dir="auto">{facility.city.name}</bdi>
+              <bdi dir="auto">{t.facility.moreIn(facility.city.name)}</bdi>
             </h2>
             <Link href={`/cities/${facility.city.slug}`}>
-              All facilities in <bdi dir="auto">{facility.city.name}</bdi> →
+              <bdi dir="auto">
+                {t.facility.allFacilitiesIn(facility.city.name)}
+              </bdi>{" "}
+              <span aria-hidden="true">{arrows.forward}</span>
             </Link>
           </div>
 
@@ -695,6 +767,10 @@ function parsePage(value: string | undefined): number {
 /**
  * Link builder for the review list. Parameters sitting at their default are
  * omitted, so every ordering of every page has exactly one URL.
+ *
+ * The vocabulary stays English (`?rsort=helpful`) in both languages on
+ * purpose: a link shared from the Arabic page has to open the same ordering
+ * for whoever receives it.
  */
 function reviewsPath(slug: string, sort: ReviewSortKey, page: number): string {
   const params = new URLSearchParams();
@@ -792,6 +868,7 @@ type StructuredReview = {
 function structuredData(
   facility: StructuredFacility,
   reviews: StructuredReview[],
+  t: Dictionary,
 ): string {
   // schema.org wants an absolute URL; `env` supplies one in every environment.
   const url = `${env.NEXT_PUBLIC_SITE_URL}/facilities/${facility.slug}`;
@@ -837,7 +914,7 @@ function structuredData(
       "@type": "Review",
       author: {
         "@type": "Person",
-        name: review.author?.username ?? "deleted",
+        name: review.author?.username ?? t.review.authorDeleted,
       },
       reviewRating: {
         "@type": "Rating",

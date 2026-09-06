@@ -1,14 +1,21 @@
+import { getT } from "@/lib/i18n/server";
+
 /**
  * The skeleton mirrors the real layout's boxes exactly — heading, tab strip,
  * rail, card grid — so nothing jumps when the data lands. Marked
  * `aria-hidden` and paired with a polite status message: a screen reader
  * should hear "loading", not twelve empty cards.
+ *
+ * The boxes themselves need no mirroring: every size and offset below is
+ * logical, so the grid flips with the document direction on its own.
  */
-export default function FacilitiesLoading() {
+export default async function FacilitiesLoading() {
+  const t = await getT();
+
   return (
     <div className="page" style={{ paddingBlock: "var(--space-xl)" }}>
       <p role="status" className="sr-only">
-        Loading facilities…
+        {t.facilities.loadingStatus}
       </p>
 
       <div aria-hidden="true">

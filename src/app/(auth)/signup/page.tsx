@@ -2,35 +2,27 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AuthForm } from "@/components/auth-form";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { safeRedirectPath } from "@/lib/net";
 import { getCurrentUser } from "@/lib/session";
 
-export const metadata: Metadata = {
-  title: "Create an account",
-  description:
-    "An account here is a username and a password. No email, no real name, no school.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+
+  return {
+    title: t.auth.signUpTitle,
+    description: t.auth.signUpMetaDescription,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
- * Stated before the form rather than after it. Someone about to write about
- * the department they are still rotating through deserves to know exactly what
- * the account holds before they type anything into it, not on a policy page
- * they would have to go looking for.
+ * The two lists are stated before the form rather than after it. Someone about
+ * to write about the department they are still rotating through deserves to
+ * know exactly what the account holds before they type anything into it, not
+ * on a policy page they would have to go looking for.
  */
-const STORED = [
-  "The username you invent — the only name attached to anything you post.",
-  "Your password, as a scrypt hash. Nobody here can read it back.",
-  "The date you joined, and the reviews, comments and votes you make.",
-];
-
-const NOT_STORED = [
-  "Email address. There is no field for one and no way to add one.",
-  "Real name, school, programme, or student number.",
-  "Exact rotation dates — reviews record a year at most.",
-  "Analytics, trackers, third-party fonts or scripts of any kind.",
-];
-
 function ItemList({
   items,
   marker,
@@ -82,7 +74,8 @@ export default async function SignUpPage({
 
   // Not redirected away when signed in — see the note in `signUpAction`. The
   // form itself explains the situation instead, and the action refuses.
-  const user = await getCurrentUser();
+  const [user, locale] = await Promise.all([getCurrentUser(), getLocale()]);
+  const t = getDictionary(locale);
 
   const signInHref =
     next === "/" ? "/login" : `/login?next=${encodeURIComponent(next)}`;
@@ -96,15 +89,14 @@ export default async function SignUpPage({
           gap: "var(--space-xs)",
         }}
       >
-        <h1 style={{ fontSize: "var(--step-3)" }}>Create an account</h1>
-        <p style={{ color: "var(--ink-2)" }}>
-          Two fields, and nothing that could be traced back to you.
-        </p>
+        <h1 style={{ fontSize: "var(--step-3)" }}>{t.auth.signUpTitle}</h1>
+        <p style={{ color: "var(--ink-2)" }}>{t.auth.signUpLede}</p>
       </div>
 
       <AuthForm
         mode="signup"
         next={next}
+        locale={locale}
         signedInAs={user?.username ?? null}
         intro={
           <section
@@ -118,7 +110,7 @@ export default async function SignUpPage({
             aria-labelledby="collected-heading"
           >
             <h2 id="collected-heading" className="sr-only">
-              What this account holds
+              {t.auth.accountHoldsHeading}
             </h2>
 
             <div
@@ -128,8 +120,12 @@ export default async function SignUpPage({
                 gap: "var(--space-xs)",
               }}
             >
-              <p className="label">What we keep</p>
-              <ItemList items={STORED} marker="+" markerColor="var(--brand)" />
+              <p className="label">{t.auth.weKeep}</p>
+              <ItemList
+                items={t.auth.stored}
+                marker="+"
+                markerColor="var(--brand)"
+              />
             </div>
 
             <div
@@ -141,9 +137,9 @@ export default async function SignUpPage({
                 paddingBlockStart: "var(--space-m)",
               }}
             >
-              <p className="label">What we never ask for</p>
+              <p className="label">{t.auth.weNeverAsk}</p>
               <ItemList
-                items={NOT_STORED}
+                items={t.auth.notStored}
                 marker="−"
                 markerColor="var(--danger)"
               />
@@ -152,14 +148,11 @@ export default async function SignUpPage({
         }
         outro={
           <>
-            <p className="notice notice--warn">
-              You will be shown a recovery code once, on the next screen. With
-              no email on file it is the only way back in if you forget your
-              password, so write it down before you go anywhere.
-            </p>
+            <p className="notice notice--warn">{t.auth.recoveryWarning}</p>
 
             <p style={{ color: "var(--ink-2)" }}>
-              Already have an account? <Link href={signInHref}>Sign in</Link>.
+              {t.auth.alreadyHaveAccount}{" "}
+              <Link href={signInHref}>{t.auth.signIn}</Link>.
             </p>
           </>
         }

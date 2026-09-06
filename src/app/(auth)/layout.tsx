@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { getT } from "@/lib/i18n/server";
+
 /**
  * The content and the footer note share one measure, so the note reads as
  * part of the page rather than as something stranded against its edge.
@@ -24,9 +26,11 @@ const column: React.CSSProperties = {
  * out is the wordmark, because nobody should feel walled in by a page that
  * exists only to take a password.
  */
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const t = await getT();
+
   return (
     <div
       style={{
@@ -61,9 +65,9 @@ export default function AuthLayout({
               textDecoration: "none",
             }}
           >
-            Tellyrate
+            {t.common.siteName}
           </Link>
-          <span className="label">Reading never needs an account</span>
+          <span className="label">{t.auth.layoutNote}</span>
         </div>
       </header>
 
@@ -89,9 +93,8 @@ export default function AuthLayout({
       >
         <div className="page">
           <p className="hint" style={measure}>
-            An account here is a username and a password. No email, no real
-            name, no school — see{" "}
-            <Link href="/privacy">what we store</Link>.
+            {t.auth.layoutFooterPrefix}
+            <Link href="/privacy">{t.auth.layoutFooterLink}</Link>.
           </p>
         </div>
       </footer>

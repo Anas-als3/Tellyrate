@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Stars } from "@/components/stars";
-import { FACILITY_KIND_LABELS } from "@/lib/labels";
+import { lookup } from "@/lib/i18n/dictionaries";
+import { getT } from "@/lib/i18n/server";
 
 export type FacilityCardData = {
   slug: string;
@@ -12,7 +13,12 @@ export type FacilityCardData = {
   city: { name: string; slug: string; countryCode: string };
 };
 
-export function FacilityCard({ facility }: { facility: FacilityCardData }) {
+export async function FacilityCard({
+  facility,
+}: {
+  facility: FacilityCardData;
+}) {
+  const t = await getT();
   const rated = facility.reviewCount > 0;
 
   return (
@@ -26,7 +32,7 @@ export function FacilityCard({ facility }: { facility: FacilityCardData }) {
       }}
     >
       <span className="label">
-        {FACILITY_KIND_LABELS[facility.kind] ?? "Facility"}
+        {lookup(t.labels.facilityKind, facility.kind, t.labels.facilityFallback)}
       </span>
 
       <h3 style={{ fontSize: "var(--step-1)" }}>
@@ -34,8 +40,9 @@ export function FacilityCard({ facility }: { facility: FacilityCardData }) {
           href={`/facilities/${facility.slug}`}
           style={{ textDecoration: "none" }}
         >
-          {/* bdi keeps an Arabic name from reordering the Latin text around it */}
-          <bdi>{facility.name}</bdi>
+          {/* Names arrive from OpenStreetMap in either script, so the isolate
+              has to take its direction from the text rather than the page. */}
+          <bdi dir="auto">{facility.name}</bdi>
         </Link>
       </h3>
 
@@ -57,7 +64,7 @@ export function FacilityCard({ facility }: { facility: FacilityCardData }) {
           marginBlockStart: "auto",
         }}
       >
-        {facility.city.name}
+        <bdi dir="auto">{facility.city.name}</bdi>
       </Link>
 
       <div
@@ -82,13 +89,13 @@ export function FacilityCard({ facility }: { facility: FacilityCardData }) {
               className="tnum"
               style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}
             >
-              · {facility.reviewCount}{" "}
-              {facility.reviewCount === 1 ? "review" : "reviews"}
+              {t.common.separator}
+              {t.common.reviewCount(facility.reviewCount)}
             </span>
           </>
         ) : (
           <span style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}>
-            No reviews yet — be the first
+            {t.facility.noReviewsYet} {t.facility.writeTheFirstOne}
           </span>
         )}
       </div>

@@ -202,7 +202,7 @@ const en = {
   },
 
   home: {
-    metaTitle: "Tellyrate — what a clinical rotation is really like",
+    metaTitle: "Tellyrate — know where to train before you apply",
     metaDescription:
       "Anonymous reviews of the hospitals and clinics where healthcare students train. Search by name or city, read what supervision and hands-on time were actually like, and add your own placement.",
 
@@ -1443,7 +1443,7 @@ const ar: Dictionary = {
   },
 
   home: {
-    metaTitle: "Tellyrate — كيف يكون التدريب السريري على أرض الواقع",
+    metaTitle: "Tellyrate — اعرف أين تتدرّب قبل أن تُقدِّم طلبك",
     metaDescription:
       "مراجعات بلا أسماء للمستشفيات والعيادات التي يتدرّب فيها طلبة التخصصات الصحية. ابحث بالاسم أو بالمدينة، واقرأ كيف كان الإشراف والممارسة العملية فعليًا، وأضف مكان تدريبك.",
 

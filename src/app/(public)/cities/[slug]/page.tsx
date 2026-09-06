@@ -4,15 +4,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCityBySlug, listFacilities } from "@/lib/queries";
-import { COUNTRY_NAMES } from "@/lib/labels";
 import {
   buildHref,
-  describeFacilityQuery,
   parseFacilityQuery,
   shouldNoIndex,
   toFacilityFilters,
   type FacilityQuery,
 } from "@/lib/facility-query";
+import { lookup, type Dictionary } from "@/lib/i18n/dictionaries";
+import { getT } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { SortTabs } from "@/components/sort-tabs";
 import { Pagination } from "@/components/pagination";
@@ -53,6 +53,26 @@ function cityUrlQuery(sp: { [key: string]: string | string[] | undefined }): Fac
   return { ...parseFacilityQuery(sp), city: undefined, country: undefined };
 }
 
+/**
+ * "Hospitals in Riyadh" — the same assembly the directory index uses, kept in
+ * the dictionary because Arabic attaches the place differently and the English
+ * builder in lib/facility-query.ts joins fragments in English word order.
+ */
+function headingFor(
+  t: Dictionary,
+  input: { kind?: string; cityName: string },
+): string {
+  const noun = input.kind
+    ? lookup(
+        t.labels.facilityKindPlural,
+        input.kind,
+        t.labels.facilityKindPluralFallback,
+      )
+    : t.labels.facilityKindPluralFallback;
+
+  return t.facilities.describe({ noun, place: input.cityName });
+}
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -60,20 +80,27 @@ export async function generateMetadata({
   params: Params;
   searchParams: SearchParams;
 }): Promise<Metadata> {
+  const t = await getT();
   const { slug } = await params;
   const city = await cachedCity(slug);
 
   if (!city) {
-    return { title: "City not found", robots: { index: false, follow: false } };
+    return {
+      title: t.cities.notFoundTitle,
+      robots: { index: false, follow: false },
+    };
   }
 
   const query = cityUrlQuery(await searchParams);
   const base = `/cities/${city.slug}`;
-  const heading = describeFacilityQuery({ kind: query.kind, cityName: city.name });
+  const heading = headingFor(t, { kind: query.kind, cityName: city.name });
 
   return {
-    title: query.page > 1 ? `${city.name} — page ${query.page}` : city.name,
-    description: `${heading} reviewed by the healthcare students who trained there.`,
+    title:
+      query.page > 1
+        ? t.cities.titleWithPage(city.name, query.page)
+        : city.name,
+    description: t.cities.metaDescriptionFor(heading),
     alternates: { canonical: buildHref(base, query) },
     robots: shouldNoIndex(query)
       ? { index: false, follow: true }
@@ -88,6 +115,7 @@ export default async function CityPage({
   params: Params;
   searchParams: SearchParams;
 }) {
+  const t = await getT();
   const { slug } = await params;
   const city = await cachedCity(slug);
   if (!city) notFound();
@@ -99,28 +127,30 @@ export default async function CityPage({
     toFacilityFilters({ ...query, city: city.slug }),
   );
 
-  const countryName = COUNTRY_NAMES[city.countryCode] ?? city.country;
+  const countryName = lookup(t.labels.country, city.countryCode, city.country);
 
   return (
     <div className="page" style={{ paddingBlock: "var(--space-xl)" }}>
       <header style={{ display: "grid", gap: "var(--space-2xs)" }}>
+        {/* Source order is crumb-then-place; the direction of the page decides
+            which end of the line that lands on. */}
         <p className="label" style={{ margin: 0 }}>
           <Link href="/cities" style={{ color: "inherit" }}>
-            Cities
+            {t.cities.breadcrumb}
           </Link>{" "}
-          / {countryName}
+          / <bdi dir="auto">{countryName}</bdi>
         </p>
         <h1 style={{ fontSize: "var(--step-3)" }}>
           <bdi dir="auto">{city.name}</bdi>
         </h1>
         <p className="hint tnum">
-          {city.facilityCount}{" "}
-          {city.facilityCount === 1 ? "facility" : "facilities"} ·{" "}
-          {city.reviewCount} {city.reviewCount === 1 ? "review" : "reviews"}
+          {t.common.facilityCount(city.facilityCount)}
+          {t.common.separator}
+          {t.common.reviewCount(city.reviewCount)}
         </p>
         <p style={{ marginBlockStart: "var(--space-2xs)" }}>
           <Link className="btn btn--small" href={`/facilities?city=${city.slug}`}>
-            Filter by kind and rating
+            {t.cities.filterByKindAndRating}
           </Link>
         </p>
       </header>
@@ -129,7 +159,7 @@ export default async function CityPage({
         <SortTabs
           base={base}
           query={query}
-          label={`Sort facilities in ${city.name}`}
+          label={t.cities.sortLabelFor(city.name)}
         />
       </div>
 
@@ -138,25 +168,27 @@ export default async function CityPage({
         style={{ marginBlockStart: "var(--space-m)" }}
       >
         <h2 id="city-results" className="sr-only">
-          Facilities in {city.name}
+          {t.cities.resultsHeadingFor(city.name)}
         </h2>
 
         <p role="status" className="sr-only">
           {result.total === 0
-            ? `No facilities listed in ${city.name} yet.`
-            : `${result.total} facilities in ${city.name}. Showing page ${result.page} of ${result.pageCount}.`}
+            ? t.cities.resultsStatusEmpty(city.name)
+            : t.cities.resultsStatus(
+                city.name,
+                result.total,
+                result.page,
+                result.pageCount,
+              )}
         </p>
 
         {result.facilities.length === 0 ? (
           <EmptyState
-            title={`Nothing listed in ${city.name} yet`}
-            primary={{ href: "/facilities/new", label: "Add a facility" }}
-            secondary={{ href: "/cities", label: "Browse other cities" }}
+            title={t.cities.nothingListed(city.name)}
+            primary={{ href: "/facilities/new", label: t.cities.addFacility }}
+            secondary={{ href: "/cities", label: t.cities.browseOtherCities }}
           >
-            <p>
-              If you trained at a hospital or clinic here, adding it takes about
-              a minute and gives the next student somewhere to start.
-            </p>
+            <p>{t.cities.nothingListedBody}</p>
           </EmptyState>
         ) : (
           <>

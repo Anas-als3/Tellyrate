@@ -3,14 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { listCities, listFacilities } from "@/lib/queries";
-import { COUNTRY_NAMES, FACILITY_KIND_LABELS } from "@/lib/labels";
 import {
   MAX_QUERY_LENGTH,
   MIN_RATING_OPTIONS,
   activeFamilies,
   buildHref,
   clearedQuery,
-  describeFacilityQuery,
   familyOverride,
   hasActiveFilters,
   parseFacilityQuery,
@@ -20,6 +18,8 @@ import {
   type FilterFamily,
 } from "@/lib/facility-query";
 import { DEFAULT_SORT } from "@/lib/ranking";
+import { lookup, type Dictionary } from "@/lib/i18n/dictionaries";
+import { getT } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { FilterRail, type FilterOption } from "@/components/filter-rail";
 import { SortTabs } from "@/components/sort-tabs";
@@ -39,6 +39,39 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
  * same request. Without it the city list is fetched twice for every page view.
  */
 const cachedCities = cache(async () => listCities());
+
+/**
+ * The heading and the `<title>` for a result set.
+ *
+ * `describeFacilityQuery` in lib/facility-query.ts builds the English form by
+ * joining fragments; Arabic cannot reuse that, because the pieces attach in a
+ * different order and "in" carries no article. So the assembly lives in the
+ * dictionary and this only decides which noun goes in.
+ */
+function headingFor(
+  t: Dictionary,
+  input: {
+    kind?: string;
+    cityName?: string;
+    countryName?: string;
+    q?: string;
+  },
+): string {
+  const place = input.cityName ?? input.countryName;
+
+  // Nothing narrowed at all: say so plainly rather than "Facilities".
+  if (!input.kind && !place && !input.q) return t.facilities.allFacilities;
+
+  const noun = input.kind
+    ? lookup(
+        t.labels.facilityKindPlural,
+        input.kind,
+        t.labels.facilityKindPluralFallback,
+      )
+    : t.labels.facilityKindPluralFallback;
+
+  return t.facilities.describe({ noun, place, q: input.q });
+}
 
 /**
  * Mirrors the private `facilityWhere` in lib/queries.ts, minus one family at a
@@ -84,7 +117,11 @@ function facetWhere(
 
 type CityRow = Awaited<ReturnType<typeof listCities>>[number];
 
-async function loadFacets(query: FacilityQuery, cities: CityRow[]) {
+async function loadFacets(
+  query: FacilityQuery,
+  cities: CityRow[],
+  t: Dictionary,
+) {
   const [kindGroups, cityGroups, countryGroups] = await Promise.all([
     prisma.facility.groupBy({
       by: ["kind"],
@@ -128,7 +165,7 @@ async function loadFacets(query: FacilityQuery, cities: CityRow[]) {
   const countryOptions: FilterOption[] = [...countryCounts.entries()]
     .map(([code, count]) => ({
       value: code.toLowerCase(),
-      label: COUNTRY_NAMES[code] ?? code,
+      label: lookup(t.labels.country, code, code),
       count,
     }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
@@ -139,7 +176,7 @@ async function loadFacets(query: FacilityQuery, cities: CityRow[]) {
   const kindOptions: FilterOption[] = [...kindCounts.entries()]
     .map(([kind, count]) => ({
       value: kind,
-      label: FACILITY_KIND_LABELS[kind] ?? kind,
+      label: lookup(t.labels.facilityKind, kind, kind),
       count,
     }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
@@ -150,7 +187,7 @@ async function loadFacets(query: FacilityQuery, cities: CityRow[]) {
     .reverse()
     .map((value) => ({
       value: String(value),
-      label: `${value} stars and up`,
+      label: t.facilities.ratingOption(value),
     }));
 
   return {
@@ -161,12 +198,12 @@ async function loadFacets(query: FacilityQuery, cities: CityRow[]) {
   };
 }
 
-function placeNames(query: FacilityQuery, cities: CityRow[]) {
+function placeNames(query: FacilityQuery, cities: CityRow[], t: Dictionary) {
   const cityName = query.city
     ? cities.find((city) => city.slug === query.city)?.name
     : undefined;
   const countryName = query.country
-    ? (COUNTRY_NAMES[query.country.toUpperCase()] ?? query.country.toUpperCase())
+    ? lookup(t.labels.country, query.country.toUpperCase(), query.country.toUpperCase())
     : undefined;
   return { cityName, countryName };
 }
@@ -176,21 +213,23 @@ export async function generateMetadata({
 }: {
   searchParams: SearchParams;
 }): Promise<Metadata> {
+  const t = await getT();
   const query = parseFacilityQuery(await searchParams);
-  const { cityName, countryName } = placeNames(query, await cachedCities());
+  const { cityName, countryName } = placeNames(query, await cachedCities(), t);
 
-  const heading = describeFacilityQuery({
+  const heading = headingFor(t, {
     kind: query.kind,
     cityName,
     countryName,
     q: query.q || undefined,
   });
-  const title = query.page > 1 ? `${heading} — page ${query.page}` : heading;
 
   return {
-    title,
-    description:
-      "Hospitals, clinics and health centres reviewed by the healthcare students who trained in them.",
+    title:
+      query.page > 1
+        ? t.facilities.titleWithPage(heading, query.page)
+        : heading,
+    description: t.facilities.metaDescription,
     alternates: { canonical: buildHref(BASE, query) },
     // Follow, but do not index, the long tail: four filter families multiply
     // into far more URLs than there are distinct pages worth reading.
@@ -201,19 +240,22 @@ export async function generateMetadata({
 }
 
 function chipLabel(
+  t: Dictionary,
   family: FilterFamily,
   query: FacilityQuery,
   names: { cityName?: string; countryName?: string },
 ): string {
   switch (family) {
     case "city":
-      return `City: ${names.cityName ?? query.city}`;
+      return t.facilities.chipCity(names.cityName ?? query.city ?? "");
     case "country":
-      return `Country: ${names.countryName ?? query.country}`;
+      return t.facilities.chipCountry(names.countryName ?? query.country ?? "");
     case "kind":
-      return `Kind: ${FACILITY_KIND_LABELS[query.kind ?? ""] ?? query.kind}`;
+      return t.facilities.chipKind(
+        lookup(t.labels.facilityKind, query.kind ?? "", query.kind ?? ""),
+      );
     case "min":
-      return `Rated ${query.min} and up`;
+      return t.facilities.chipMinRating(query.min ?? 0);
   }
 }
 
@@ -222,16 +264,17 @@ export default async function FacilitiesPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const t = await getT();
   const query = parseFacilityQuery(await searchParams);
   const cities = await cachedCities();
 
   const [result, facets] = await Promise.all([
     listFacilities(toFacilityFilters(query)),
-    loadFacets(query, cities),
+    loadFacets(query, cities, t),
   ]);
 
-  const names = placeNames(query, cities);
-  const heading = describeFacilityQuery({
+  const names = placeNames(query, cities, t);
+  const heading = headingFor(t, {
     kind: query.kind,
     cityName: names.cityName,
     countryName: names.countryName,
@@ -243,14 +286,14 @@ export default async function FacilitiesPage({
       ? [
           {
             key: "q",
-            label: `Search: “${query.q}”`,
+            label: t.facilities.chipSearch(query.q),
             href: buildHref(BASE, query, { q: "" }),
           },
         ]
       : []),
     ...activeFamilies(query).map((family) => ({
       key: family,
-      label: chipLabel(family, query, names),
+      label: chipLabel(t, family, query, names),
       href: buildHref(BASE, query, familyOverride(family, undefined)),
     })),
   ];
@@ -262,10 +305,13 @@ export default async function FacilitiesPage({
   return (
     <div className="page" style={{ paddingBlock: "var(--space-xl)" }}>
       <header style={{ display: "grid", gap: "var(--space-s)" }}>
-        <h1 style={{ fontSize: "var(--step-3)" }}>{heading}</h1>
+        <h1 style={{ fontSize: "var(--step-3)" }}>
+          {/* The heading can carry a city name or a search term in the other
+              script, so it takes its direction from what it ended up saying. */}
+          <bdi dir="auto">{heading}</bdi>
+        </h1>
         <p className="hint" style={{ maxInlineSize: "var(--measure)" }}>
-          Every entry is a real place someone trained in. Ratings come only from
-          students who were there.
+          {t.facilities.lede}
         </p>
 
         {/* A GET form, so a search is a URL like any other. The hidden inputs
@@ -275,7 +321,7 @@ export default async function FacilitiesPage({
           action={BASE}
           method="get"
           role="search"
-          aria-label="Search within facilities"
+          aria-label={t.facilities.searchLabel}
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -284,14 +330,17 @@ export default async function FacilitiesPage({
           }}
         >
           <label style={{ flex: "1 1 18rem", minInlineSize: 0 }}>
-            <span className="sr-only">Search facilities by name</span>
+            <span className="sr-only">{t.facilities.searchFieldLabel}</span>
+            {/* The reader may type either script into this box whichever
+                language the page is in, so the field follows its own value. */}
             <input
               className="input"
               type="search"
               name="q"
+              dir="auto"
               defaultValue={query.q}
               maxLength={MAX_QUERY_LENGTH}
-              placeholder="Search by name — e.g. King Fahad"
+              placeholder={t.facilities.searchPlaceholder}
             />
           </label>
           {query.sort !== DEFAULT_SORT ? (
@@ -310,7 +359,7 @@ export default async function FacilitiesPage({
             <input type="hidden" name="min" value={String(query.min)} />
           ) : null}
           <button className="btn btn--primary" type="submit">
-            Search
+            {t.facilities.searchButton}
           </button>
         </form>
       </header>
@@ -327,13 +376,17 @@ export default async function FacilitiesPage({
 
         <section aria-labelledby="results-heading" className="mt-6 lg:mt-0">
           <h2 id="results-heading" className="sr-only">
-            Results
+            {t.facilities.resultsHeading}
           </h2>
 
           <p role="status" className="sr-only">
             {result.total === 0
-              ? "No facilities match these filters."
-              : `${result.total} facilities match. Showing page ${result.page} of ${result.pageCount}.`}
+              ? t.facilities.resultsStatusEmpty
+              : t.facilities.resultsStatus(
+                  result.total,
+                  result.page,
+                  result.pageCount,
+                )}
           </p>
 
           <div
@@ -346,14 +399,14 @@ export default async function FacilitiesPage({
             }}
           >
             <p className="hint tnum" style={{ marginInlineEnd: "auto" }}>
-              {result.total} {result.total === 1 ? "facility" : "facilities"}
+              {t.common.facilityCount(result.total)}
             </p>
 
             {chips.map((chip) => (
               <Link key={chip.key} className="chip chip--brand" href={chip.href}>
                 <bdi dir="auto">{chip.label}</bdi>
                 <span aria-hidden="true">✕</span>
-                <span className="sr-only">— remove this filter</span>
+                <span className="sr-only">{t.facilities.removeFilter}</span>
               </Link>
             ))}
 
@@ -362,7 +415,7 @@ export default async function FacilitiesPage({
                 className="btn btn--quiet btn--small"
                 href={buildHref(BASE, clearedQuery(query))}
               >
-                Clear all
+                {t.facilities.clearAll}
               </Link>
             ) : null}
           </div>
@@ -371,15 +424,15 @@ export default async function FacilitiesPage({
             <EmptyState
               title={
                 query.q
-                  ? `Nothing here matches “${query.q}”`
-                  : "Nothing matches these filters"
+                  ? t.facilities.emptyTitleQuery(query.q)
+                  : t.facilities.emptyTitle
               }
-              primary={{ href: addHref, label: "Add this facility" }}
+              primary={{ href: addHref, label: t.facilities.addFacility }}
               secondary={
                 hasActiveFilters(query)
                   ? {
                       href: buildHref(BASE, clearedQuery(query)),
-                      label: "Clear filters",
+                      label: t.facilities.clearFilters,
                     }
                   : undefined
               }
@@ -387,16 +440,19 @@ export default async function FacilitiesPage({
               <p>
                 {query.q ? (
                   <>
-                    No facility on Tellyrate is called{" "}
+                    {t.facilities.emptyBodyPrefix}{" "}
                     <strong>
                       <bdi dir="auto">{query.q}</bdi>
                     </strong>
-                    {names.cityName ? ` in ${names.cityName}` : ""}. If you
-                    trained somewhere we do not list yet, adding it takes about a
-                    minute.
+                    {names.cityName ? (
+                      <bdi dir="auto">
+                        {t.facilities.emptyBodyInCity(names.cityName)}
+                      </bdi>
+                    ) : null}
+                    {t.facilities.emptyBodySuffix}
                   </>
                 ) : (
-                  "Try widening one of the filters, or add the place you trained in."
+                  t.facilities.emptyBodyNoQuery
                 )}
               </p>
             </EmptyState>

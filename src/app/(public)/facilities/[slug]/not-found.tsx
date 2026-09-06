@@ -1,11 +1,19 @@
 import Link from "next/link";
 
+import { getT } from "@/lib/i18n/server";
+
 /**
  * A missing facility is usually a stale link or a place that was merged into
  * another record, so this page spends its space on the two routes back in
  * rather than on an apology.
+ *
+ * Async because it answers in the reader's language, and the locale lives in
+ * a cookie. The root layout already reads that cookie on every request, so
+ * this costs nothing that was not already being paid.
  */
-export default function FacilityNotFound() {
+export default async function FacilityNotFound() {
+  const t = await getT();
+
   return (
     <div
       className="page"
@@ -16,24 +24,20 @@ export default function FacilityNotFound() {
         maxInlineSize: "var(--measure)",
       }}
     >
-      <p className="label">404 — not found</p>
+      <p className="label">{t.errors.facilityNotFoundEyebrow}</p>
 
       <h1 style={{ fontSize: "var(--step-3)" }}>
-        There is no facility at this address
+        {t.errors.facilityNotFoundTitle}
       </h1>
 
-      <p style={{ color: "var(--ink-2)" }}>
-        The link may be out of date, or two records for the same place may have
-        been merged into one. Searching by name is the quickest way to find it
-        again — hospital names are often listed in both English and Arabic.
-      </p>
+      <p style={{ color: "var(--ink-2)" }}>{t.errors.facilityNotFoundBody}</p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-xs)" }}>
         <Link className="btn btn--primary" href="/facilities">
-          Search facilities
+          {t.errors.searchFacilities}
         </Link>
         <Link className="btn" href="/cities">
-          Browse by city
+          {t.errors.browseByCity}
         </Link>
       </div>
     </div>

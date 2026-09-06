@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { EnvironmentBanner } from "@/components/environment-banner";
 import {
   LOCALE_DIR,
   OG_LOCALES,
@@ -100,6 +101,9 @@ export default async function RootLayout({
         ) : null}
       </head>
       <body>
+        {/* Above everything, including the skip link: whoever lands here needs
+            to know it is not the live site before they act on anything. */}
+        <EnvironmentBanner />
         <a className="skip-link" href="#main">
           {t.common.skipToContent}
         </a>

@@ -9,6 +9,10 @@ type Action = { href: string; label: string };
  * The important part is not the apology, it is the exit. An empty result is
  * the moment a reader has told us the name of a place we do not have yet, so
  * "add it" is a primary action here and nowhere else on the page.
+ *
+ * Every string arrives translated from the caller; the only thing this file
+ * decides about language is the `<bdi>` around the title, which almost always
+ * quotes something typed by the reader or read out of the database.
  */
 export function EmptyState({
   title,
@@ -32,7 +36,9 @@ export function EmptyState({
         textAlign: "center",
       }}
     >
-      <h2 style={{ fontSize: "var(--step-1)", margin: 0 }}>{title}</h2>
+      <h2 style={{ fontSize: "var(--step-1)", margin: 0 }}>
+        <bdi dir="auto">{title}</bdi>
+      </h2>
 
       {children ? (
         <div

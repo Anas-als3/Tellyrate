@@ -8,12 +8,18 @@ import {
   SignOutEverywhereForm,
 } from "@/components/auth-form";
 import { prisma } from "@/lib/db";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/session";
 
-export const metadata: Metadata = {
-  title: "Password and account",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+
+  return {
+    title: t.account.securityMetaTitle,
+    robots: { index: false, follow: false },
+  };
+}
 
 function Section({
   id,
@@ -51,26 +57,29 @@ export default async function SecurityPage() {
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/account/security")}`);
 
-  const [account, reviewCount, commentCount] = await Promise.all([
+  const [account, reviewCount, commentCount, locale] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
       select: { recoveryCodeHash: true, recoveryUsedAt: true },
     }),
     prisma.review.count({ where: { authorId: user.id } }),
     prisma.comment.count({ where: { authorId: user.id } }),
+    getLocale(),
   ]);
+
+  const t = getDictionary(locale);
 
   const hasRecoveryCode =
     account?.recoveryCodeHash != null && account.recoveryUsedAt == null;
 
   return (
     <>
-      <nav className="tabs" aria-label="Account">
+      <nav className="tabs" aria-label={t.account.tabsLabel}>
         <Link className="tab" href="/account">
-          Account
+          {t.account.tabAccount}
         </Link>
         <Link className="tab" href="/account/security" aria-current="page">
-          Security
+          {t.account.tabSecurity}
         </Link>
       </nav>
 
@@ -81,67 +90,37 @@ export default async function SecurityPage() {
           gap: "var(--space-2xs)",
         }}
       >
-        <h1 style={{ fontSize: "var(--step-3)" }}>Password and account</h1>
+        <h1 style={{ fontSize: "var(--step-3)" }}>{t.account.securityHeading}</h1>
         <p style={{ color: "var(--ink-2)" }}>
-          Signed in as <bdi dir="auto">{user.username}</bdi>.
+          {t.account.securitySignedInAs}{" "}
+          <bdi dir="auto">{user.username}</bdi>.
         </p>
       </header>
 
       <p className={hasRecoveryCode ? "notice" : "notice notice--warn"}>
-        {hasRecoveryCode
-          ? "Your recovery code is still unused. It is the only way back into " +
-            "this account if you forget your password, so keep it somewhere " +
-            "you will find it again."
-          : "This account has no unused recovery code left. If you forget " +
-            "your password there is no way back in — there is no email to " +
-            "reset with."}
+        {hasRecoveryCode ? t.account.recoveryUnused : t.account.recoveryUsed}
       </p>
 
-      <Section id="change-password" title="Change password">
-        <p style={{ color: "var(--ink-2)" }}>
-          Changing it signs out every other device. This one stays signed in.
-        </p>
-        <ChangePasswordForm />
+      <Section id="change-password" title={t.account.changePassword}>
+        <p style={{ color: "var(--ink-2)" }}>{t.account.changePasswordBody}</p>
+        <ChangePasswordForm locale={locale} />
       </Section>
 
-      <Section id="sign-out-everywhere" title="Sign out everywhere">
+      <Section id="sign-out-everywhere" title={t.account.signOutEverywhere}>
         <p style={{ color: "var(--ink-2)" }}>
-          Ends every session, including this one — the right move if you left
-          yourself signed in on a ward computer. Your password does not change,
-          so you can sign straight back in.
+          {t.account.signOutEverywhereBody}
         </p>
-        <SignOutEverywhereForm />
+        <SignOutEverywhereForm locale={locale} />
       </Section>
 
-      <Section id="delete-account" title="Delete account" tone="danger">
+      <Section id="delete-account" title={t.account.deleteAccount} tone="danger">
+        <p style={{ color: "var(--ink-2)" }}>{t.account.deleteBody}</p>
         <p style={{ color: "var(--ink-2)" }}>
-          Your account, your password hash and your votes are deleted outright
-          and cannot be restored.
+          {reviewCount + commentCount > 0
+            ? t.account.deleteKeepsContent(reviewCount, commentCount)
+            : t.account.deleteNothingPosted}
         </p>
-        <p style={{ color: "var(--ink-2)" }}>
-          {reviewCount + commentCount > 0 ? (
-            <>
-              Your{" "}
-              <strong className="tnum">
-                {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
-              </strong>{" "}
-              and{" "}
-              <strong className="tnum">
-                {commentCount} {commentCount === 1 ? "comment" : "comments"}
-              </strong>{" "}
-              stay up, unattributed — they will read as{" "}
-              <span style={{ fontFamily: "var(--font-mono)" }}>@deleted</span>.
-              Other students are relying on them, and pulling them would quietly
-              rewrite the ratings they helped build.
-            </>
-          ) : (
-            <>
-              You have not posted anything, so nothing will be left behind. Had
-              you posted, the text would stay up without your name on it.
-            </>
-          )}
-        </p>
-        <DeleteAccountForm />
+        <DeleteAccountForm locale={locale} />
       </Section>
     </>
   );

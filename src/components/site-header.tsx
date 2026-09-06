@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useViewer } from "@/components/use-viewer";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle, type ThemeStrings } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 
@@ -29,10 +29,12 @@ export function SiteHeader({
   locale,
   nav,
   language,
+  theme,
 }: {
   locale: Locale;
   nav: NavStrings;
   language: LanguageStrings;
+  theme: ThemeStrings;
 }) {
   // Fetched client-side rather than passed down, so that reading the session
   // cookie does not make every public page render per-request. See use-viewer.
@@ -155,7 +157,7 @@ export function SiteHeader({
             targetName={language.targetName}
           />
 
-          <ThemeToggle />
+          <ThemeToggle strings={theme} />
 
           <div
             className="hidden md:flex"

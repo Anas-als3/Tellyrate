@@ -10,6 +10,7 @@ import {
   signUpAction,
   type AuthState,
 } from "@/lib/actions/auth";
+import { getDictionary, type Locale } from "@/lib/i18n/dictionaries";
 
 /**
  * Every credential form on the site.
@@ -18,6 +19,13 @@ import {
  * action returns — and because the error wiring (`aria-describedby` pointing
  * at a message that only exists when there is one) is fiddly enough that
  * having a single copy of it is what keeps it correct.
+ *
+ * Each export takes a `locale` and reads the dictionary itself, rather than
+ * being handed its strings the way `SiteHeader` is. The header can be handed
+ * `t.nav` because every value in it is a string; `t.auth` holds functions
+ * (`signedInAs(username)`), and a function cannot cross the server/client
+ * boundary. The username those functions need is only known here anyway —
+ * it comes back inside the action's result, after this tree has rendered.
  */
 
 const EMPTY: AuthState = {};
@@ -30,29 +38,55 @@ function describe(
   return list.length > 0 ? list : undefined;
 }
 
-function FormError({ message }: { message?: string }) {
+/**
+ * Text that came back from a server action.
+ *
+ * Those actions answer in English and their strings are not in the dictionary
+ * yet, so on an Arabic page this is foreign text inside a native sentence.
+ * Tagging it is the honest handling: a screen reader switches voice instead of
+ * spelling English out in Arabic phonemes, and `bdi` isolates it so its
+ * trailing full stop does not jump to the wrong end of the line.
+ */
+function Server({ locale, text }: { locale: Locale; text: string }) {
+  if (locale === "en") return <>{text}</>;
+  return (
+    <bdi lang="en" dir="ltr">
+      {text}
+    </bdi>
+  );
+}
+
+function FormError({ locale, message }: { locale: Locale; message?: string }) {
   if (!message) return null;
   return (
     <p className="notice notice--danger" role="alert">
-      {message}
+      <Server locale={locale} text={message} />
     </p>
   );
 }
 
-function FormOk({ message }: { message?: string }) {
+function FormOk({ locale, message }: { locale: Locale; message?: string }) {
   if (!message) return null;
   return (
     <p className="notice" role="status">
-      {message}
+      <Server locale={locale} text={message} />
     </p>
   );
 }
 
-function FieldError({ id, message }: { id: string; message?: string }) {
+function FieldError({
+  id,
+  locale,
+  message,
+}: {
+  id: string;
+  locale: Locale;
+  message?: string;
+}) {
   if (!message) return null;
   return (
     <p className="error-text" id={id}>
-      {message}
+      <Server locale={locale} text={message} />
     </p>
   );
 }
@@ -79,12 +113,14 @@ function Framed({ children }: { children: React.ReactNode }) {
 export function AuthForm({
   mode,
   next,
+  locale,
   signedInAs = null,
   intro = null,
   outro = null,
 }: {
   mode: "login" | "signup";
   next: string;
+  locale: Locale;
   /**
    * Whose session is already active, if any. Decided here rather than on the
    * page, because the page cannot tell "arrived while signed in" apart from
@@ -101,6 +137,7 @@ export function AuthForm({
   intro?: React.ReactNode;
   outro?: React.ReactNode;
 }) {
+  const t = getDictionary(locale).auth;
   const isSignup = mode === "signup";
   const [state, formAction, isPending] = useActionState<AuthState, FormData>(
     isSignup ? signUpAction : logInAction,
@@ -117,6 +154,7 @@ export function AuthForm({
           code={state.recoveryCode}
           username={state.username ?? ""}
           next={next}
+          locale={locale}
         />
       </Framed>
     );
@@ -125,18 +163,14 @@ export function AuthForm({
   if (signedInAs) {
     return (
       <Framed>
-        <p className="notice">
-          You are already signed in as <strong>{signedInAs}</strong>. An account
-          is only a username and a password, so there is nothing to merge — to
-          make a second one, sign out of this one first.
-        </p>
+        <p className="notice">{t.alreadySignedIn(signedInAs)}</p>
         <div style={{ display: "flex", gap: "var(--space-s)", flexWrap: "wrap" }}>
           <a className="btn btn--primary" href="/account">
-            Your account
+            {t.yourAccount}
           </a>
           <form method="post" action="/logout">
             <button type="submit" className="btn">
-              Sign out
+              {t.signOut}
             </button>
           </form>
         </div>
@@ -159,17 +193,20 @@ export function AuthForm({
       <Framed>
         <form action={formAction} style={formStyle} noValidate>
           <input type="hidden" name="next" value={next} />
-          <FormError message={state.error} />
+          <FormError locale={locale} message={state.error} />
 
           <div className="field">
             <label className="label" htmlFor={usernameId}>
-              Username
+              {t.usernameLabel}
             </label>
             <input
               className="input"
               id={usernameId}
               name="username"
               type="text"
+              // Usernames are chosen, not written in a language, so the box
+              // follows whichever script the first character is typed in.
+              dir="auto"
               autoComplete="username"
               autoCapitalize="none"
               autoCorrect="off"
@@ -184,16 +221,19 @@ export function AuthForm({
             />
             {isSignup ? (
               <p className="hint" id={usernameHintId}>
-                3–24 characters: letters, numbers, hyphens, underscores. This is
-                the only name anyone will see, so pick one that is not yours.
+                {t.usernameHint}
               </p>
             ) : null}
-            <FieldError id={usernameErrorId} message={fieldErrors.username} />
+            <FieldError
+              id={usernameErrorId}
+              locale={locale}
+              message={fieldErrors.username}
+            />
           </div>
 
           <div className="field">
             <label className="label" htmlFor={passwordId}>
-              Password
+              {t.passwordLabel}
             </label>
             <input
               className="input"
@@ -211,11 +251,14 @@ export function AuthForm({
             />
             {isSignup ? (
               <p className="hint" id={passwordHintId}>
-                At least 10 characters. No symbol-and-digit rules — a phrase you
-                will remember is worth more than a puzzle you won&rsquo;t.
+                {t.passwordHint}
               </p>
             ) : null}
-            <FieldError id={passwordErrorId} message={fieldErrors.password} />
+            <FieldError
+              id={passwordErrorId}
+              locale={locale}
+              message={fieldErrors.password}
+            />
           </div>
 
           <button
@@ -226,11 +269,11 @@ export function AuthForm({
           >
             {isPending
               ? isSignup
-                ? "Creating account…"
-                : "Signing in…"
+                ? t.creatingAccount
+                : t.signingIn
               : isSignup
-                ? "Create account"
-                : "Sign in"}
+                ? t.submitSignUp
+                : t.submitSignIn}
           </button>
         </form>
       </Framed>
@@ -248,11 +291,14 @@ function RecoveryCode({
   code,
   username,
   next,
+  locale,
 }: {
   code: string;
   username: string;
   next: string;
+  locale: Locale;
 }) {
+  const t = getDictionary(locale).auth;
   const [saved, setSaved] = useState(false);
   const [copy, setCopy] = useState<"idle" | "copied" | "failed">("idle");
   const base = useId();
@@ -275,24 +321,22 @@ function RecoveryCode({
       aria-labelledby={`${base}-heading`}
     >
       <h2 id={`${base}-heading`} style={{ fontSize: "var(--step-2)" }}>
-        Account created
+        {t.accountCreated}
       </h2>
 
-      <p style={{ color: "var(--ink-2)" }}>
-        You are signed in as <strong>{username}</strong>.
-      </p>
+      <p style={{ color: "var(--ink-2)" }}>{t.signedInAs(username)}</p>
 
-      <p className="notice notice--warn">
-        Save this. It is the only way back into your account if you forget your
-        password — there is no email to reset with.
-      </p>
+      <p className="notice notice--warn">{t.recoverySaveWarning}</p>
 
       <div className="field">
         <span className="label" id={`${base}-code-label`}>
-          Recovery code
+          {t.recoveryCodeLabel}
         </span>
         <p
           aria-labelledby={`${base}-code-label`}
+          // The code is generated from a Latin alphabet, so it is read and
+          // laid out as Latin even when the page around it runs right to left.
+          dir="ltr"
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "var(--step-2)",
@@ -316,13 +360,13 @@ function RecoveryCode({
           }}
         >
           <button type="button" className="btn btn--small" onClick={copyCode}>
-            Copy code
+            {t.copyCode}
           </button>
           <span className="hint" role="status">
             {copy === "copied"
-              ? "Copied to your clipboard."
+              ? t.copied
               : copy === "failed"
-                ? "Copying was blocked — select the code above instead."
+                ? t.copyBlocked
                 : ""}
           </span>
         </div>
@@ -342,9 +386,7 @@ function RecoveryCode({
           onChange={(event) => setSaved(event.target.checked)}
           style={{ marginBlockStart: "0.3em", accentColor: "var(--brand)" }}
         />
-        <label htmlFor={confirmId}>
-          I have written this code down somewhere I can find it again.
-        </label>
+        <label htmlFor={confirmId}>{t.recoveryConfirm}</label>
       </div>
 
       {/* A full navigation rather than a client-side one: the session was
@@ -359,11 +401,9 @@ function RecoveryCode({
         }}
         style={{ inlineSize: "100%" }}
       >
-        Continue
+        {t.continue}
       </a>
-      {!saved ? (
-        <p className="hint">Tick the box above once the code is safe.</p>
-      ) : null}
+      {!saved ? <p className="hint">{t.tickTheBox}</p> : null}
     </section>
   );
 }
@@ -372,7 +412,8 @@ function RecoveryCode({
 /* Security page                                                               */
 /* -------------------------------------------------------------------------- */
 
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ locale }: { locale: Locale }) {
+  const t = getDictionary(locale).account;
   const [state, formAction, isPending] = useActionState<AuthState, FormData>(
     changePasswordAction,
     EMPTY,
@@ -390,12 +431,12 @@ export function ChangePasswordForm() {
 
   return (
     <form action={formAction} style={formStyle} noValidate>
-      <FormError message={state.error} />
-      <FormOk message={state.ok} />
+      <FormError locale={locale} message={state.error} />
+      <FormOk locale={locale} message={state.ok} />
 
       <div className="field">
         <label className="label" htmlFor={currentId}>
-          Current password
+          {t.currentPassword}
         </label>
         <input
           className="input"
@@ -409,12 +450,16 @@ export function ChangePasswordForm() {
             fieldErrors.currentPassword && currentErrorId,
           )}
         />
-        <FieldError id={currentErrorId} message={fieldErrors.currentPassword} />
+        <FieldError
+          id={currentErrorId}
+          locale={locale}
+          message={fieldErrors.currentPassword}
+        />
       </div>
 
       <div className="field">
         <label className="label" htmlFor={newId}>
-          New password
+          {t.newPassword}
         </label>
         <input
           className="input"
@@ -431,14 +476,18 @@ export function ChangePasswordForm() {
           )}
         />
         <p className="hint" id={newHintId}>
-          At least 10 characters.
+          {t.newPasswordHint}
         </p>
-        <FieldError id={newErrorId} message={fieldErrors.newPassword} />
+        <FieldError
+          id={newErrorId}
+          locale={locale}
+          message={fieldErrors.newPassword}
+        />
       </div>
 
       <div className="field">
         <label className="label" htmlFor={confirmId}>
-          New password again
+          {t.confirmPassword}
         </label>
         <input
           className="input"
@@ -452,7 +501,11 @@ export function ChangePasswordForm() {
             fieldErrors.confirmPassword && confirmErrorId,
           )}
         />
-        <FieldError id={confirmErrorId} message={fieldErrors.confirmPassword} />
+        <FieldError
+          id={confirmErrorId}
+          locale={locale}
+          message={fieldErrors.confirmPassword}
+        />
       </div>
 
       <button
@@ -461,13 +514,14 @@ export function ChangePasswordForm() {
         disabled={isPending}
         style={{ alignSelf: "flex-start" }}
       >
-        {isPending ? "Changing…" : "Change password"}
+        {isPending ? t.changingPassword : t.changePasswordSubmit}
       </button>
     </form>
   );
 }
 
-export function SignOutEverywhereForm() {
+export function SignOutEverywhereForm({ locale }: { locale: Locale }) {
+  const t = getDictionary(locale).account;
   const [state, formAction, isPending] = useActionState<AuthState, FormData>(
     signOutEverywhereAction,
     EMPTY,
@@ -475,20 +529,21 @@ export function SignOutEverywhereForm() {
 
   return (
     <form action={formAction} style={formStyle}>
-      <FormError message={state.error} />
+      <FormError locale={locale} message={state.error} />
       <button
         type="submit"
         className="btn"
         disabled={isPending}
         style={{ alignSelf: "flex-start" }}
       >
-        {isPending ? "Signing out…" : "Sign out everywhere"}
+        {isPending ? t.signingOut : t.signOutEverywhere}
       </button>
     </form>
   );
 }
 
-export function DeleteAccountForm() {
+export function DeleteAccountForm({ locale }: { locale: Locale }) {
+  const t = getDictionary(locale).account;
   const [state, formAction, isPending] = useActionState<AuthState, FormData>(
     deleteAccountAction,
     EMPTY,
@@ -503,11 +558,11 @@ export function DeleteAccountForm() {
 
   return (
     <form action={formAction} style={formStyle} noValidate>
-      <FormError message={state.error} />
+      <FormError locale={locale} message={state.error} />
 
       <div className="field">
         <label className="label" htmlFor={passwordId}>
-          Your password
+          {t.yourPassword}
         </label>
         <input
           className="input"
@@ -519,7 +574,11 @@ export function DeleteAccountForm() {
           aria-invalid={fieldErrors.password ? true : undefined}
           aria-describedby={describe(fieldErrors.password && passwordErrorId)}
         />
-        <FieldError id={passwordErrorId} message={fieldErrors.password} />
+        <FieldError
+          id={passwordErrorId}
+          locale={locale}
+          message={fieldErrors.password}
+        />
       </div>
 
       <div className="field">
@@ -540,12 +599,13 @@ export function DeleteAccountForm() {
             aria-describedby={describe(fieldErrors.confirm && confirmErrorId)}
             style={{ marginBlockStart: "0.3em", accentColor: "var(--danger)" }}
           />
-          <label htmlFor={confirmId}>
-            I understand this cannot be undone, and that my reviews and comments
-            stay up without a name on them.
-          </label>
+          <label htmlFor={confirmId}>{t.deleteConfirm}</label>
         </div>
-        <FieldError id={confirmErrorId} message={fieldErrors.confirm} />
+        <FieldError
+          id={confirmErrorId}
+          locale={locale}
+          message={fieldErrors.confirm}
+        />
       </div>
 
       <button
@@ -558,7 +618,7 @@ export function DeleteAccountForm() {
           color: "var(--danger)",
         }}
       >
-        {isPending ? "Deleting…" : "Delete my account"}
+        {isPending ? t.deleting : t.deleteSubmit}
       </button>
     </form>
   );

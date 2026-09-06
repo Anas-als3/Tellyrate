@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listCities } from "@/lib/queries";
-import { COUNTRY_NAMES } from "@/lib/labels";
+import { lookup, type Dictionary } from "@/lib/i18n/dictionaries";
+import { getT } from "@/lib/i18n/server";
 import { EmptyState } from "@/components/empty-state";
 
 /**
@@ -14,12 +15,19 @@ import { EmptyState } from "@/components/empty-state";
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Cities",
-  description:
-    "Every Saudi city with a hospital, clinic or health centre where students train.",
-  alternates: { canonical: "/cities" },
-};
+/**
+ * A function rather than a constant, because the title and description are
+ * different sentences in each language and the locale is only known per
+ * request.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: t.cities.metaTitle,
+    description: t.cities.metaDescription,
+    alternates: { canonical: "/cities" },
+  };
+}
 
 type CityRow = Awaited<ReturnType<typeof listCities>>[number];
 
@@ -36,7 +44,7 @@ type CountryGroup = {
  * ordered: by how much testimony is behind them, not alphabetically. A reader
  * arriving here is looking for somewhere with reviews to read.
  */
-function groupByCountry(cities: CityRow[]): CountryGroup[] {
+function groupByCountry(cities: CityRow[], t: Dictionary): CountryGroup[] {
   const groups = new Map<string, CountryGroup>();
 
   for (const city of cities) {
@@ -45,7 +53,9 @@ function groupByCountry(cities: CityRow[]): CountryGroup[] {
     if (!group) {
       group = {
         code,
-        name: COUNTRY_NAMES[code] ?? city.country ?? code,
+        // The country column holds an English name; the dictionary has the
+        // Arabic one, so the translation wins wherever it exists.
+        name: lookup(t.labels.country, code, city.country ?? code),
         cities: [],
         facilityCount: 0,
         reviewCount: 0,
@@ -65,7 +75,7 @@ function groupByCountry(cities: CityRow[]): CountryGroup[] {
   );
 }
 
-function CityLink({ city }: { city: CityRow }) {
+function CityLink({ city, t }: { city: CityRow; t: Dictionary }) {
   return (
     <Link
       className="card"
@@ -82,42 +92,37 @@ function CityLink({ city }: { city: CityRow }) {
         <bdi dir="auto">{city.name}</bdi>
       </span>
       <span className="tnum" style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}>
-        {city.facilityCount}{" "}
-        {city.facilityCount === 1 ? "facility" : "facilities"}
-        {city.reviewCount > 0
-          ? ` · ${city.reviewCount} ${city.reviewCount === 1 ? "review" : "reviews"}`
-          : ""}
+        {t.cities.cityLine(city.facilityCount, city.reviewCount)}
       </span>
     </Link>
   );
 }
 
 export default async function CitiesPage() {
+  const t = await getT();
   const cities = await listCities();
-  const groups = groupByCountry(cities);
+  const groups = groupByCountry(cities, t);
   const totalFacilities = groups.reduce((sum, g) => sum + g.facilityCount, 0);
 
   return (
     <div className="page" style={{ paddingBlock: "var(--space-xl)" }}>
       <header style={{ display: "grid", gap: "var(--space-s)" }}>
-        <h1 style={{ fontSize: "var(--step-3)" }}>Cities</h1>
-        <p className="hint" style={{ maxInlineSize: "var(--measure)" }}>
-          <span className="tnum">{cities.length}</span>{" "}
-          {cities.length === 1 ? "city" : "cities"} with{" "}
-          <span className="tnum">{totalFacilities}</span> places to train.
+        <h1 style={{ fontSize: "var(--step-3)" }}>{t.cities.heading}</h1>
+        <p className="hint tnum" style={{ maxInlineSize: "var(--measure)" }}>
+          {t.cities.lede(cities.length, totalFacilities)}
         </p>
       </header>
 
       {groups.length === 0 ? (
         <div style={{ marginBlockStart: "var(--space-xl)" }}>
           <EmptyState
-            title="No cities yet"
-            primary={{ href: "/facilities/new", label: "Add a facility" }}
+            title={t.cities.emptyTitle}
+            primary={{
+              href: "/facilities/new",
+              label: t.cities.addFacility,
+            }}
           >
-            <p>
-              A city appears here as soon as it has its first facility. Add the
-              place you trained in to start one off.
-            </p>
+            <p>{t.cities.emptyBody}</p>
           </EmptyState>
         </div>
       ) : (
@@ -139,13 +144,13 @@ export default async function CitiesPage() {
               }}
             >
               <h2 id={`country-${group.code}`} style={{ fontSize: "var(--step-1)" }}>
-                {group.name}
+                <bdi dir="auto">{group.name}</bdi>
               </h2>
               <Link
                 className="hint"
                 href={`/facilities?country=${group.code.toLowerCase()}`}
               >
-                All {group.facilityCount} facilities
+                {t.cities.allFacilitiesIn(group.facilityCount)}
               </Link>
             </div>
 
@@ -155,7 +160,7 @@ export default async function CitiesPage() {
             >
               {group.cities.map((city) => (
                 <li key={city.slug}>
-                  <CityLink city={city} />
+                  <CityLink city={city} t={t} />
                 </li>
               ))}
             </ul>

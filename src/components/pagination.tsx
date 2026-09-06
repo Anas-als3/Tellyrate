@@ -1,4 +1,10 @@
 import Link from "next/link";
+import {
+  LOCALE_DIR,
+  formatNumber,
+  getDictionary,
+} from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/server";
 
 /**
  * Windowed page numbers: always the first and last page, always the pages
@@ -31,11 +37,21 @@ export function pageWindow(
   return out;
 }
 
-export function Pagination({
+/**
+ * An arrow means "backwards" or "forwards", not "left" or "right", and those
+ * are opposite glyphs in the two directions. Keyed on the writing direction
+ * rather than on the language, so a third locale gets this right for free.
+ * The flex row needs no mirroring: the browser reverses it under `dir="rtl"`,
+ * which is why Previous stays first in the DOM.
+ */
+const BACKWARD_GLYPH = { ltr: "←", rtl: "→" } as const;
+const FORWARD_GLYPH = { ltr: "→", rtl: "←" } as const;
+
+export async function Pagination({
   page,
   pageCount,
   href,
-  label = "Pagination",
+  label,
 }: {
   page: number;
   pageCount: number;
@@ -45,11 +61,14 @@ export function Pagination({
 }) {
   if (pageCount <= 1) return null;
 
+  const locale = await getLocale();
+  const t = getDictionary(locale);
+  const dir = LOCALE_DIR[locale];
   const items = pageWindow(page, pageCount);
 
   return (
     <nav
-      aria-label={label}
+      aria-label={label ?? t.common.pagination}
       style={{
         display: "flex",
         alignItems: "center",
@@ -60,10 +79,12 @@ export function Pagination({
       }}
     >
       {/* Absent rather than disabled at the ends: a control that cannot act
-          should not be in the tab order at all. */}
+          should not be in the tab order at all. `rel` describes the document
+          order, so it stays prev/next whichever way the arrows point. */}
       {page > 1 ? (
         <Link className="btn btn--small" rel="prev" href={href(page - 1)}>
-          <span aria-hidden="true">←</span> Previous
+          <span aria-hidden="true">{BACKWARD_GLYPH[dir]}</span>{" "}
+          {t.common.previous}
         </Link>
       ) : null}
 
@@ -99,10 +120,10 @@ export function Pagination({
                 }
                 href={href(item)}
                 aria-current={item === page ? "page" : undefined}
-                aria-label={`Page ${item}`}
+                aria-label={t.common.pageNumber(item)}
                 style={{ minInlineSize: 36 }}
               >
-                {item}
+                {formatNumber(item)}
               </Link>
             </li>
           ),
@@ -111,13 +132,11 @@ export function Pagination({
 
       {page < pageCount ? (
         <Link className="btn btn--small" rel="next" href={href(page + 1)}>
-          Next <span aria-hidden="true">→</span>
+          {t.common.next} <span aria-hidden="true">{FORWARD_GLYPH[dir]}</span>
         </Link>
       ) : null}
 
-      <p className="sr-only">
-        Page {page} of {pageCount}
-      </p>
+      <p className="sr-only">{t.common.pageOf(page, pageCount)}</p>
     </nav>
   );
 }
