@@ -18,7 +18,36 @@ const schema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+
+  /**
+   * Which deployment this is, as distinct from NODE_ENV.
+   *
+   * A staging build is a *production* Node build — same optimisations, same
+   * strictness — that simply must not be indexed, must not share a database
+   * with the live site, and must be obvious to anyone looking at it. NODE_ENV
+   * cannot express that, so this does.
+   *
+   * On Vercel it derives from VERCEL_ENV automatically: every preview
+   * deployment, including pull requests, counts as staging. Set APP_ENV
+   * explicitly to override, which is what a self-hosted staging box needs.
+   */
+  APP_ENV: z.enum(["production", "staging", "development"]).default("development"),
 });
+
+function resolveAppEnv(): string | undefined {
+  if (process.env.APP_ENV) return process.env.APP_ENV;
+
+  switch (process.env.VERCEL_ENV) {
+    case "production":
+      return "production";
+    case "preview":
+      return "staging";
+    case "development":
+      return "development";
+    default:
+      return process.env.NODE_ENV === "production" ? "production" : undefined;
+  }
+}
 
 const parsed = schema.safeParse({
   DATABASE_URL: process.env.DATABASE_URL,
@@ -26,6 +55,7 @@ const parsed = schema.safeParse({
   IP_HASH_SECRET: process.env.IP_HASH_SECRET,
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NODE_ENV: process.env.NODE_ENV,
+  APP_ENV: resolveAppEnv(),
 });
 
 if (!parsed.success) {
@@ -38,6 +68,9 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+/** True only on the real, indexable, public deployment. */
+export const isProductionDeployment = env.APP_ENV === "production";
 
 /**
  * A production deployment without this secret has guessable rate-limit

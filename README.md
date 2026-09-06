@@ -195,6 +195,66 @@ development and is a reasonable base for a production compose file. Set
 single nginx, 2 behind Cloudflare *and* nginx — or the rate limiter will
 throttle everyone into one bucket.
 
+### Staging and production
+
+Two environments, each with its own database and its own server. Staging exists so a
+migration or a risky change is proven somewhere real before it touches student reviews
+that cannot be regenerated.
+
+**The database: one Neon project, two branches.** Neon branches are copy-on-write, so a
+staging branch costs almost nothing on top of production — it holds the same schema
+without duplicating storage.
+
+1. In Neon: **Branches → New branch**, from `main`, named `staging`.
+2. Leave **scale-to-zero enabled on staging only**. Nobody is waiting on a cold start
+   there, and an idle branch costs cents rather than the ~$19 that keeping production
+   always-warm costs.
+3. Copy the staging branch's pooled and direct connection strings.
+
+**The server: one Vercel project, two environments.** Vercel already separates
+Production from Preview, so no second project is needed.
+
+1. Create a long-lived `staging` branch in git. Every push to it deploys automatically
+   to a stable URL — `hospirate-git-staging-<your-account>.vercel.app`.
+2. In **Settings → Environment Variables**, add the staging values scoped to
+   **Preview** only, and the live values scoped to **Production** only:
+
+   | Variable | Production | Preview (staging) |
+   | --- | --- | --- |
+   | `DATABASE_URL` | Neon `main`, pooled | Neon `staging`, pooled |
+   | `DIRECT_URL` | Neon `main`, direct | Neon `staging`, direct |
+   | `IP_HASH_SECRET` | one secret | **a different secret** |
+   | `NEXT_PUBLIC_SITE_URL` | `https://your-domain.com` | the staging URL |
+
+   Use a different `IP_HASH_SECRET` per environment. Sharing it would let rate-limit
+   buckets collide across two databases that are meant to know nothing about each other.
+
+Scoping to Preview covers pull-request deployments too, which is what you want: a PR
+should be exercised against staging data, never against production.
+
+**How a change reaches production**
+
+```bash
+git switch -c staging          # once
+git push -u origin staging     # deploys to the staging URL
+
+# apply the migration to staging first, and try it there
+DIRECT_URL="<staging direct>" npx prisma migrate deploy
+
+# only then to production
+DIRECT_URL="<production direct>" npx prisma migrate deploy
+git switch main && git merge staging && git push
+```
+
+Seed demo content on staging freely — `npm run db:seed` is safe there and makes the site
+worth looking at. Never run it against production.
+
+**What the code does differently off production.** `APP_ENV` (derived from `VERCEL_ENV`)
+drives two guards: `robots.ts` refuses every crawler and publishes no sitemap, so a
+staging copy can never compete with the real site in search results or show test reviews
+to a student who found them on Google; and a banner marks every page, so nobody moderates
+a real report on the wrong environment.
+
 ### Environment variables
 
 | Variable | Required | What it is |
@@ -204,6 +264,7 @@ throttle everyone into one bucket.
 | `IP_HASH_SECRET` | production | 32+ random bytes, base64. Keys the daily-rotating salt that pseudonymises addresses for rate limiting. |
 | `NEXT_PUBLIC_SITE_URL` | yes | Public origin, for canonical URLs and the sitemap. |
 | `TRUSTED_PROXY_HOPS` | no | Proxies in front of the app. Default 1, which is correct on Vercel. |
+| `APP_ENV` | no | `production` / `staging` / `development`. Derived from `VERCEL_ENV` on Vercel; set it by hand when self-hosting a staging box. Anything but `production` blocks crawlers and shows a banner. |
 
 ---
 
