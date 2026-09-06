@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Hospirate — production image.
+# Tellyrate — production image.
 #
 # Three stages so the runtime layer carries only what serves traffic: no npm,
 # no source, no dev dependencies and no Prisma CLI. Next's standalone output
@@ -28,7 +28,7 @@ WORKDIR /app
 
 # `NEXT_PUBLIC_*` values are inlined into the bundle at build time, so this one
 # is a build argument rather than a runtime variable. Pass the real origin:
-#   docker build --build-arg NEXT_PUBLIC_SITE_URL=https://hospirate.example .
+#   docker build --build-arg NEXT_PUBLIC_SITE_URL=https://tellyrate.example .
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Hospirate collects anonymous reviews of the hospitals and clinics where healthcare students do their clinical training, written by the students who trained there.",
+    "Tellyrate collects anonymous reviews of the hospitals and clinics where healthcare students do their clinical training, written by the students who trained there.",
   alternates: { canonical: "/about" },
 };
 
@@ -65,7 +65,7 @@ export default function AboutPage() {
           className="prose"
           style={{ marginBlockStart: "var(--space-m)", color: "var(--ink-2)" }}
         >
-          Hospirate collects anonymous reviews of the hospitals, clinics and
+          Tellyrate collects anonymous reviews of the hospitals, clinics and
           health centres where healthcare students do their clinical training —
           written by the students who did the rotation.
         </p>
@@ -223,7 +223,7 @@ export default function AboutPage() {
 
         <Section id="who" title="Who runs it">
           <p>
-            Hospirate is an independent project, not affiliated with any
+            Tellyrate is an independent project, not affiliated with any
             hospital, university, ministry or professional body. There is no
             advertising, nothing is sponsored, no listing is paid for, and no
             data is sold or shared with anyone — there is barely any to sell.

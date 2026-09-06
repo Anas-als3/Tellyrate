@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useViewer } from "@/components/use-viewer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 
 /**
  * Structurally satisfied by `SessionUser`, but declared locally: `@/lib/session`
@@ -11,22 +13,38 @@ import { ThemeToggle } from "@/components/theme-toggle";
  */
 export type HeaderUser = { username: string };
 
-const NAV_LINKS = [
-  { href: "/facilities", label: "Facilities" },
-  { href: "/cities", label: "Cities" },
-  { href: "/guidelines", label: "Guidelines" },
-] as const;
+/**
+ * The strings arrive as props for the same reason: `@/lib/i18n/server` reads
+ * cookies and cannot be imported here. Typing them off `Dictionary` keeps them
+ * in step with the dictionary without importing a value from it.
+ */
+type NavStrings = Dictionary["nav"];
+type LanguageStrings = Dictionary["common"]["language"];
 
 function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SiteHeader() {
+export function SiteHeader({
+  locale,
+  nav,
+  language,
+}: {
+  locale: Locale;
+  nav: NavStrings;
+  language: LanguageStrings;
+}) {
   // Fetched client-side rather than passed down, so that reading the session
   // cookie does not make every public page render per-request. See use-viewer.
   const { viewer: user } = useViewer();
 
   const pathname = usePathname();
+
+  const navLinks = [
+    { href: "/facilities", label: nav.facilities },
+    { href: "/cities", label: nav.cities },
+    { href: "/guidelines", label: nav.guidelines },
+  ];
 
   return (
     <header
@@ -49,8 +67,12 @@ export function SiteHeader() {
       >
         <Link
           href="/"
-          aria-label="Hospirate — home"
+          aria-label={nav.brandHome}
           style={{
+            // globals.css clears `min-inline-size` on every flex child so text
+            // can shrink; a nowrap wordmark that shrinks just spills over its
+            // neighbour instead, so this one opts out of shrinking.
+            flexShrink: 0,
             fontFamily: "var(--font-ui)",
             fontWeight: 700,
             fontStretch: "92%",
@@ -61,15 +83,18 @@ export function SiteHeader() {
             color: "var(--ink)",
           }}
         >
-          Hospirate
+          {/* The wordmark is the brand and stays Latin in both languages, so
+              it is tagged `en` — otherwise an Arabic page would try to shape
+              it with the Arabic face and read it out letter by letter. */}
+          <span lang="en">Tellyrate</span>
         </Link>
 
         <nav
-          aria-label="Sections"
+          aria-label={nav.sections}
           className="hidden md:flex"
           style={{ alignItems: "center", gap: "var(--space-3xs)" }}
         >
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <NavLink
               key={link.href}
               href={link.href}
@@ -94,14 +119,14 @@ export function SiteHeader() {
           }}
         >
           <label htmlFor="site-search" className="sr-only">
-            Search facilities and cities
+            {nav.searchLabel}
           </label>
           <input
             id="site-search"
             name="q"
             type="search"
             className="input"
-            placeholder="Search"
+            placeholder={nav.searchPlaceholder}
             autoComplete="off"
             style={{
               minInlineSize: 0,
@@ -117,8 +142,19 @@ export function SiteHeader() {
             alignItems: "center",
             gap: "var(--space-2xs)",
             marginInlineStart: "auto",
+            // Fixed-size controls: the search box beside them is the elastic
+            // one. Without this they share the squeeze and spill their buttons
+            // out of the header on a narrow Arabic page, where the switcher
+            // reads "English" and is wider than it is on the English page.
+            flexShrink: 0,
           }}
         >
+          <LanguageSwitcher
+            locale={locale}
+            label={language.switchTo}
+            targetName={language.targetName}
+          />
+
           <ThemeToggle />
 
           <div
@@ -147,18 +183,18 @@ export function SiteHeader() {
                 {/* Deliberately a plain anchor: a next/link would let a hover
                     prefetch sign the reader out. */}
                 <a href="/logout" className="btn btn--quiet btn--small">
-                  Log out
+                  {nav.logOut}
                 </a>
               </>
             ) : (
               <Link href="/login" className="btn btn--quiet btn--small">
-                Log in
+                {nav.logIn}
               </Link>
             )}
             {/* A review always belongs to one facility, so the call to action
                 leads to the directory the reader picks it from. */}
             <Link href="/facilities" className="btn btn--primary btn--small">
-              Write a review
+              {nav.writeReview}
             </Link>
           </div>
 
@@ -182,7 +218,7 @@ export function SiteHeader() {
                 color: "var(--ink-2)",
               }}
             >
-              <span className="sr-only">Menu</span>
+              <span className="sr-only">{nav.menu}</span>
               <svg
                 width={18}
                 height={18}
@@ -212,7 +248,7 @@ export function SiteHeader() {
                 boxShadow: "var(--shadow-2)",
               }}
             >
-              {NAV_LINKS.map((link) => (
+              {navLinks.map((link) => (
                 <NavLink
                   key={link.href}
                   href={link.href}
@@ -252,12 +288,12 @@ export function SiteHeader() {
                       color: "var(--ink-2)",
                     }}
                   >
-                    Log out
+                    {nav.logOut}
                   </a>
                 </>
               ) : (
                 <NavLink href="/login" active={isActive(pathname, "/login")} block>
-                  Log in
+                  {nav.logIn}
                 </NavLink>
               )}
 
@@ -266,7 +302,7 @@ export function SiteHeader() {
                 className="btn btn--primary btn--small"
                 style={{ marginBlockStart: "var(--space-2xs)" }}
               >
-                Write a review
+                {nav.writeReview}
               </Link>
             </div>
           </details>

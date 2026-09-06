@@ -83,7 +83,7 @@ const RESERVED_USERNAMES = new Set([
   "administrator",
   "moderator",
   "mod",
-  "hospirate",
+  "tellyrate",
   "official",
   "support",
   "staff",

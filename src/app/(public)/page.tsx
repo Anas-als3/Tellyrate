@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSiteCounts, listCities } from "@/lib/queries";
-import { rotationStamp, STUDENT_FIELD_LABELS } from "@/lib/labels";
+import { rotationStamp } from "@/lib/labels";
+import {
+  formatNumber,
+  getDictionary,
+  lookup,
+  type Dictionary,
+} from "@/lib/i18n/dictionaries";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { Stars } from "@/components/stars";
 
@@ -16,14 +23,15 @@ import { Stars } from "@/components/stars";
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: {
-    absolute: "Hospirate — what a clinical rotation is really like",
-  },
-  description:
-    "Anonymous reviews of the hospitals and clinics where healthcare students train. Search by name or city, read what supervision and hands-on time were actually like, and add your own placement.",
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = getDictionary(await getLocale());
+
+  return {
+    title: { absolute: t.home.metaTitle },
+    description: t.home.metaDescription,
+    alternates: { canonical: "/" },
+  };
+}
 
 /** Everything `<FacilityCard>` needs, and nothing else. */
 const facilityCardSelect = {
@@ -42,9 +50,9 @@ const LATEST_REVIEW_COUNT = 6;
 /** Below this a five-star average is one person's opinion, not a rating. */
 const RATED_THRESHOLD = 3;
 
-const numbers = new Intl.NumberFormat("en");
-
 export default async function HomePage() {
+  const t = await getT();
+
   const [counts, cities, mostReviewed, highestRated, latestReviews] =
     await Promise.all([
       getSiteCounts(),
@@ -101,7 +109,7 @@ export default async function HomePage() {
         aria-labelledby="hero-heading"
         style={{ paddingBlock: "var(--space-2xl) var(--space-xl)" }}
       >
-        <span className="label">Anonymous reviews by healthcare students</span>
+        <span className="label">{t.home.eyebrow}</span>
 
         <h1
           id="hero-heading"
@@ -110,7 +118,7 @@ export default async function HomePage() {
             maxInlineSize: "17ch",
           }}
         >
-          Know where to train before you apply.
+          {t.home.heading}
         </h1>
 
         <p
@@ -121,9 +129,7 @@ export default async function HomePage() {
             color: "var(--ink-2)",
           }}
         >
-          Students who already did their training year describe the
-          supervision, the hands-on time and the way they were treated — so you
-          can pick the hospitals worth applying to.
+          {t.home.lede}
         </p>
 
         {/* The hero is the search box. A plain GET form, so it works before any
@@ -138,7 +144,7 @@ export default async function HomePage() {
           }}
         >
           <label htmlFor="home-search" className="label">
-            Search facilities
+            {t.home.searchLabel}
           </label>
           <div
             style={{
@@ -152,7 +158,7 @@ export default async function HomePage() {
               name="q"
               type="search"
               className="input"
-              placeholder="Hospital, clinic, or city"
+              placeholder={t.home.searchPlaceholder}
               autoComplete="off"
               style={{
                 flex: "1 1 auto",
@@ -166,14 +172,14 @@ export default async function HomePage() {
               className="btn btn--primary"
               style={{ paddingInline: "var(--space-l)" }}
             >
-              Search
+              {t.home.searchButton}
             </button>
           </div>
         </form>
 
         {topCities.length > 0 ? (
           <div style={{ marginBlockStart: "var(--space-l)" }}>
-            <span className="label">Browse by city</span>
+            <span className="label">{t.home.browseByCity}</span>
             <ul
               style={{
                 listStyle: "none",
@@ -189,7 +195,7 @@ export default async function HomePage() {
                   <Link href={`/cities/${city.slug}`} className="chip">
                     <bdi dir="auto">{city.name}</bdi>
                     <span className="tnum" style={{ color: "var(--ink-3)" }}>
-                      {numbers.format(city.facilityCount)}
+                      {formatNumber(city.facilityCount)}
                     </span>
                   </Link>
                 </li>
@@ -202,22 +208,16 @@ export default async function HomePage() {
           className="hint tnum"
           style={{ marginBlockStart: "var(--space-m)" }}
         >
-          {numbers.format(counts.facilities)}{" "}
-          {counts.facilities === 1 ? "facility" : "facilities"} ·{" "}
-          {numbers.format(counts.cities)}{" "}
-          {counts.cities === 1 ? "city" : "cities"} ·{" "}
-          {counts.reviews === 0
-            ? "no reviews yet"
-            : `${numbers.format(counts.reviews)} ${counts.reviews === 1 ? "review" : "reviews"}`}
+          {t.home.stats(counts.facilities, counts.cities, counts.reviews)}
         </p>
       </section>
 
       {mostReviewed.length > 0 ? (
         <Section
           id="most-reviewed"
-          title="Most reviewed"
+          title={t.home.mostReviewed}
           href="/facilities"
-          linkLabel="All facilities"
+          linkLabel={t.home.allFacilities}
         >
           <div className="grid-cards">
             {mostReviewed.map((facility) => (
@@ -228,10 +228,10 @@ export default async function HomePage() {
       ) : recentlyAdded.length > 0 ? (
         <Section
           id="recently-added"
-          title="Recently added"
-          note="waiting for a first review"
+          title={t.home.recentlyAdded}
+          note={t.home.recentlyAddedNote}
           href="/facilities?sort=newest"
-          linkLabel="All facilities"
+          linkLabel={t.home.allFacilities}
         >
           <div className="grid-cards">
             {recentlyAdded.map((facility) => (
@@ -244,12 +244,12 @@ export default async function HomePage() {
       {highestRated.length > 0 ? (
         <Section
           id="highest-rated"
-          title="Highest rated"
+          title={t.home.highestRated}
           // Said out loud rather than hidden in a tooltip: a 5.0 from a single
           // review is noise, and a reader deserves to know it was excluded.
-          note={`${RATED_THRESHOLD}+ reviews`}
+          note={t.home.highestRatedNote(RATED_THRESHOLD)}
           href="/facilities?sort=highest_rated"
-          linkLabel="All facilities by rating"
+          linkLabel={t.home.allFacilitiesByRating}
         >
           <div className="grid-cards">
             {highestRated.map((facility) => (
@@ -261,9 +261,9 @@ export default async function HomePage() {
 
       <Section
         id="latest-reviews"
-        title="Latest reviews"
+        title={t.home.latestReviews}
         href={latestReviews.length > 0 ? "/facilities" : undefined}
-        linkLabel="Browse facilities"
+        linkLabel={t.home.browseFacilities}
       >
         {latestReviews.length > 0 ? (
           <div
@@ -274,7 +274,7 @@ export default async function HomePage() {
             }}
           >
             {latestReviews.map((review) => (
-              <ReviewPreview key={review.id} review={review} />
+              <ReviewPreview key={review.id} review={review} t={t} />
             ))}
           </div>
         ) : (
@@ -288,16 +288,10 @@ export default async function HomePage() {
               gap: "var(--space-s)",
             }}
           >
-            <p className="prose">
-              Nobody has written one yet. Every facility here is waiting for the
-              first student who trained there to say what it was actually like.
-            </p>
-            <p className="hint">
-              Find the place you trained, then leave a rating and a few
-              sentences. Readers only ever see a username.
-            </p>
+            <p className="prose">{t.home.noReviewsBody}</p>
+            <p className="hint">{t.home.noReviewsHint}</p>
             <Link href="/facilities" className="btn btn--primary">
-              Write the first review
+              {t.home.writeFirstReview}
             </Link>
           </div>
         )}
@@ -316,7 +310,7 @@ export default async function HomePage() {
           className="label"
           style={{ fontSize: "var(--step--2)", fontWeight: 400 }}
         >
-          Why this can be honest
+          {t.home.privacyHeading}
         </h2>
         <div
           style={{
@@ -326,18 +320,9 @@ export default async function HomePage() {
             gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
           }}
         >
-          <p style={promiseLine}>
-            Signing up asks for a username and a password. There is no email
-            field, because there is no email.
-          </p>
-          <p style={promiseLine}>
-            Reviews carry no real name, no school and no exact dates — timing is
-            blurred until a place has enough reviews to hide in.
-          </p>
-          <p style={promiseLine}>
-            No analytics, no third-party fonts, no trackers. Nothing on this
-            page is loaded from anyone else&rsquo;s server.
-          </p>
+          <p style={promiseLine}>{t.home.promiseAccount}</p>
+          <p style={promiseLine}>{t.home.promiseReviews}</p>
+          <p style={promiseLine}>{t.home.promiseTracking}</p>
         </div>
         <p style={{ marginBlockStart: "var(--space-s)" }}>
           <Link
@@ -348,7 +333,7 @@ export default async function HomePage() {
               color: "var(--brand-ink)",
             }}
           >
-            How this works
+            {t.home.howThisWorks}
           </Link>
         </p>
       </section>
@@ -438,9 +423,19 @@ type ReviewPreviewData = {
   facility: { slug: string; name: string; reviewCount: number };
 };
 
-function ReviewPreview({ review }: { review: ReviewPreviewData }) {
+function ReviewPreview({
+  review,
+  t,
+}: {
+  review: ReviewPreviewData;
+  t: Dictionary;
+}) {
   const stamp = rotationStamp(review.trainingYear, review.facility.reviewCount);
-  const field = STUDENT_FIELD_LABELS[review.field] ?? "Student";
+  const field = lookup(
+    t.labels.studentField,
+    review.field,
+    t.home.studentFallback,
+  );
 
   return (
     <article
@@ -454,17 +449,19 @@ function ReviewPreview({ review }: { review: ReviewPreviewData }) {
     >
       <span className="label">
         {field}
-        {stamp ? ` · ${stamp}` : ""}
+        {stamp ? `${t.common.separator}${stamp}` : ""}
       </span>
 
       <Stars value={review.overall} size={14} showValue />
 
       {review.title ? (
-        <h3 style={{ fontSize: "var(--step-1)" }}>{review.title}</h3>
+        <h3 style={{ fontSize: "var(--step-1)" }}>
+          <bdi dir="auto">{review.title}</bdi>
+        </h3>
       ) : null}
 
       <p className="prose" style={{ fontSize: "var(--step-0)", maxInlineSize: "none" }}>
-        {excerpt(review.body)}
+        <bdi dir="auto">{excerpt(review.body)}</bdi>
       </p>
 
       <div className="stamp" style={{ marginBlockStart: "auto" }}>

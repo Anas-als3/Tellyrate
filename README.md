@@ -1,4 +1,4 @@
-# Hospirate
+# Tellyrate
 
 Anonymous reviews of the hospitals and health facilities where healthcare students do
 their clinical training.
@@ -168,7 +168,7 @@ from a mean that is no longer current.
 ### What the free tier actually costs you
 
 Vercel's Hobby plan forbids commercial use — that includes ads, affiliate
-links and **donation buttons**. Hospirate carries none, so it qualifies; adding
+links and **donation buttons**. Tellyrate carries none, so it qualifies; adding
 any of them later means moving to Pro at $20/month.
 
 Neon's free tier allows 100 compute-hours a month with a five-minute idle
@@ -184,8 +184,8 @@ every cliff above — around $7/month on a small VPS, with app-to-database
 latency of essentially zero.
 
 ```bash
-docker build --build-arg NEXT_PUBLIC_SITE_URL=https://your-domain.com -t hospirate .
-docker run -p 3000:3000 --env-file .env hospirate
+docker build --build-arg NEXT_PUBLIC_SITE_URL=https://your-domain.com -t tellyrate .
+docker run -p 3000:3000 --env-file .env tellyrate
 ```
 
 The image uses Next's standalone output, runs as a non-root user, and carries
@@ -215,7 +215,7 @@ without duplicating storage.
 Production from Preview, so no second project is needed.
 
 1. Create a long-lived `staging` branch in git. Every push to it deploys automatically
-   to a stable URL — `hospirate-git-staging-<your-account>.vercel.app`.
+   to a stable URL — `tellyrate-git-staging-<your-account>.vercel.app`.
 2. In **Settings → Environment Variables**, add the staging values scoped to
    **Preview** only, and the live values scoped to **Production** only:
 

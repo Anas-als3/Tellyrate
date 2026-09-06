@@ -61,7 +61,7 @@ export default function AuthLayout({
               textDecoration: "none",
             }}
           >
-            Hospirate
+            Tellyrate
           </Link>
           <span className="label">Reading never needs an account</span>
         </div>

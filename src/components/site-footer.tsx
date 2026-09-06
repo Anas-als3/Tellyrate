@@ -1,12 +1,17 @@
 import Link from "next/link";
 
-const FOOTER_LINKS = [
-  { href: "/about", label: "About" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/guidelines", label: "Guidelines" },
-] as const;
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { getDictionary, type Locale } from "@/lib/i18n/dictionaries";
 
-export function SiteFooter() {
+export function SiteFooter({ locale }: { locale: Locale }) {
+  const t = getDictionary(locale);
+
+  const footerLinks = [
+    { href: "/about", label: t.nav.about },
+    { href: "/privacy", label: t.nav.privacy },
+    { href: "/guidelines", label: t.nav.guidelines },
+  ];
+
   return (
     <footer
       style={{
@@ -25,8 +30,10 @@ export function SiteFooter() {
           alignItems: "start",
         }}
       >
-        <nav aria-label="About this site" style={column}>
-          <span className="label">Hospirate</span>
+        <nav aria-label={t.common.footer.aboutNav} style={column}>
+          <span className="label" lang="en">
+            {t.common.siteName}
+          </span>
           <ul
             style={{
               listStyle: "none",
@@ -37,7 +44,7 @@ export function SiteFooter() {
               gap: "var(--space-2xs)",
             }}
           >
-            {FOOTER_LINKS.map((link) => (
+            {footerLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
@@ -55,33 +62,47 @@ export function SiteFooter() {
         </nav>
 
         <div style={column}>
-          <span className="label">Anonymous by design</span>
+          <span className="label">{t.common.footer.anonymousHeading}</span>
           <p style={{ fontSize: "var(--step--1)", color: "var(--ink-2)" }}>
-            No email. No real name. Just a username.
+            {t.common.footer.anonymousLine}
           </p>
           <p style={{ fontSize: "var(--step--2)", color: "var(--ink-3)" }}>
-            An account exists only so that one person cannot review the same
-            placement twice.
+            {t.common.footer.anonymousNote}
           </p>
         </div>
 
         <div style={column}>
-          <span className="label">Data</span>
+          <span className="label">{t.common.footer.dataHeading}</span>
           {/* A licence obligation, not a courtesy: it has to appear on every
-              page that shows imported facility data. */}
+              page that shows imported facility data, in whatever language the
+              page is being read in. */}
           <p style={{ fontSize: "var(--step--1)", color: "var(--ink-2)" }}>
             <a
               href="https://www.openstreetmap.org/copyright"
               rel="license noopener noreferrer"
               target="_blank"
             >
-              Facility data © OpenStreetMap contributors, ODbL
+              {t.common.footer.osmAttribution}
             </a>
           </p>
           <p style={{ fontSize: "var(--step--2)", color: "var(--ink-3)" }}>
-            Reviews are the opinions of the students who wrote them, not of the
-            facilities described.
+            {t.common.footer.disclaimer}
           </p>
+        </div>
+
+        {/* Repeated from the header on purpose: someone who reaches the bottom
+            of a page in the wrong language should not have to scroll back up
+            to change it. */}
+        <div style={column}>
+          <span className="label">{t.common.language.groupLabel}</span>
+          <div>
+            <LanguageSwitcher
+              locale={locale}
+              label={t.common.language.switchTo}
+              targetName={t.common.language.targetName}
+              className="btn btn--small"
+            />
+          </div>
         </div>
       </div>
     </footer>

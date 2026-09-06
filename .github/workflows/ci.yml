@@ -21,19 +21,19 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: hospirate
-          POSTGRES_PASSWORD: hospirate
-          POSTGRES_DB: hospirate_ci
+          POSTGRES_USER: tellyrate
+          POSTGRES_PASSWORD: tellyrate
+          POSTGRES_DB: tellyrate_ci
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U hospirate -d hospirate_ci"
+          --health-cmd "pg_isready -U tellyrate -d tellyrate_ci"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
 
     env:
-      DATABASE_URL: postgresql://hospirate:hospirate@localhost:5432/hospirate_ci?schema=public
+      DATABASE_URL: postgresql://tellyrate:tellyrate@localhost:5432/tellyrate_ci?schema=public
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       # `lib/env.ts` requires this whenever NODE_ENV is production, which is
       # what `next build` sets. Not a secret: this database is thrown away

@@ -1,23 +1,23 @@
-# Local development database for Hospirate.
+# Local development database for Tellyrate.
 # Usage: npm run db:up   (start)   |   npm run db:down   (stop)
 services:
   db:
     image: postgres:17-alpine
-    container_name: hospirate-db
+    container_name: tellyrate-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: hospirate
-      POSTGRES_PASSWORD: hospirate
-      POSTGRES_DB: hospirate
+      POSTGRES_USER: tellyrate
+      POSTGRES_PASSWORD: tellyrate
+      POSTGRES_DB: tellyrate
     ports:
       - "5433:5432"
     volumes:
-      - hospirate-pgdata:/var/lib/postgresql/data
+      - tellyrate-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hospirate -d hospirate"]
+      test: ["CMD-SHELL", "pg_isready -U tellyrate -d tellyrate"]
       interval: 5s
       timeout: 5s
       retries: 20
 
 volumes:
-  hospirate-pgdata:
+  tellyrate-pgdata:

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { generateSessionToken, hashToken } from "@/lib/crypto";
 
-export const SESSION_COOKIE = "hospirate_session";
+export const SESSION_COOKIE = "tellyrate_session";
 
 /** Sessions last 30 days and are slid forward once they are half spent. */
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;

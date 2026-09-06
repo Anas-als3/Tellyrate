@@ -1,5 +1,5 @@
 /**
- * Ranking maths for Hospirate.
+ * Ranking maths for Tellyrate.
  *
  * The whole point of a review site is that the ordering is honest, so both
  * formulas here are about the same thing: not letting a tiny sample shout down

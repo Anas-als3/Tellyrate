@@ -387,7 +387,7 @@ export default async function FacilitiesPage({
               <p>
                 {query.q ? (
                   <>
-                    No facility on Hospirate is called{" "}
+                    No facility on Tellyrate is called{" "}
                     <strong>
                       <bdi dir="auto">{query.q}</bdi>
                     </strong>

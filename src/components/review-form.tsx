@@ -36,7 +36,7 @@ const MIN_BODY = 120;
 const COUNTER_AFTER = 60;
 const DRAFT_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 const DRAFT_DEBOUNCE_MS = 400;
-const DRAFT_VERSION = "hospirate:draft:v1";
+const DRAFT_VERSION = "tellyrate:draft:v1";
 
 export type ReviewFormValues = {
   overall: number | null;

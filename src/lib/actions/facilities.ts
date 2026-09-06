@@ -53,7 +53,7 @@ function tokenSecret(): string {
   // Same fallback as the rate limiter: absent in development, required in
   // production by lib/env.ts, so this can never silently sign with a constant
   // in a deployment that matters.
-  return process.env.IP_HASH_SECRET ?? "hospirate-development-only";
+  return process.env.IP_HASH_SECRET ?? "tellyrate-development-only";
 }
 
 function sign(payload: string): string {

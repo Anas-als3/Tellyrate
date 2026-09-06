@@ -61,7 +61,7 @@ export default function AccountLayout({
               textDecoration: "none",
             }}
           >
-            Hospirate
+            Tellyrate
           </Link>
           <Link href="/facilities" className="btn btn--quiet btn--small">
             Browse facilities

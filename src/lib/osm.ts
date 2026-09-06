@@ -41,7 +41,7 @@ export const OVERPASS_ENDPOINTS = [
 ];
 
 export const USER_AGENT =
-  "Hospirate/1.0 (student placement reviews; https://github.com/Anas-als3/Hospirate)";
+  "Tellyrate/1.0 (student placement reviews; https://github.com/Anas-als3/Tellyrate)";
 
 /** Tags that make an OSM element a place a healthcare student might train in. */
 const AMENITY_MATCH = "^(hospital|clinic|doctors|dentist|pharmacy|nursing_home)$";

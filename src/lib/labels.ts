@@ -152,7 +152,7 @@ export const REPORT_REASON_LABELS: Record<string, string> = {
 };
 
 /**
- * Hospirate covers Saudi Arabia only.
+ * Tellyrate covers Saudi Arabia only.
  *
  * The scope is deliberate rather than a starting point: a review site is only
  * useful once a given hospital has several reviews, and spreading thin across

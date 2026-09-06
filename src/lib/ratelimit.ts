@@ -41,7 +41,7 @@ export type RateLimitAction = keyof typeof RATE_LIMITS;
  * cannot be joined across days into a history of anyone's activity.
  */
 async function clientFingerprint(): Promise<string> {
-  const secret = process.env.IP_HASH_SECRET ?? "hospirate-development-only";
+  const secret = process.env.IP_HASH_SECRET ?? "tellyrate-development-only";
   const store = await headers();
 
   const address = normaliseAddress(

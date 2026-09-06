@@ -102,8 +102,8 @@ export function safeRedirectPath(
   if (hasForbiddenChar(value)) return fallback;
 
   try {
-    const probe = new URL(value, "https://hospirate.invalid");
-    if (probe.origin !== "https://hospirate.invalid") return fallback;
+    const probe = new URL(value, "https://tellyrate.invalid");
+    if (probe.origin !== "https://tellyrate.invalid") return fallback;
     return probe.pathname + probe.search + probe.hash;
   } catch {
     return fallback;

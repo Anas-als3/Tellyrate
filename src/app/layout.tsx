@@ -1,32 +1,49 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import {
+  LOCALE_DIR,
+  OG_LOCALES,
+  getDictionary,
+} from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/server";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: "Hospirate — know where to train before you apply",
-    template: "%s · Hospirate",
-  },
-  description:
-    "Anonymous reviews of Saudi hospitals and clinics by the healthcare students who did their training year there — so you know which ones are worth applying to. No email, no real name, just a username.",
-  applicationName: "Hospirate",
-  openGraph: {
-    type: "website",
-    siteName: "Hospirate",
-    title: "Hospirate",
-    description:
-      "Where Saudi healthcare students actually trained, and which hospitals are worth applying to.",
-  },
-  robots: { index: true, follow: true },
-  // No verification tags, no analytics, no third-party anything.
-};
+/**
+ * Locale-aware, so `generateMetadata` rather than a static `metadata` export.
+ *
+ * Both languages share one URL, so there is no `alternates.languages` to
+ * declare: there is no second address to point a crawler at. That is the cost
+ * of the cookie-based design, and it is stated in lib/i18n/server.ts.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const t = getDictionary(locale);
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: t.common.meta.defaultTitle,
+      template: t.common.meta.titleTemplate,
+    },
+    description: t.common.meta.description,
+    applicationName: t.common.siteName,
+    openGraph: {
+      type: "website",
+      siteName: t.common.siteName,
+      title: t.common.meta.ogTitle,
+      description: t.common.meta.ogDescription,
+      locale: OG_LOCALES[locale],
+    },
+    robots: { index: true, follow: true },
+    // No verification tags, no analytics, no third-party anything.
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f7f3" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1513" },
+    { media: "(prefers-color-scheme: light)", color: "#fbfafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#121011" },
   ],
 };
 
@@ -36,16 +53,22 @@ export const viewport: Viewport = {
  */
 const themeScript = `
 try {
-  var t = localStorage.getItem("hospirate-theme");
+  var t = localStorage.getItem("tellyrate-theme");
   if (t === "dark" || t === "light") document.documentElement.dataset.theme = t;
 } catch (e) {}
 `;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
+  const t = getDictionary(locale);
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    // Direction is set here and nowhere else. Every rule in the stylesheet is
+    // written in logical properties, so flipping this attribute mirrors the
+    // whole interface without a single physical property changing hands.
+    <html lang={locale} dir={LOCALE_DIR[locale]} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {/* Only the Latin faces are preloaded; Arabic loads on demand
@@ -64,10 +87,21 @@ export default function RootLayout({
           type="font/woff2"
           crossOrigin="anonymous"
         />
+        {/* On an Arabic page the Arabic face is not "on demand" — it is the
+            first glyph on screen, so it is worth the same head start. */}
+        {locale === "ar" ? (
+          <link
+            rel="preload"
+            href="/fonts/noto-sans-arabic-var.woff2"
+            as="font"
+            type="font/woff2"
+            crossOrigin="anonymous"
+          />
+        ) : null}
       </head>
       <body>
         <a className="skip-link" href="#main">
-          Skip to content
+          {t.common.skipToContent}
         </a>
         {children}
       </body>

@@ -32,7 +32,7 @@ function robotsFor(appEnv: string): {
         APP_ENV: appEnv,
         VERCEL_ENV: "",
         DATABASE_URL: "postgresql://user:pass@localhost:5433/test",
-        NEXT_PUBLIC_SITE_URL: "https://hospirate.example",
+        NEXT_PUBLIC_SITE_URL: "https://tellyrate.example",
         IP_HASH_SECRET: "test-secret-long-enough-to-pass",
       },
     },
@@ -61,5 +61,5 @@ test("production is crawlable, minus the API and account areas", () => {
 
   assert.equal(result.rules[0].allow, "/");
   assert.deepEqual(result.rules[0].disallow, ["/api/", "/account/"]);
-  assert.equal(result.sitemap, "https://hospirate.example/sitemap.xml");
+  assert.equal(result.sitemap, "https://tellyrate.example/sitemap.xml");
 });

@@ -334,7 +334,7 @@ export function FacilitySearch({
         >
           <div>
             <h2 id="create-heading" style={{ fontSize: "var(--step-2)" }}>
-              Add it to Hospirate
+              Add it to Tellyrate
             </h2>
             <p className="hint" style={{ marginBlockStart: "var(--space-2xs)" }}>
               New places stay off the directory listings until they have their

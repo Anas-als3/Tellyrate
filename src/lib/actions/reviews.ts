@@ -241,7 +241,7 @@ export async function submitReviewAction(
   if (!facility) {
     return {
       status: "error",
-      message: "That placement no longer exists on Hospirate.",
+      message: "That placement no longer exists on Tellyrate.",
       fieldErrors: {},
     };
   }

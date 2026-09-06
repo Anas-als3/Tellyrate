@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 type Theme = "light" | "dark";
 
 /** Must match the key the pre-paint script in src/app/layout.tsx reads. */
-const STORAGE_KEY = "hospirate-theme";
+const STORAGE_KEY = "tellyrate-theme";
 
 /**
  * The theme is not React state — it lives on the document element, was applied

@@ -263,7 +263,7 @@ export default function GuidelinesPage() {
           }}
         >
           <Link className="btn btn--small" href="/about">
-            About Hospirate
+            About Tellyrate
           </Link>
           <Link className="btn btn--small" href="/privacy">
             Privacy

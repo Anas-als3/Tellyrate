@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy",
   description:
-    "What Hospirate stores and what it does not: no email, no IP logs, no analytics, no third-party requests — and an honest account of where anonymity stops.",
+    "What Tellyrate stores and what it does not: no email, no IP logs, no analytics, no third-party requests — and an honest account of where anonymity stops.",
   alternates: { canonical: "/privacy" },
 };
 
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
           <p>
             Signing in sets exactly one cookie,{" "}
             <code style={{ fontFamily: "var(--font-mono)" }}>
-              hospirate_session
+              tellyrate_session
             </code>
             . It is <code style={{ fontFamily: "var(--font-mono)" }}>
               httpOnly
@@ -141,7 +141,7 @@ export default function PrivacyPage() {
           <p>
             One key,{" "}
             <code style={{ fontFamily: "var(--font-mono)" }}>
-              hospirate-theme
+              tellyrate-theme
             </code>
             , holding <code style={{ fontFamily: "var(--font-mono)" }}>
               light
@@ -318,7 +318,7 @@ export default function PrivacyPage() {
           }}
         >
           <Link className="btn btn--small" href="/about">
-            About Hospirate
+            About Tellyrate
           </Link>
           <Link className="btn btn--small" href="/guidelines">
             Review guidelines
