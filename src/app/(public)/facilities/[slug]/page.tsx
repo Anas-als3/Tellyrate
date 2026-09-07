@@ -18,6 +18,7 @@ import {
   type Dictionary,
   type Locale,
 } from "@/lib/i18n/dictionaries";
+import { cityNameFor, facilityNamesFor } from "@/lib/i18n/names";
 import { getLocale } from "@/lib/i18n/server";
 import { Stars } from "@/components/stars";
 import { RatingDistribution, SubRating } from "@/components/graduated-bar";
@@ -100,19 +101,21 @@ export async function generateMetadata({
     facility.city.countryCode,
     facility.city.country,
   );
-  const place = `${facility.city.name}${LIST_COMMA[locale]}${country}`;
-  const title = t.facility.titleWithCity(facility.name, facility.city.name);
+  const names = facilityNamesFor(locale, facility);
+  const cityName = cityNameFor(locale, facility.city.name);
+  const place = `${cityName}${LIST_COMMA[locale]}${country}`;
+  const title = t.facility.titleWithCity(names.primary, cityName);
 
   const description =
     facility.reviewCount > 0
       ? t.facility.metaRated(
-          facility.name,
+          names.primary,
           kind,
           place,
           facility.ratingAvg.toFixed(1),
           facility.reviewCount,
         )
-      : t.facility.metaUnrated(facility.name, kind, place);
+      : t.facility.metaUnrated(names.primary, kind, place);
 
   return {
     title,
@@ -138,6 +141,8 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
 
   const facility = await loadFacility(slug);
   if (!facility) notFound();
+  const names = facilityNamesFor(locale, facility);
+  const cityName = cityNameFor(locale, facility.city.name);
 
   const sortParam = firstParam(sp.rsort);
   // A separate `rsort`/`rpage` namespace, so paging the reviews here can never
@@ -189,6 +194,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
         select: {
           slug: true,
           name: true,
+          nameEn: true,
           nameLocal: true,
           kind: true,
           reviewCount: true,
@@ -328,27 +334,27 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
           <li aria-hidden="true">/</li>
           <li>
             <Link href={`/cities/${facility.city.slug}`}>
-              <bdi dir="auto">{facility.city.name}</bdi>
+              <bdi dir="auto">{cityName}</bdi>
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" style={{ color: "var(--ink-2)" }}>
-            <bdi dir="auto">{facility.name}</bdi>
+            <bdi dir="auto">{names.primary}</bdi>
           </li>
         </ol>
       </nav>
 
       <header style={{ display: "grid", gap: "var(--space-s)" }}>
         <h1 style={{ fontSize: "var(--step-4)" }}>
-          <bdi dir="auto">{facility.name}</bdi>
+          <bdi dir="auto">{names.primary}</bdi>
         </h1>
 
-        {facility.nameLocal ? (
+        {names.secondary ? (
           <bdi
             dir="auto"
             style={{ fontSize: "var(--step-1)", color: "var(--ink-3)" }}
           >
-            {facility.nameLocal}
+            {names.secondary}
           </bdi>
         ) : null}
 
@@ -362,7 +368,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
         >
           <span className="chip">{kindLabel}</span>
           <Link className="chip" href={`/cities/${facility.city.slug}`}>
-            <bdi dir="auto">{facility.city.name}</bdi>
+            <bdi dir="auto">{cityName}</bdi>
           </Link>
           {facility.status === "PENDING" ? (
             <span className="chip chip--warn">{t.facility.pendingBadge}</span>
@@ -628,9 +634,9 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                 <dt className="hint">{t.facility.address}</dt>
                 <dd style={{ margin: 0 }}>
                   <bdi dir="auto">
-                    {[facility.address, facility.postcode, facility.city.name]
+                    {[facility.address, facility.postcode, cityName]
                       .filter(Boolean)
-                      .join(comma) || facility.city.name}
+                      .join(comma) || cityName}
                   </bdi>
                 </dd>
               </div>
@@ -730,11 +736,11 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                 then lets a Latin city sit inside an Arabic heading — or the
                 reverse — without either reordering the other. */}
             <h2 id="nearby-heading" style={{ fontSize: "var(--step-2)" }}>
-              <bdi dir="auto">{t.facility.moreIn(facility.city.name)}</bdi>
+              <bdi dir="auto">{t.facility.moreIn(cityName)}</bdi>
             </h2>
             <Link href={`/cities/${facility.city.slug}`}>
               <bdi dir="auto">
-                {t.facility.allFacilitiesIn(facility.city.name)}
+                {t.facility.allFacilitiesIn(cityName)}
               </bdi>{" "}
               <span aria-hidden="true">{arrows.forward}</span>
             </Link>
@@ -742,7 +748,11 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
 
           <div className="grid-cards">
             {alsoInCity.map((other) => (
-              <FacilityCard key={other.slug} facility={other} />
+              <FacilityCard
+                key={other.slug}
+                facility={other}
+                locale={locale}
+              />
             ))}
           </div>
         </section>

@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listCities } from "@/lib/queries";
-import { lookup, type Dictionary } from "@/lib/i18n/dictionaries";
-import { getT } from "@/lib/i18n/server";
+import {
+  getDictionary,
+  lookup,
+  type Dictionary,
+  type Locale,
+} from "@/lib/i18n/dictionaries";
+import { cityNameFor } from "@/lib/i18n/names";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { EmptyState } from "@/components/empty-state";
 
 /**
@@ -75,7 +81,15 @@ function groupByCountry(cities: CityRow[], t: Dictionary): CountryGroup[] {
   );
 }
 
-function CityLink({ city, t }: { city: CityRow; t: Dictionary }) {
+function CityLink({
+  city,
+  t,
+  locale,
+}: {
+  city: CityRow;
+  t: Dictionary;
+  locale: Locale;
+}) {
   return (
     <Link
       className="card"
@@ -89,7 +103,7 @@ function CityLink({ city, t }: { city: CityRow; t: Dictionary }) {
       }}
     >
       <span style={{ fontSize: "var(--step-0)", fontWeight: 600 }}>
-        <bdi dir="auto">{city.name}</bdi>
+        <bdi dir="auto">{cityNameFor(locale, city.name)}</bdi>
       </span>
       <span className="tnum" style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}>
         {t.cities.cityLine(city.facilityCount, city.reviewCount)}
@@ -99,7 +113,8 @@ function CityLink({ city, t }: { city: CityRow; t: Dictionary }) {
 }
 
 export default async function CitiesPage() {
-  const t = await getT();
+  const locale = await getLocale();
+  const t = getDictionary(locale);
   const cities = await listCities();
   const groups = groupByCountry(cities, t);
   const totalFacilities = groups.reduce((sum, g) => sum + g.facilityCount, 0);
@@ -160,7 +175,7 @@ export default async function CitiesPage() {
             >
               {group.cities.map((city) => (
                 <li key={city.slug}>
-                  <CityLink city={city} t={t} />
+                  <CityLink city={city} t={t} locale={locale} />
                 </li>
               ))}
             </ul>

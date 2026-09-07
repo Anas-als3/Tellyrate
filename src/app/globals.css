@@ -327,9 +327,31 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Arabic needs noticeably more leading than Latin at the same size. */
+/*
+ * Arabic is set as an interface, not as typeset literary prose. The original
+ * treatment inherited the Latin display scale, a serif body face and very
+ * loose leading, which made short, everyday copy feel formal and oversized.
+ * Noto Sans Arabic is already self-hosted inside the Archivo family, so this
+ * keeps the page familiar and readable without adding a network request.
+ */
 :lang(ar) {
-  line-height: 1.85;
+  --font-prose: var(--font-ui);
+  --lh-tight: 1.32;
+  --lh-snug: 1.48;
+  --lh-body: 1.7;
+  --lh-prose: 1.82;
+}
+
+h1:lang(ar),
+h2:lang(ar),
+h3:lang(ar),
+h4:lang(ar) {
+  font-stretch: 100%;
+  letter-spacing: 0;
+}
+
+h1:lang(ar) {
+  font-size: clamp(2.15rem, 1.7rem + 2.2vw, 3.25rem);
 }
 
 h1,
@@ -500,6 +522,14 @@ textarea {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
+}
+
+.label:lang(ar),
+.stamp:lang(ar) {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* Card: hairline plus a 1px hard offset — printed on paper, not floating. */

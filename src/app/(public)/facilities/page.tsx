@@ -18,8 +18,15 @@ import {
   type FilterFamily,
 } from "@/lib/facility-query";
 import { DEFAULT_SORT } from "@/lib/ranking";
-import { lookup, type Dictionary } from "@/lib/i18n/dictionaries";
-import { getT } from "@/lib/i18n/server";
+import { facilitySearchConditions } from "@/lib/facility-search-query";
+import {
+  getDictionary,
+  lookup,
+  type Dictionary,
+  type Locale,
+} from "@/lib/i18n/dictionaries";
+import { cityNameFor } from "@/lib/i18n/names";
+import { getLocale } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { FilterRail, type FilterOption } from "@/components/filter-rail";
 import { SortTabs } from "@/components/sort-tabs";
@@ -104,12 +111,7 @@ function facetWhere(
   }
 
   if (query.q) {
-    where.OR = [
-      { name: { contains: query.q, mode: "insensitive" } },
-      { nameEn: { contains: query.q, mode: "insensitive" } },
-      { nameLocal: { contains: query.q } },
-      { city: { name: { contains: query.q, mode: "insensitive" } } },
-    ];
+    where.OR = facilitySearchConditions(query.q, { includeCity: true });
   }
 
   return where;
@@ -121,6 +123,7 @@ async function loadFacets(
   query: FacilityQuery,
   cities: CityRow[],
   t: Dictionary,
+  locale: Locale,
 ) {
   const [kindGroups, cityGroups, countryGroups] = await Promise.all([
     prisma.facility.groupBy({
@@ -150,7 +153,7 @@ async function loadFacets(
   const cityOptions: FilterOption[] = cities
     .map((city) => ({
       value: city.slug,
-      label: city.name,
+      label: cityNameFor(locale, city.name),
       count: cityCounts.get(city.id) ?? 0,
     }))
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0) || a.label.localeCompare(b.label))
@@ -198,9 +201,17 @@ async function loadFacets(
   };
 }
 
-function placeNames(query: FacilityQuery, cities: CityRow[], t: Dictionary) {
-  const cityName = query.city
+function placeNames(
+  query: FacilityQuery,
+  cities: CityRow[],
+  t: Dictionary,
+  locale: Locale,
+) {
+  const rawCityName = query.city
     ? cities.find((city) => city.slug === query.city)?.name
+    : undefined;
+  const cityName = rawCityName
+    ? cityNameFor(locale, rawCityName)
     : undefined;
   const countryName = query.country
     ? lookup(t.labels.country, query.country.toUpperCase(), query.country.toUpperCase())
@@ -213,9 +224,15 @@ export async function generateMetadata({
 }: {
   searchParams: SearchParams;
 }): Promise<Metadata> {
-  const t = await getT();
+  const locale = await getLocale();
+  const t = getDictionary(locale);
   const query = parseFacilityQuery(await searchParams);
-  const { cityName, countryName } = placeNames(query, await cachedCities(), t);
+  const { cityName, countryName } = placeNames(
+    query,
+    await cachedCities(),
+    t,
+    locale,
+  );
 
   const heading = headingFor(t, {
     kind: query.kind,
@@ -264,16 +281,17 @@ export default async function FacilitiesPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const t = await getT();
+  const locale = await getLocale();
+  const t = getDictionary(locale);
   const query = parseFacilityQuery(await searchParams);
   const cities = await cachedCities();
 
   const [result, facets] = await Promise.all([
     listFacilities(toFacilityFilters(query)),
-    loadFacets(query, cities, t),
+    loadFacets(query, cities, t, locale),
   ]);
 
-  const names = placeNames(query, cities, t);
+  const names = placeNames(query, cities, t, locale);
   const heading = headingFor(t, {
     kind: query.kind,
     cityName: names.cityName,
@@ -464,7 +482,7 @@ export default async function FacilitiesPage({
               >
                 {result.facilities.map((facility) => (
                   <li key={facility.slug}>
-                    <FacilityCard facility={facility} />
+                    <FacilityCard facility={facility} locale={locale} />
                   </li>
                 ))}
               </ul>

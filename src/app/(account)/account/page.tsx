@@ -10,6 +10,7 @@ import {
   lookup,
   type Locale,
 } from "@/lib/i18n/dictionaries";
+import { facilityNamesFor } from "@/lib/i18n/names";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/session";
 
@@ -76,7 +77,14 @@ export default async function AccountPage({
         overall: true,
         status: true,
         createdAt: true,
-        facility: { select: { name: true, nameLocal: true, slug: true } },
+        facility: {
+          select: {
+            name: true,
+            nameEn: true,
+            nameLocal: true,
+            slug: true,
+          },
+        },
       },
     }),
   ]);
@@ -219,54 +227,58 @@ export default async function AccountPage({
               gap: "var(--space-xs)",
             }}
           >
-            {reviews.map((review) => (
-              <li
-                key={review.id}
-                className="card"
-                style={{
-                  padding: "var(--space-s) var(--space-m)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "var(--space-2xs)",
-                }}
-              >
-                <div
+            {reviews.map((review) => {
+              const facilityNames = facilityNamesFor(locale, review.facility);
+
+              return (
+                <li
+                  key={review.id}
+                  className="card"
                   style={{
+                    padding: "var(--space-s) var(--space-m)",
                     display: "flex",
-                    alignItems: "center",
-                    gap: "var(--space-xs)",
-                    flexWrap: "wrap",
+                    flexDirection: "column",
+                    gap: "var(--space-2xs)",
                   }}
                 >
-                  <Stars value={review.overall} size={14} t={t} />
-                  <span className="stamp" style={{ border: 0, padding: 0 }}>
-                    {monthYear.format(review.createdAt)}
-                  </span>
-                  {review.status !== "PUBLISHED" ? (
-                    <span className="chip chip--warn">
-                      {lookup(
-                        t.labels.reviewStatus,
-                        review.status,
-                        t.labels.notVisible,
-                      )}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--space-xs)",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Stars value={review.overall} size={14} t={t} />
+                    <span className="stamp" style={{ border: 0, padding: 0 }}>
+                      {monthYear.format(review.createdAt)}
                     </span>
+                    {review.status !== "PUBLISHED" ? (
+                      <span className="chip chip--warn">
+                        {lookup(
+                          t.labels.reviewStatus,
+                          review.status,
+                          t.labels.notVisible,
+                        )}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <Link
+                    href={`/facilities/${review.facility.slug}#review-${review.id}`}
+                    style={{ fontWeight: 600 }}
+                  >
+                    <bdi dir="auto">{facilityNames.primary}</bdi>
+                  </Link>
+
+                  {review.title ? (
+                    <p className="prose" style={{ fontSize: "var(--step-0)" }}>
+                      <bdi dir="auto">{review.title}</bdi>
+                    </p>
                   ) : null}
-                </div>
-
-                <Link
-                  href={`/facilities/${review.facility.slug}#review-${review.id}`}
-                  style={{ fontWeight: 600 }}
-                >
-                  <bdi dir="auto">{review.facility.name}</bdi>
-                </Link>
-
-                {review.title ? (
-                  <p className="prose" style={{ fontSize: "var(--step-0)" }}>
-                    <bdi dir="auto">{review.title}</bdi>
-                  </p>
-                ) : null}
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

@@ -11,8 +11,13 @@ import {
   toFacilityFilters,
   type FacilityQuery,
 } from "@/lib/facility-query";
-import { lookup, type Dictionary } from "@/lib/i18n/dictionaries";
-import { getT } from "@/lib/i18n/server";
+import {
+  getDictionary,
+  lookup,
+  type Dictionary,
+} from "@/lib/i18n/dictionaries";
+import { cityNameFor } from "@/lib/i18n/names";
+import { getLocale } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { SortTabs } from "@/components/sort-tabs";
 import { Pagination } from "@/components/pagination";
@@ -80,7 +85,8 @@ export async function generateMetadata({
   params: Params;
   searchParams: SearchParams;
 }): Promise<Metadata> {
-  const t = await getT();
+  const locale = await getLocale();
+  const t = getDictionary(locale);
   const { slug } = await params;
   const city = await cachedCity(slug);
 
@@ -93,13 +99,14 @@ export async function generateMetadata({
 
   const query = cityUrlQuery(await searchParams);
   const base = `/cities/${city.slug}`;
-  const heading = headingFor(t, { kind: query.kind, cityName: city.name });
+  const cityName = cityNameFor(locale, city.name);
+  const heading = headingFor(t, { kind: query.kind, cityName });
 
   return {
     title:
       query.page > 1
-        ? t.cities.titleWithPage(city.name, query.page)
-        : city.name,
+        ? t.cities.titleWithPage(cityName, query.page)
+        : cityName,
     description: t.cities.metaDescriptionFor(heading),
     alternates: { canonical: buildHref(base, query) },
     robots: shouldNoIndex(query)
@@ -115,10 +122,12 @@ export default async function CityPage({
   params: Params;
   searchParams: SearchParams;
 }) {
-  const t = await getT();
+  const locale = await getLocale();
+  const t = getDictionary(locale);
   const { slug } = await params;
   const city = await cachedCity(slug);
   if (!city) notFound();
+  const cityName = cityNameFor(locale, city.name);
 
   const query = cityUrlQuery(await searchParams);
   const base = `/cities/${city.slug}`;
@@ -141,7 +150,7 @@ export default async function CityPage({
           / <bdi dir="auto">{countryName}</bdi>
         </p>
         <h1 style={{ fontSize: "var(--step-3)" }}>
-          <bdi dir="auto">{city.name}</bdi>
+          <bdi dir="auto">{cityName}</bdi>
         </h1>
         <p className="hint tnum">
           {t.common.facilityCount(city.facilityCount)}
@@ -159,7 +168,7 @@ export default async function CityPage({
         <SortTabs
           base={base}
           query={query}
-          label={t.cities.sortLabelFor(city.name)}
+          label={t.cities.sortLabelFor(cityName)}
         />
       </div>
 
@@ -168,14 +177,14 @@ export default async function CityPage({
         style={{ marginBlockStart: "var(--space-m)" }}
       >
         <h2 id="city-results" className="sr-only">
-          {t.cities.resultsHeadingFor(city.name)}
+          {t.cities.resultsHeadingFor(cityName)}
         </h2>
 
         <p role="status" className="sr-only">
           {result.total === 0
-            ? t.cities.resultsStatusEmpty(city.name)
+            ? t.cities.resultsStatusEmpty(cityName)
             : t.cities.resultsStatus(
-                city.name,
+                cityName,
                 result.total,
                 result.page,
                 result.pageCount,
@@ -184,7 +193,7 @@ export default async function CityPage({
 
         {result.facilities.length === 0 ? (
           <EmptyState
-            title={t.cities.nothingListed(city.name)}
+            title={t.cities.nothingListed(cityName)}
             primary={{ href: "/facilities/new", label: t.cities.addFacility }}
             secondary={{ href: "/cities", label: t.cities.browseOtherCities }}
           >
@@ -198,7 +207,7 @@ export default async function CityPage({
             >
               {result.facilities.map((facility) => (
                 <li key={facility.slug}>
-                  <FacilityCard facility={facility} />
+                  <FacilityCard facility={facility} locale={locale} />
                 </li>
               ))}
             </ul>

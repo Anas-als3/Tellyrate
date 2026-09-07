@@ -271,15 +271,17 @@ export function normaliseElement(el: OsmElement): NormalisedFacility | null {
   const tags = el.tags;
   if (!tags) return null;
 
-  const nameEn = tags["name:en"] ?? null;
-  const rawName = tags.name ?? nameEn ?? tags["name:ar"] ?? null;
+  const nameEn = tags["name:en"]?.trim() || null;
+  const nameAr = tags["name:ar"]?.trim() || null;
+  const rawName = tags.name ?? nameEn ?? nameAr ?? null;
   if (!rawName) return null;
 
   // Prefer a Latin-script display name where OSM offers one, since the site's
   // interface is English — but keep the local name so it stays searchable.
   const isLatin = LATIN.test(rawName);
   const name = isLatin ? rawName : (nameEn ?? rawName);
-  const nameLocal = isLatin ? null : rawName;
+  const localCandidate = nameAr ?? (isLatin ? null : rawName);
+  const nameLocal = localCandidate && localCandidate !== name ? localCandidate : null;
 
   const lat = el.lat ?? el.center?.lat ?? null;
   const lon = el.lon ?? el.center?.lon ?? null;

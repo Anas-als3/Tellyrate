@@ -12,6 +12,7 @@ import {
   lookup,
   type Locale,
 } from "@/lib/i18n/dictionaries";
+import { cityNameFor, facilityNamesFor } from "@/lib/i18n/names";
 import { FACILITY_KINDS } from "@/lib/labels";
 
 /**
@@ -35,6 +36,7 @@ const DEBOUNCE_MS = 250;
 type Candidate = {
   slug: string;
   name: string;
+  nameEn: string | null;
   nameLocal: string | null;
   kind: string;
   reviewCount: number;
@@ -188,6 +190,10 @@ export function FacilitySearch({
 
   const fieldErrors: Record<string, string> =
     state.status === "error" ? state.fieldErrors : {};
+  const duplicateNames =
+    state.status === "duplicate"
+      ? facilityNamesFor(locale, state.facility)
+      : null;
 
   return (
     <div style={{ display: "grid", gap: "var(--space-l)" }}>
@@ -240,7 +246,7 @@ export function FacilitySearch({
               <option value="">{add.everywhere}</option>
               {cities.map((city) => (
                 <option key={city.slug} value={city.slug}>
-                  {city.name}
+                  {cityNameFor(locale, city.name)}
                 </option>
               ))}
             </select>
@@ -273,70 +279,74 @@ export function FacilitySearch({
                 gap: "var(--space-xs)",
               }}
             >
-              {shown.map((candidate) => (
-                <li
-                  key={candidate.slug}
-                  className="card"
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "var(--space-s)",
-                    padding: "var(--space-s) var(--space-m)",
-                  }}
-                >
-                  <div style={{ display: "grid", gap: "var(--space-3xs)" }}>
-                    <Link
-                      href={`/facilities/${candidate.slug}`}
-                      style={{ fontWeight: 600 }}
-                    >
-                      <bdi dir="auto">{candidate.name}</bdi>
-                    </Link>
-                    {candidate.nameLocal ? (
-                      <bdi
-                        dir="auto"
-                        style={{
-                          fontSize: "var(--step--1)",
-                          color: "var(--ink-3)",
-                        }}
-                      >
-                        {candidate.nameLocal}
-                      </bdi>
-                    ) : null}
-                    <span
-                      className="hint tnum"
-                      style={{ display: "flex", gap: "var(--space-2xs)" }}
-                    >
-                      <span>
-                        {lookup(
-                          t.labels.facilityKind,
-                          candidate.kind,
-                          t.labels.facilityFallback,
-                        )}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span>{candidate.city.name}</span>
-                      <span aria-hidden="true">·</span>
-                      <span>
-                        {candidate.reviewCount === 0
-                          ? t.common.noReviewsYet
-                          : t.common.reviewCount(candidate.reviewCount)}
-                      </span>
-                    </span>
-                  </div>
+              {shown.map((candidate) => {
+                const names = facilityNamesFor(locale, candidate);
 
-                  <Link
-                    className="btn btn--small"
-                    href={`/facilities/${candidate.slug}/review`}
-                    // Five identical "Review it" links in a row are useless in
-                    // a links list; the name is what tells them apart.
-                    aria-label={`${add.reviewIt}${t.common.separator}${candidate.name}`}
+                return (
+                  <li
+                    key={candidate.slug}
+                    className="card"
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "var(--space-s)",
+                      padding: "var(--space-s) var(--space-m)",
+                    }}
                   >
-                    {add.reviewIt} <span aria-hidden="true">{forward}</span>
-                  </Link>
-                </li>
-              ))}
+                    <div style={{ display: "grid", gap: "var(--space-3xs)" }}>
+                      <Link
+                        href={`/facilities/${candidate.slug}`}
+                        style={{ fontWeight: 600 }}
+                      >
+                        <bdi dir="auto">{names.primary}</bdi>
+                      </Link>
+                      {names.secondary ? (
+                        <bdi
+                          dir="auto"
+                          style={{
+                            fontSize: "var(--step--1)",
+                            color: "var(--ink-3)",
+                          }}
+                        >
+                          {names.secondary}
+                        </bdi>
+                      ) : null}
+                      <span
+                        className="hint tnum"
+                        style={{ display: "flex", gap: "var(--space-2xs)" }}
+                      >
+                        <span>
+                          {lookup(
+                            t.labels.facilityKind,
+                            candidate.kind,
+                            t.labels.facilityFallback,
+                          )}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span>{cityNameFor(locale, candidate.city.name)}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>
+                          {candidate.reviewCount === 0
+                            ? t.common.noReviewsYet
+                            : t.common.reviewCount(candidate.reviewCount)}
+                        </span>
+                      </span>
+                    </div>
+
+                    <Link
+                      className="btn btn--small"
+                      href={`/facilities/${candidate.slug}/review`}
+                      // Five identical links in a row need the place name to
+                      // be useful in a screen reader's links list.
+                      aria-label={`${add.reviewIt}${t.common.separator}${names.primary}`}
+                    >
+                      {add.reviewIt} <span aria-hidden="true">{forward}</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}
@@ -423,14 +433,16 @@ export function FacilitySearch({
                   <Server locale={locale} text={state.message} />
                 </strong>
                 <p style={{ marginBlockStart: "var(--space-2xs)" }}>
-                  <bdi dir="auto">{state.facility.name}</bdi>
-                  {state.facility.nameLocal ? (
+                  <bdi dir="auto">{duplicateNames?.primary}</bdi>
+                  {duplicateNames?.secondary ? (
                     <>
                       {" — "}
-                      <bdi dir="auto">{state.facility.nameLocal}</bdi>
+                      <bdi dir="auto">{duplicateNames.secondary}</bdi>
                     </>
                   ) : null}{" "}
-                  {add.duplicateIn(state.facility.cityName)}{" "}
+                  {add.duplicateIn(
+                    cityNameFor(locale, state.facility.cityName),
+                  )}{" "}
                   <span className="tnum">
                     {t.common.reviewCount(state.facility.reviewCount)}
                   </span>
@@ -529,9 +541,9 @@ export function FacilitySearch({
                   </option>
                   {cities.map((city) => (
                     <option key={city.slug} value={city.slug}>
-                      {city.name}
+                      {cityNameFor(locale, city.name)}
                       {t.common.separator}
-                      {city.country}
+                      {lookup(t.labels.country, city.countryCode, city.country)}
                     </option>
                   ))}
                 </select>

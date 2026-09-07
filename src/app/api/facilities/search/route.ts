@@ -1,5 +1,6 @@
 import { issueSearchToken } from "@/lib/actions/facilities";
 import { prisma } from "@/lib/db";
+import { facilitySearchConditions } from "@/lib/facility-search-query";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { getCurrentUser } from "@/lib/session";
 import { fold } from "@/lib/slug";
@@ -28,6 +29,7 @@ const MIN_QUERY_LENGTH = 2;
 export type FacilitySearchCandidate = {
   slug: string;
   name: string;
+  nameEn: string | null;
   nameLocal: string | null;
   kind: string;
   reviewCount: number;
@@ -75,11 +77,7 @@ export async function GET(request: Request) {
         // hour ago has to be findable, or the next person adds it again.
         status: { in: ["PUBLISHED", "PENDING"] },
         ...(citySlug ? { city: { slug: citySlug } } : {}),
-        OR: [
-          { name: { contains: query, mode: "insensitive" } },
-          { nameEn: { contains: query, mode: "insensitive" } },
-          { nameLocal: { contains: query } },
-        ],
+        OR: facilitySearchConditions(query),
       },
       take: CANDIDATE_POOL,
       orderBy: [{ reviewCount: "desc" }, { name: "asc" }],
@@ -121,6 +119,7 @@ export async function GET(request: Request) {
       .map(({ row }) => ({
         slug: row.slug,
         name: row.name,
+        nameEn: row.nameEn,
         nameLocal: row.nameLocal,
         kind: row.kind,
         reviewCount: row.reviewCount,

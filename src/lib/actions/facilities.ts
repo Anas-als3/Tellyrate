@@ -25,6 +25,7 @@ export type FacilityFieldErrors = Record<string, string>;
 export type DuplicateFacility = {
   slug: string;
   name: string;
+  nameEn: string | null;
   nameLocal: string | null;
   cityName: string;
   reviewCount: number;
@@ -259,6 +260,7 @@ async function findExistingFacility(
       return {
         slug: candidate.slug,
         name: candidate.name,
+        nameEn: candidate.nameEn,
         nameLocal: candidate.nameLocal,
         cityName: candidate.city.name,
         reviewCount: candidate.reviewCount,

@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { Stars } from "@/components/stars";
-import { lookup } from "@/lib/i18n/dictionaries";
-import { getT } from "@/lib/i18n/server";
+import {
+  getDictionary,
+  lookup,
+  type Locale,
+} from "@/lib/i18n/dictionaries";
+import { cityNameFor, facilityNamesFor } from "@/lib/i18n/names";
 
 export type FacilityCardData = {
   slug: string;
   name: string;
+  nameEn: string | null;
   nameLocal: string | null;
   kind: string;
   reviewCount: number;
@@ -13,12 +18,16 @@ export type FacilityCardData = {
   city: { name: string; slug: string; countryCode: string };
 };
 
-export async function FacilityCard({
+export function FacilityCard({
   facility,
+  locale,
 }: {
   facility: FacilityCardData;
+  locale: Locale;
 }) {
-  const t = await getT();
+  const t = getDictionary(locale);
+  const names = facilityNamesFor(locale, facility);
+  const cityName = cityNameFor(locale, facility.city.name);
   const rated = facility.reviewCount > 0;
 
   return (
@@ -42,16 +51,16 @@ export async function FacilityCard({
         >
           {/* Names arrive from OpenStreetMap in either script, so the isolate
               has to take its direction from the text rather than the page. */}
-          <bdi dir="auto">{facility.name}</bdi>
+          <bdi dir="auto">{names.primary}</bdi>
         </Link>
       </h3>
 
-      {facility.nameLocal ? (
+      {names.secondary ? (
         <bdi
           dir="auto"
           style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}
         >
-          {facility.nameLocal}
+          {names.secondary}
         </bdi>
       ) : null}
 
@@ -64,7 +73,7 @@ export async function FacilityCard({
           marginBlockStart: "auto",
         }}
       >
-        <bdi dir="auto">{facility.city.name}</bdi>
+        <bdi dir="auto">{cityName}</bdi>
       </Link>
 
       <div
@@ -78,7 +87,7 @@ export async function FacilityCard({
       >
         {rated ? (
           <>
-            <Stars value={facility.ratingAvg} size={14} />
+            <Stars value={facility.ratingAvg} size={14} t={t} />
             <span
               className="tnum"
               style={{ fontSize: "var(--step--1)", color: "var(--ink-2)" }}

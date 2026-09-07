@@ -9,7 +9,8 @@ import {
   lookup,
   type Dictionary,
 } from "@/lib/i18n/dictionaries";
-import { getLocale, getT } from "@/lib/i18n/server";
+import { cityNameFor, facilityNamesFor } from "@/lib/i18n/names";
+import { getLocale } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { Stars } from "@/components/stars";
 
@@ -37,6 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const facilityCardSelect = {
   slug: true,
   name: true,
+  nameEn: true,
   nameLocal: true,
   kind: true,
   reviewCount: true,
@@ -51,7 +53,8 @@ const LATEST_REVIEW_COUNT = 6;
 const RATED_THRESHOLD = 3;
 
 export default async function HomePage() {
-  const t = await getT();
+  const locale = await getLocale();
+  const t = getDictionary(locale);
 
   const [counts, cities, mostReviewed, highestRated, latestReviews] =
     await Promise.all([
@@ -81,7 +84,13 @@ export default async function HomePage() {
           field: true,
           trainingYear: true,
           facility: {
-            select: { slug: true, name: true, reviewCount: true },
+            select: {
+              slug: true,
+              name: true,
+              nameEn: true,
+              nameLocal: true,
+              reviewCount: true,
+            },
           },
         },
       }),
@@ -193,7 +202,7 @@ export default async function HomePage() {
               {topCities.map((city) => (
                 <li key={city.slug}>
                   <Link href={`/cities/${city.slug}`} className="chip">
-                    <bdi dir="auto">{city.name}</bdi>
+                    <bdi dir="auto">{cityNameFor(locale, city.name)}</bdi>
                     <span className="tnum" style={{ color: "var(--ink-3)" }}>
                       {formatNumber(city.facilityCount)}
                     </span>
@@ -221,7 +230,11 @@ export default async function HomePage() {
         >
           <div className="grid-cards">
             {mostReviewed.map((facility) => (
-              <FacilityCard key={facility.slug} facility={facility} />
+              <FacilityCard
+                key={facility.slug}
+                facility={facility}
+                locale={locale}
+              />
             ))}
           </div>
         </Section>
@@ -235,7 +248,11 @@ export default async function HomePage() {
         >
           <div className="grid-cards">
             {recentlyAdded.map((facility) => (
-              <FacilityCard key={facility.slug} facility={facility} />
+              <FacilityCard
+                key={facility.slug}
+                facility={facility}
+                locale={locale}
+              />
             ))}
           </div>
         </Section>
@@ -253,7 +270,11 @@ export default async function HomePage() {
         >
           <div className="grid-cards">
             {highestRated.map((facility) => (
-              <FacilityCard key={facility.slug} facility={facility} />
+              <FacilityCard
+                key={facility.slug}
+                facility={facility}
+                locale={locale}
+              />
             ))}
           </div>
         </Section>
@@ -274,7 +295,12 @@ export default async function HomePage() {
             }}
           >
             {latestReviews.map((review) => (
-              <ReviewPreview key={review.id} review={review} t={t} />
+              <ReviewPreview
+                key={review.id}
+                review={review}
+                t={t}
+                locale={locale}
+              />
             ))}
           </div>
         ) : (
@@ -420,17 +446,26 @@ type ReviewPreviewData = {
   body: string;
   field: string;
   trainingYear: number | null;
-  facility: { slug: string; name: string; reviewCount: number };
+  facility: {
+    slug: string;
+    name: string;
+    nameEn: string | null;
+    nameLocal: string | null;
+    reviewCount: number;
+  };
 };
 
 function ReviewPreview({
   review,
   t,
+  locale,
 }: {
   review: ReviewPreviewData;
   t: Dictionary;
+  locale: "en" | "ar";
 }) {
   const stamp = rotationStamp(review.trainingYear, review.facility.reviewCount);
+  const facilityNames = facilityNamesFor(locale, review.facility);
   const field = lookup(
     t.labels.studentField,
     review.field,
@@ -452,7 +487,7 @@ function ReviewPreview({
         {stamp ? `${t.common.separator}${stamp}` : ""}
       </span>
 
-      <Stars value={review.overall} size={14} showValue />
+      <Stars value={review.overall} size={14} showValue t={t} />
 
       {review.title ? (
         <h3 style={{ fontSize: "var(--step-1)" }}>
@@ -469,7 +504,7 @@ function ReviewPreview({
           href={`/facilities/${review.facility.slug}`}
           style={{ color: "var(--ink-2)", textDecoration: "none" }}
         >
-          <bdi dir="auto">{review.facility.name}</bdi>
+          <bdi dir="auto">{facilityNames.primary}</bdi>
         </Link>
       </div>
     </article>

@@ -1,5 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { facilitySearchConditions } from "@/lib/facility-search-query";
+import { citySearchName } from "@/lib/i18n/names";
 import { fold } from "@/lib/slug";
 import {
   DEFAULT_MEAN_RATING,
@@ -68,12 +70,7 @@ function facilityWhere(filters: FacilityFilters): Prisma.FacilityWhereInput {
     if (q) {
       // Match across the display name and both localised names, so an Arabic
       // or English spelling finds the same place.
-      where.OR = [
-        { name: { contains: q, mode: "insensitive" } },
-        { nameEn: { contains: q, mode: "insensitive" } },
-        { nameLocal: { contains: q } },
-        { city: { name: { contains: q, mode: "insensitive" } } },
-      ];
+      where.OR = facilitySearchConditions(q, { includeCity: true });
     }
   }
 
@@ -94,6 +91,7 @@ export async function listFacilities(filters: FacilityFilters) {
         id: true,
         slug: true,
         name: true,
+        nameEn: true,
         nameLocal: true,
         kind: true,
         reviewCount: true,
@@ -180,7 +178,14 @@ export async function listCities(options: { query?: string; countryCode?: string
   const where: Prisma.CityWhereInput = { facilityCount: { gt: 0 } };
   if (options.countryCode) where.countryCode = options.countryCode;
   if (options.query?.trim()) {
-    where.nameFold = { contains: fold(options.query) };
+    const query = options.query.trim();
+    const englishCity = citySearchName(query);
+    where.OR = [
+      { nameFold: { contains: fold(query) } },
+      ...(englishCity
+        ? [{ name: { equals: englishCity, mode: "insensitive" as const } }]
+        : []),
+    ];
   }
 
   return prisma.city.findMany({

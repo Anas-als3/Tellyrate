@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PAGE_SIZE, listCities, listFacilities } from "@/lib/queries";
 import { MAX_QUERY_LENGTH, parseFacilityQuery } from "@/lib/facility-query";
-import { formatNumber, lookup, type Dictionary } from "@/lib/i18n/dictionaries";
-import { getT } from "@/lib/i18n/server";
+import {
+  formatNumber,
+  getDictionary,
+  lookup,
+  type Dictionary,
+} from "@/lib/i18n/dictionaries";
+import { cityNameFor } from "@/lib/i18n/names";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { EmptyState } from "@/components/empty-state";
 
@@ -67,7 +73,8 @@ export default async function SearchPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const t = await getT();
+  const locale = await getLocale();
+  const t = getDictionary(locale);
   // Reading costs nothing and is never gated, so no rate limit here — a
   // throttle on search would only ever punish someone browsing.
   const { q } = parseFacilityQuery(await searchParams);
@@ -166,7 +173,7 @@ export default async function SearchPage({
                   }}
                 >
                   <span style={{ fontWeight: 600 }}>
-                    <bdi dir="auto">{city.name}</bdi>
+                    <bdi dir="auto">{cityNameFor(locale, city.name)}</bdi>
                   </span>
                   <span
                     className="tnum"
@@ -223,7 +230,7 @@ export default async function SearchPage({
           >
             {facilityResult.facilities.map((facility) => (
               <li key={facility.slug}>
-                <FacilityCard facility={facility} />
+                <FacilityCard facility={facility} locale={locale} />
               </li>
             ))}
           </ul>

@@ -5,7 +5,8 @@ import { cache } from "react";
 import { ReviewForm } from "@/components/review-form";
 import { prisma } from "@/lib/db";
 import { getDictionary, lookup } from "@/lib/i18n/dictionaries";
-import { getLocale, getT } from "@/lib/i18n/server";
+import { cityNameFor, facilityNamesFor } from "@/lib/i18n/names";
+import { getLocale } from "@/lib/i18n/server";
 import { getFacilityBySlug } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
 
@@ -30,14 +31,18 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const [facility, t] = await Promise.all([loadFacility(slug), getT()]);
+  const [facility, locale] = await Promise.all([loadFacility(slug), getLocale()]);
+  const t = getDictionary(locale);
+  const facilityName = facility
+    ? facilityNamesFor(locale, facility).primary
+    : null;
 
   return {
-    title: facility
-      ? t.reviewForm.metaTitleFor(facility.name)
+    title: facilityName
+      ? t.reviewForm.metaTitleFor(facilityName)
       : t.reviewForm.metaTitle,
-    description: facility
-      ? t.reviewForm.metaDescriptionFor(facility.name)
+    description: facilityName
+      ? t.reviewForm.metaDescriptionFor(facilityName)
       : undefined,
     // A form has nothing to index, and keeping it out of search results means
     // one fewer way for a review to be found by its author's own words.
@@ -57,6 +62,8 @@ export default async function WriteReviewPage({ params }: PageProps) {
   if (!facility) notFound();
 
   const t = getDictionary(locale);
+  const names = facilityNamesFor(locale, facility);
+  const cityName = cityNameFor(locale, facility.city.name);
 
   const existing = user
     ? await prisma.review.findFirst({
@@ -95,7 +102,7 @@ export default async function WriteReviewPage({ params }: PageProps) {
           <Link href={`/facilities/${facility.slug}`}>
             <span aria-hidden="true">{backArrow}</span> {t.common.back}
             {t.common.separator}
-            <bdi dir="auto">{facility.name}</bdi>
+            <bdi dir="auto">{names.primary}</bdi>
           </Link>
         </nav>
 
@@ -104,7 +111,7 @@ export default async function WriteReviewPage({ params }: PageProps) {
             {existing ? t.facility.editYourReview : t.facility.writeReview}
           </p>
           <h1 style={{ fontSize: "var(--step-3)" }}>
-            <bdi dir="auto">{facility.name}</bdi>
+            <bdi dir="auto">{names.primary}</bdi>
           </h1>
           <p className="hint">
             {lookup(
@@ -114,12 +121,12 @@ export default async function WriteReviewPage({ params }: PageProps) {
             )}
             {t.common.separator}
             <Link href={`/cities/${facility.city.slug}`}>
-              {facility.city.name}
+              {cityName}
             </Link>
-            {facility.nameLocal ? (
+            {names.secondary ? (
               <>
                 {t.common.separator}
-                <bdi dir="auto">{facility.nameLocal}</bdi>
+                <bdi dir="auto">{names.secondary}</bdi>
               </>
             ) : null}
           </p>
@@ -160,7 +167,7 @@ export default async function WriteReviewPage({ params }: PageProps) {
         </div>
 
         <ReviewForm
-          facility={{ slug: facility.slug, name: facility.name }}
+          facility={{ slug: facility.slug, name: names.primary }}
           locale={locale}
           username={user?.username ?? null}
           mode={existing ? "edit" : "create"}
