@@ -720,16 +720,24 @@ textarea {
 
 /* Sort controls are real links styled as chart tabs, so they work without JS
    and each ordering has its own shareable, crawlable URL. */
+/**
+ * Sort controls. They wrap rather than scroll.
+ *
+ * These were a horizontal scroller, which was wrong twice over on a phone.
+ * `overflow-x: auto` does not stay on one axis — the spec makes the other axis
+ * compute to `auto` as well, so the strip became scrollable up and down too,
+ * swallowing the page's own scroll whenever a thumb landed on it. And a
+ * scroller hides options: a reader has to discover that "Name (A-Z)" exists.
+ * Four short labels wrap onto two lines and are all visible at once.
+ */
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-3xs);
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
   border-block-end: 1px solid var(--line);
 }
 
 .tab {
-  scroll-snap-align: start;
   padding: var(--space-xs) var(--space-s);
   border: 1px solid transparent;
   border-block-end: none;
