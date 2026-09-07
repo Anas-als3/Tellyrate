@@ -333,13 +333,22 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
         >
           {/* The country was here until every facility on the site was in the
               same one. The region is the level that actually tells a reader
-              where this is — and where to look for alternatives to it. */}
-          <li>
-            <Link href={`/regions/${regionSlug}`}>
-              <bdi dir="auto">{regionName}</bdi>
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
+              where this is — and where to look for alternatives to it.
+
+              Five regions share a name with their capital, so Riyadh would
+              otherwise read "Riyadh / Riyadh / …" and look like a bug. The
+              city link is the more useful of the two, so the region step is
+              the one that goes. */}
+          {regionName === cityName ? null : (
+            <>
+              <li>
+                <Link href={`/regions/${regionSlug}`}>
+                  <bdi dir="auto">{regionName}</bdi>
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+            </>
+          )}
           <li>
             <Link href={`/cities/${facility.city.slug}`}>
               <bdi dir="auto">{cityName}</bdi>
