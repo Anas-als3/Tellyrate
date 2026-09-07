@@ -17,7 +17,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaClient, type Region as CityRegion } from "../src/generated/prisma/client";
 import {
   buildBboxQuery,
   haversineKm,
@@ -31,6 +31,7 @@ type SeedCity = {
   name: string;
   country: string;
   countryCode: string;
+  region: string;
   lat: number;
   lon: number;
   bbox: [number, number, number, number];
@@ -130,6 +131,7 @@ async function main() {
         nameFold: fold(city.name),
         country: city.country,
         countryCode: city.countryCode,
+        region: city.region as SeedCity["region"] & CityRegion,
         lat: city.lat,
         lon: city.lon,
         bboxSouth: city.bbox[0],
@@ -138,6 +140,7 @@ async function main() {
         bboxEast: city.bbox[3],
       },
       update: {
+        region: city.region as SeedCity["region"] & CityRegion,
         lat: city.lat,
         lon: city.lon,
         bboxSouth: city.bbox[0],

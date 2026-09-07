@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { getSiteCounts, listCities } from "@/lib/queries";
+import { getSiteCounts } from "@/lib/queries";
+import { listRegions } from "@/lib/regions";
 import { rotationStamp } from "@/lib/labels";
 import {
   formatNumber,
@@ -9,7 +10,7 @@ import {
   lookup,
   type Dictionary,
 } from "@/lib/i18n/dictionaries";
-import { cityNameFor, facilityNamesFor } from "@/lib/i18n/names";
+import { facilityNamesFor } from "@/lib/i18n/names";
 import { getLocale } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { Stars } from "@/components/stars";
@@ -56,10 +57,10 @@ export default async function HomePage() {
   const locale = await getLocale();
   const t = getDictionary(locale);
 
-  const [counts, cities, mostReviewed, highestRated, latestReviews] =
+  const [counts, regions, mostReviewed, highestRated, latestReviews] =
     await Promise.all([
       getSiteCounts(),
-      listCities(),
+      listRegions(),
       prisma.facility.findMany({
         where: { status: "PUBLISHED", reviewCount: { gt: 0 } },
         orderBy: [{ reviewCount: "desc" }, { bayesScore: "desc" }, { name: "asc" }],
@@ -107,10 +108,6 @@ export default async function HomePage() {
           select: facilityCardSelect,
         })
       : [];
-
-  const topCities = [...cities]
-    .sort((a, b) => b.facilityCount - a.facilityCount)
-    .slice(0, 6);
 
   return (
     <div className="page" style={{ paddingBlockEnd: "var(--space-2xl)" }}>
@@ -186,32 +183,43 @@ export default async function HomePage() {
           </div>
         </form>
 
-        {topCities.length > 0 ? (
-          <div style={{ marginBlockStart: "var(--space-l)" }}>
-            <span className="label">{t.home.browseByCity}</span>
-            <ul
-              style={{
-                listStyle: "none",
-                margin: "var(--space-xs) 0 0",
-                padding: 0,
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "var(--space-2xs)",
-              }}
-            >
-              {topCities.map((city) => (
-                <li key={city.slug}>
-                  <Link href={`/cities/${city.slug}`} className="chip">
-                    <bdi dir="auto">{cityNameFor(locale, city.name)}</bdi>
-                    <span className="tnum" style={{ color: "var(--ink-3)" }}>
-                      {formatNumber(city.facilityCount)}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        {/* Six cities used to sit here. A student weighing a training year
+            starts a level up — "somewhere in Qassim" comes before Buraydah —
+            and thirteen regions cover the whole country, where six cities
+            silently left most of it out. */}
+        <div style={{ marginBlockStart: "var(--space-l)" }}>
+          {/* TODO(dictionary): `home.browseByRegion`. */}
+          <Link
+            className="label"
+            href="/regions"
+            style={{ color: "var(--brand-ink)", textDecoration: "none" }}
+          >
+            {t.home.browseByCity}
+          </Link>
+          <ul
+            style={{
+              listStyle: "none",
+              margin: "var(--space-xs) 0 0",
+              padding: 0,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "var(--space-2xs)",
+            }}
+          >
+            {regions.map((region) => (
+              <li key={region.slug}>
+                <Link href={`/regions/${region.slug}`} className="chip">
+                  <bdi dir="auto">
+                    {lookup(t.labels.region, region.key, region.key)}
+                  </bdi>
+                  <span className="tnum" style={{ color: "var(--ink-3)" }}>
+                    {formatNumber(region.facilityCount)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <p
           className="hint tnum"

@@ -1,275 +1,5 @@
 [
   {
-    "name": "Riyadh",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 23.333333,
-    "lon": 45.333333,
-    "bbox": [
-      19.20833,
-      41.68113,
-      27.7021,
-      48.2582
-    ],
-    "osmType": "relation",
-    "osmId": 3678409
-  },
-  {
-    "name": "Jeddah",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 21.5504432,
-    "lon": 39.1742363,
-    "bbox": [
-      21.39044,
-      39.01424,
-      21.71044,
-      39.33424
-    ],
-    "osmType": "node",
-    "osmId": 1933393717
-  },
-  {
-    "name": "Mecca",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 21.420847,
-    "lon": 39.826869,
-    "bbox": [
-      21.11982,
-      39.50586,
-      21.84804,
-      40.47561
-    ],
-    "osmType": "relation",
-    "osmId": 12429517
-  },
-  {
-    "name": "Medina",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 25.1354363,
-    "lon": 39.162594,
-    "bbox": [
-      22.51971,
-      37.084,
-      27.47331,
-      42.15873
-    ],
-    "osmType": "relation",
-    "osmId": 3679869
-  },
-  {
-    "name": "Dammam",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.4367824,
-    "lon": 50.1039991,
-    "bbox": [
-      26.27678,
-      49.944,
-      26.59678,
-      50.264
-    ],
-    "osmType": "node",
-    "osmId": 287865393
-  },
-  {
-    "name": "Al Khobar",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.3039999,
-    "lon": 50.1960237,
-    "bbox": [
-      26.144,
-      50.03602,
-      26.464,
-      50.35602
-    ],
-    "osmType": "node",
-    "osmId": 32441763
-  },
-  {
-    "name": "Dhahran",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.2966528,
-    "lon": 50.1202146,
-    "bbox": [
-      26.13665,
-      49.96021,
-      26.45665,
-      50.28021
-    ],
-    "osmType": "node",
-    "osmId": 447805356
-  },
-  {
-    "name": "Taif",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 21.2702801,
-    "lon": 40.4158308,
-    "bbox": [
-      21.11028,
-      40.25583,
-      21.43028,
-      40.57583
-    ],
-    "osmType": "node",
-    "osmId": 1236468526
-  },
-  {
-    "name": "Buraydah",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.9252275,
-    "lon": 43.6378715,
-    "bbox": [
-      25.07413,
-      42.35376,
-      27.70827,
-      44.45119
-    ],
-    "osmType": "relation",
-    "osmId": 12406852
-  },
-  {
-    "name": "Unaizah",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.0908582,
-    "lon": 43.9864354,
-    "bbox": [
-      25.92458,
-      43.84479,
-      26.24458,
-      44.16479
-    ],
-    "osmType": "way",
-    "osmId": 785290146
-  },
-  {
-    "name": "Tabuk",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 28.3251866,
-    "lon": 37.6328648,
-    "bbox": [
-      24.56184,
-      34.49441,
-      29.97559,
-      39.94176
-    ],
-    "osmType": "relation",
-    "osmId": 3679867
-  },
-  {
-    "name": "Abha",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 18.4031209,
-    "lon": 42.4724333,
-    "bbox": [
-      17.48522,
-      41.02411,
-      19.08534,
-      43.53365
-    ],
-    "osmType": "relation",
-    "osmId": 12436473
-  },
-  {
-    "name": "Khamis Mushait",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 18.3,
-    "lon": 42.733333,
-    "bbox": [
-      18.14,
-      42.57333,
-      18.46,
-      42.89333
-    ],
-    "osmType": "node",
-    "osmId": 983083570
-  },
-  {
-    "name": "Najran",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 18,
-    "lon": 45.666667,
-    "bbox": [
-      16.95,
-      43.59569,
-      19.44889,
-      52.00175
-    ],
-    "osmType": "relation",
-    "osmId": 3667317
-  },
-  {
-    "name": "Jazan",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 17.333333,
-    "lon": 42.666667,
-    "bbox": [
-      16.37953,
-      41.45691,
-      18.05874,
-      43.3365
-    ],
-    "osmType": "relation",
-    "osmId": 3679903
-  },
-  {
-    "name": "Hail",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 27.8289499,
-    "lon": 40.8183065,
-    "bbox": [
-      26.73508,
-      39.11418,
-      28.92316,
-      42.29669
-    ],
-    "osmType": "relation",
-    "osmId": 12413060
-  },
-  {
-    "name": "Arar",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 30.916667,
-    "lon": 41.5,
-    "bbox": [
-      30.54625,
-      39.5557,
-      31.99403,
-      42.216
-    ],
-    "osmType": "relation",
-    "osmId": 12413339
-  },
-  {
-    "name": "Sakakah",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 29.9784008,
-    "lon": 40.2047701,
-    "bbox": [
-      28.91363,
-      39.48188,
-      30.96334,
-      41.99684
-    ],
-    "osmType": "relation",
-    "osmId": 12413342
-  },
-  {
     "name": "Al Bahah",
     "country": "Saudi Arabia",
     "countryCode": "SA",
@@ -282,352 +12,24 @@
       42.13005
     ],
     "osmType": "relation",
-    "osmId": 3679888
+    "osmId": 3679888,
+    "region": "AL_BAHAH"
   },
   {
-    "name": "Yanbu",
+    "name": "Al Mandaq",
     "country": "Saudi Arabia",
     "countryCode": "SA",
-    "lat": 24.252616,
-    "lon": 38.2536615,
+    "region": "AL_BAHAH",
+    "lat": 20.2473951,
+    "lon": 41.2360918,
     "bbox": [
-      23.64392,
-      37.36689,
-      24.86148,
-      38.90032
+      20.04039,
+      41.12035,
+      20.4553,
+      41.36035
     ],
     "osmType": "relation",
-    "osmId": 12429009
-  },
-  {
-    "name": "Al Kharj",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 23.8304401,
-    "lon": 47.6840134,
-    "bbox": [
-      23.07291,
-      46.93071,
-      24.58403,
-      48.15413
-    ],
-    "osmType": "relation",
-    "osmId": 12423676
-  },
-  {
-    "name": "Hafar Al Batin",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 28.4328084,
-    "lon": 45.9627527,
-    "bbox": [
-      28.27281,
-      45.80275,
-      28.59281,
-      46.12275
-    ],
-    "osmType": "node",
-    "osmId": 983083568
-  },
-  {
-    "name": "Qatif",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.6078257,
-    "lon": 49.9196611,
-    "bbox": [
-      26.44811,
-      49.74957,
-      26.77088,
-      50.09077
-    ],
-    "osmType": "relation",
-    "osmId": 12403818
-  },
-  {
-    "name": "Hofuf",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 25.3696585,
-    "lon": 49.5865224,
-    "bbox": [
-      25.20966,
-      49.42652,
-      25.52966,
-      49.74652
-    ],
-    "osmType": "node",
-    "osmId": 208501048
-  },
-  {
-    "name": "Jubail",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 27.0006968,
-    "lon": 49.6532161,
-    "bbox": [
-      26.8407,
-      49.49322,
-      27.1607,
-      49.81322
-    ],
-    "osmType": "node",
-    "osmId": 38903292
-  },
-  {
-    "name": "Bisha",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 20,
-    "lon": 42.6,
-    "bbox": [
-      18.9891,
-      41.87327,
-      20.59168,
-      43.11121
-    ],
-    "osmType": "relation",
-    "osmId": 12436475
-  },
-  {
-    "name": "Al Qunfudhah",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 19.1264288,
-    "lon": 41.0788747,
-    "bbox": [
-      18.50827,
-      40.03095,
-      19.83711,
-      41.6249
-    ],
-    "osmType": "relation",
-    "osmId": 12429518
-  },
-  {
-    "name": "Rabigh",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 22.7989669,
-    "lon": 39.0335547,
-    "bbox": [
-      22.30247,
-      38.65977,
-      23.49728,
-      39.88517
-    ],
-    "osmType": "relation",
-    "osmId": 12429524
-  },
-  {
-    "name": "Al Majmaah",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.5411549,
-    "lon": 45.777715,
-    "bbox": [
-      25.3811,
-      44.82173,
-      27.7021,
-      46.63197
-    ],
-    "osmType": "relation",
-    "osmId": 12423675
-  },
-  {
-    "name": "Shaqra",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 25.248333,
-    "lon": 45.252778,
-    "bbox": [
-      24.91571,
-      44.62229,
-      25.81044,
-      45.75437
-    ],
-    "osmType": "relation",
-    "osmId": 12423677
-  },
-  {
-    "name": "Ad Dawadimi",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 24.494167,
-    "lon": 44.383333,
-    "bbox": [
-      24.33417,
-      44.22333,
-      24.65417,
-      44.54333
-    ],
-    "osmType": "node",
-    "osmId": 1236695687
-  },
-  {
-    "name": "Az Zulfi",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.2995806,
-    "lon": 44.8151967,
-    "bbox": [
-      25.97023,
-      44.38393,
-      27.01695,
-      45.09648
-    ],
-    "osmType": "relation",
-    "osmId": 12423674
-  },
-  {
-    "name": "Qurayyat",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 30.8263242,
-    "lon": 37.9659429,
-    "bbox": [
-      29.90521,
-      37.00617,
-      31.7451,
-      38.40298
-    ],
-    "osmType": "relation",
-    "osmId": 12413343
-  },
-  {
-    "name": "Wadi ad-Dawasir",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 20.4602516,
-    "lon": 44.799553,
-    "bbox": [
-      19.2687,
-      43.42441,
-      22.57712,
-      45.81256
-    ],
-    "osmType": "relation",
-    "osmId": 12423662
-  },
-  {
-    "name": "Sharurah",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 17.491225,
-    "lon": 47.1126055,
-    "bbox": [
-      16.95,
-      45.54139,
-      19.3333,
-      52.00175
-    ],
-    "osmType": "relation",
-    "osmId": 12424984
-  },
-  {
-    "name": "Ras Tanura",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.707417,
-    "lon": 50.067352,
-    "bbox": [
-      26.54742,
-      49.90735,
-      26.86742,
-      50.22735
-    ],
-    "osmType": "node",
-    "osmId": 1237805652
-  },
-  {
-    "name": "Safwa",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.6484641,
-    "lon": 49.9466586,
-    "bbox": [
-      26.48846,
-      49.78666,
-      26.80846,
-      50.10666
-    ],
-    "osmType": "node",
-    "osmId": 11361447139
-  },
-  {
-    "name": "Turaif",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 31.6725877,
-    "lon": 38.6615532,
-    "bbox": [
-      31.51259,
-      38.50155,
-      31.83259,
-      38.82155
-    ],
-    "osmType": "node",
-    "osmId": 1236745370
-  },
-  {
-    "name": "Duba",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 27.5626296,
-    "lon": 36.092896,
-    "bbox": [
-      26.813,
-      34.8991,
-      28.31302,
-      36.73169
-    ],
-    "osmType": "relation",
-    "osmId": 12420157
-  },
-  {
-    "name": "Al Wajh",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 26.6270634,
-    "lon": 36.66529,
-    "bbox": [
-      25.75675,
-      36.04105,
-      27.49729,
-      37.69519
-    ],
-    "osmType": "relation",
-    "osmId": 12420156
-  },
-  {
-    "name": "Afif",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 23.9023697,
-    "lon": 42.9150847,
-    "bbox": [
-      22.41814,
-      41.68113,
-      24.7334,
-      43.68309
-    ],
-    "osmType": "relation",
-    "osmId": 12423683
-  },
-  {
-    "name": "Al Quway'iyah",
-    "country": "Saudi Arabia",
-    "countryCode": "SA",
-    "lat": 24.065056,
-    "lon": 45.284381,
-    "bbox": [
-      21.92795,
-      43.26991,
-      24.67027,
-      45.97166
-    ],
-    "osmType": "relation",
-    "osmId": 12423672
+    "osmId": 12429805
   },
   {
     "name": "Baljurashi",
@@ -642,7 +44,152 @@
       41.97897
     ],
     "osmType": "relation",
-    "osmId": 12429798
+    "osmId": 12429798,
+    "region": "AL_BAHAH"
+  },
+  {
+    "name": "Qilwah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "AL_BAHAH",
+    "lat": 19.9278451,
+    "lon": 41.1542169,
+    "bbox": [
+      19.67165,
+      40.95031,
+      20.18375,
+      41.43864
+    ],
+    "osmType": "relation",
+    "osmId": 12429801
+  },
+  {
+    "name": "Dumat al-Jandal",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "AL_JAWF",
+    "lat": 29.8059219,
+    "lon": 39.866726,
+    "bbox": [
+      28.36794,
+      38.72609,
+      30.98149,
+      40.93727
+    ],
+    "osmType": "relation",
+    "osmId": 12413345
+  },
+  {
+    "name": "Qurayyat",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 30.8263242,
+    "lon": 37.9659429,
+    "bbox": [
+      29.90521,
+      37.00617,
+      31.7451,
+      38.40298
+    ],
+    "osmType": "relation",
+    "osmId": 12413343,
+    "region": "AL_JAWF"
+  },
+  {
+    "name": "Sakakah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 29.9784008,
+    "lon": 40.2047701,
+    "bbox": [
+      28.91363,
+      39.48188,
+      30.96334,
+      41.99684
+    ],
+    "osmType": "relation",
+    "osmId": 12413342,
+    "region": "AL_JAWF"
+  },
+  {
+    "name": "Tabarjal",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "AL_JAWF",
+    "lat": 30.5006757,
+    "lon": 38.2165051,
+    "bbox": [
+      29.00449,
+      37.45745,
+      30.94399,
+      39.23234
+    ],
+    "osmType": "relation",
+    "osmId": 12413344
+  },
+  {
+    "name": "Abha",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 18.4031209,
+    "lon": 42.4724333,
+    "bbox": [
+      17.48522,
+      41.02411,
+      19.08534,
+      43.53365
+    ],
+    "osmType": "relation",
+    "osmId": 12436473,
+    "region": "ASIR"
+  },
+  {
+    "name": "Ahad Rafidah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "ASIR",
+    "lat": 18.1814093,
+    "lon": 42.8413581,
+    "bbox": [
+      18.06141,
+      42.72136,
+      18.30141,
+      42.96136
+    ],
+    "osmType": "node",
+    "osmId": 7700248106
+  },
+  {
+    "name": "Bisha",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 20,
+    "lon": 42.6,
+    "bbox": [
+      18.9891,
+      41.87327,
+      20.59168,
+      43.11121
+    ],
+    "osmType": "relation",
+    "osmId": 12436475,
+    "region": "ASIR"
+  },
+  {
+    "name": "Khamis Mushait",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 18.3,
+    "lon": 42.733333,
+    "bbox": [
+      18.14,
+      42.57333,
+      18.46,
+      42.89333
+    ],
+    "osmType": "node",
+    "osmId": 983083570,
+    "region": "ASIR"
   },
   {
     "name": "Mahayil",
@@ -657,6 +204,1095 @@
       42.20889
     ],
     "osmType": "node",
-    "osmId": 1236688965
+    "osmId": 1236688965,
+    "region": "ASIR"
+  },
+  {
+    "name": "Rijal Almaa",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "ASIR",
+    "lat": 18.2124897,
+    "lon": 42.2733367,
+    "bbox": [
+      17.76052,
+      41.72883,
+      18.44125,
+      42.37095
+    ],
+    "osmType": "relation",
+    "osmId": 12436484
+  },
+  {
+    "name": "Sarat Abidah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "ASIR",
+    "lat": 17.6117085,
+    "lon": 43.06521,
+    "bbox": [
+      17.58024,
+      42.8647,
+      18.41139,
+      43.46723
+    ],
+    "osmType": "relation",
+    "osmId": 12436483
+  },
+  {
+    "name": "Tathlith",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "ASIR",
+    "lat": 19.5296851,
+    "lon": 43.5303161,
+    "bbox": [
+      18.25638,
+      42.91561,
+      20.80266,
+      44.4873
+    ],
+    "osmType": "relation",
+    "osmId": 12436472
+  },
+  {
+    "name": "Abqaiq",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "EASTERN_PROVINCE",
+    "lat": 25.935556,
+    "lon": 49.668333,
+    "bbox": [
+      25.81556,
+      49.54833,
+      26.05556,
+      49.78833
+    ],
+    "osmType": "node",
+    "osmId": 348286415
+  },
+  {
+    "name": "Al Khobar",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.3039999,
+    "lon": 50.1960237,
+    "bbox": [
+      26.144,
+      50.03602,
+      26.464,
+      50.35602
+    ],
+    "osmType": "node",
+    "osmId": 32441763,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Dammam",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.4367824,
+    "lon": 50.1039991,
+    "bbox": [
+      26.27678,
+      49.944,
+      26.59678,
+      50.264
+    ],
+    "osmType": "node",
+    "osmId": 287865393,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Dhahran",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.2966528,
+    "lon": 50.1202146,
+    "bbox": [
+      26.13665,
+      49.96021,
+      26.45665,
+      50.28021
+    ],
+    "osmType": "node",
+    "osmId": 447805356,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Hafar Al Batin",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 28.4328084,
+    "lon": 45.9627527,
+    "bbox": [
+      28.27281,
+      45.80275,
+      28.59281,
+      46.12275
+    ],
+    "osmType": "node",
+    "osmId": 983083568,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Hofuf",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 25.3696585,
+    "lon": 49.5865224,
+    "bbox": [
+      25.20966,
+      49.42652,
+      25.52966,
+      49.74652
+    ],
+    "osmType": "node",
+    "osmId": 208501048,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Jubail",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 27.0006968,
+    "lon": 49.6532161,
+    "bbox": [
+      26.8407,
+      49.49322,
+      27.1607,
+      49.81322
+    ],
+    "osmType": "node",
+    "osmId": 38903292,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Khafji",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "EASTERN_PROVINCE",
+    "lat": 28.0864501,
+    "lon": 48.1248243,
+    "bbox": [
+      27.46829,
+      47.55689,
+      28.70405,
+      49.07402
+    ],
+    "osmType": "relation",
+    "osmId": 12404340
+  },
+  {
+    "name": "Qatif",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.6078257,
+    "lon": 49.9196611,
+    "bbox": [
+      26.44811,
+      49.74957,
+      26.77088,
+      50.09077
+    ],
+    "osmType": "relation",
+    "osmId": 12403818,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Ras Tanura",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.707417,
+    "lon": 50.067352,
+    "bbox": [
+      26.54742,
+      49.90735,
+      26.86742,
+      50.22735
+    ],
+    "osmType": "node",
+    "osmId": 1237805652,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Safwa",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.6484641,
+    "lon": 49.9466586,
+    "bbox": [
+      26.48846,
+      49.78666,
+      26.80846,
+      50.10666
+    ],
+    "osmType": "node",
+    "osmId": 11361447139,
+    "region": "EASTERN_PROVINCE"
+  },
+  {
+    "name": "Al Ghazalah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "HAIL",
+    "lat": 26.7837216,
+    "lon": 41.2185416,
+    "bbox": [
+      26.46749,
+      40.78298,
+      27.09978,
+      41.95006
+    ],
+    "osmType": "relation",
+    "osmId": 12413066
+  },
+  {
+    "name": "Ash Shinan",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "HAIL",
+    "lat": 27.1104743,
+    "lon": 42.5521195,
+    "bbox": [
+      26.64388,
+      41.80102,
+      27.58927,
+      43.45042
+    ],
+    "osmType": "relation",
+    "osmId": 12413061
+  },
+  {
+    "name": "Baqaa",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "HAIL",
+    "lat": 27.9102716,
+    "lon": 42.3899399,
+    "bbox": [
+      27.79027,
+      42.26994,
+      28.03027,
+      42.50994
+    ],
+    "osmType": "node",
+    "osmId": 1237538431
+  },
+  {
+    "name": "Hail",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 27.8289499,
+    "lon": 40.8183065,
+    "bbox": [
+      26.73508,
+      39.11418,
+      28.92316,
+      42.29669
+    ],
+    "osmType": "relation",
+    "osmId": 12413060,
+    "region": "HAIL"
+  },
+  {
+    "name": "Abu Arish",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "JAZAN",
+    "lat": 16.9922771,
+    "lon": 42.7964823,
+    "bbox": [
+      16.82238,
+      42.60541,
+      17.16029,
+      43.05018
+    ],
+    "osmType": "relation",
+    "osmId": 12430380
+  },
+  {
+    "name": "Ahad al Masarihah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "JAZAN",
+    "lat": 16.7514615,
+    "lon": 42.8626915,
+    "bbox": [
+      16.59647,
+      42.54727,
+      16.90676,
+      43.05901
+    ],
+    "osmType": "relation",
+    "osmId": 12430372
+  },
+  {
+    "name": "Farasan",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "JAZAN",
+    "lat": 16.7379259,
+    "lon": 41.9079778,
+    "bbox": [
+      16.40879,
+      41.40288,
+      17.10938,
+      42.49876
+    ],
+    "osmType": "relation",
+    "osmId": 12430369
+  },
+  {
+    "name": "Jazan",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 17.333333,
+    "lon": 42.666667,
+    "bbox": [
+      16.37953,
+      41.45691,
+      18.05874,
+      43.3365
+    ],
+    "osmType": "relation",
+    "osmId": 3679903,
+    "region": "JAZAN"
+  },
+  {
+    "name": "Sabya",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "JAZAN",
+    "lat": 17.1319384,
+    "lon": 42.5073273,
+    "bbox": [
+      16.98156,
+      42.40183,
+      17.4597,
+      42.9158
+    ],
+    "osmType": "relation",
+    "osmId": 12430371
+  },
+  {
+    "name": "Samtah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "JAZAN",
+    "lat": 16.607222,
+    "lon": 42.990833,
+    "bbox": [
+      16.4787,
+      42.71229,
+      16.7645,
+      43.20056
+    ],
+    "osmType": "relation",
+    "osmId": 12430368
+  },
+  {
+    "name": "Al Ula",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "MADINAH",
+    "lat": 26.6003399,
+    "lon": 37.9753963,
+    "bbox": [
+      25.72536,
+      37.084,
+      27.47331,
+      38.94821
+    ],
+    "osmType": "relation",
+    "osmId": 12429012
+  },
+  {
+    "name": "Badr",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "MADINAH",
+    "lat": 23.9169551,
+    "lon": 38.9331313,
+    "bbox": [
+      23.32723,
+      38.22281,
+      24.50686,
+      39.46879
+    ],
+    "osmType": "relation",
+    "osmId": 12429015
+  },
+  {
+    "name": "Khaybar",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "MADINAH",
+    "lat": 25.8572399,
+    "lon": 39.4357103,
+    "bbox": [
+      24.91113,
+      38.42854,
+      26.804,
+      39.98106
+    ],
+    "osmType": "relation",
+    "osmId": 12429011
+  },
+  {
+    "name": "Mahd adh Dhahab",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "MADINAH",
+    "lat": 23.4995868,
+    "lon": 40.8791554,
+    "bbox": [
+      23.37959,
+      40.75916,
+      23.61959,
+      40.99916
+    ],
+    "osmType": "node",
+    "osmId": 1237964803
+  },
+  {
+    "name": "Medina",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 25.1354363,
+    "lon": 39.162594,
+    "bbox": [
+      22.51971,
+      37.084,
+      27.47331,
+      42.15873
+    ],
+    "osmType": "relation",
+    "osmId": 3679869,
+    "region": "MADINAH"
+  },
+  {
+    "name": "Yanbu",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 24.252616,
+    "lon": 38.2536615,
+    "bbox": [
+      23.64392,
+      37.36689,
+      24.86148,
+      38.90032
+    ],
+    "osmType": "relation",
+    "osmId": 12429009,
+    "region": "MADINAH"
+  },
+  {
+    "name": "Al Jumum",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "MAKKAH",
+    "lat": 21.9991151,
+    "lon": 40.2135112,
+    "bbox": [
+      21.46221,
+      39.20483,
+      22.53537,
+      40.62057
+    ],
+    "osmType": "relation",
+    "osmId": 12429523
+  },
+  {
+    "name": "Al Lith",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "MAKKAH",
+    "lat": 20.1451486,
+    "lon": 40.2701391,
+    "bbox": [
+      19.67397,
+      39.48601,
+      20.99778,
+      40.99595
+    ],
+    "osmType": "relation",
+    "osmId": 12429525
+  },
+  {
+    "name": "Al Qunfudhah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 19.1264288,
+    "lon": 41.0788747,
+    "bbox": [
+      18.50827,
+      40.03095,
+      19.83711,
+      41.6249
+    ],
+    "osmType": "relation",
+    "osmId": 12429518,
+    "region": "MAKKAH"
+  },
+  {
+    "name": "Jeddah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 21.5504432,
+    "lon": 39.1742363,
+    "bbox": [
+      21.39044,
+      39.01424,
+      21.71044,
+      39.33424
+    ],
+    "osmType": "node",
+    "osmId": 1933393717,
+    "region": "MAKKAH"
+  },
+  {
+    "name": "Mecca",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 21.420847,
+    "lon": 39.826869,
+    "bbox": [
+      21.11982,
+      39.50586,
+      21.84804,
+      40.47561
+    ],
+    "osmType": "relation",
+    "osmId": 12429517,
+    "region": "MAKKAH"
+  },
+  {
+    "name": "Rabigh",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 22.7989669,
+    "lon": 39.0335547,
+    "bbox": [
+      22.30247,
+      38.65977,
+      23.49728,
+      39.88517
+    ],
+    "osmType": "relation",
+    "osmId": 12429524,
+    "region": "MAKKAH"
+  },
+  {
+    "name": "Taif",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 21.2702801,
+    "lon": 40.4158308,
+    "bbox": [
+      21.11028,
+      40.25583,
+      21.43028,
+      40.57583
+    ],
+    "osmType": "node",
+    "osmId": 1236468526,
+    "region": "MAKKAH"
+  },
+  {
+    "name": "Turubah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "MAKKAH",
+    "lat": 21.2172851,
+    "lon": 41.5874689,
+    "bbox": [
+      20.57246,
+      41.14869,
+      21.86088,
+      42.04292
+    ],
+    "osmType": "relation",
+    "osmId": 12429522
+  },
+  {
+    "name": "Habuna",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "NAJRAN",
+    "lat": 17.8518464,
+    "lon": 44.023155,
+    "bbox": [
+      17.73185,
+      43.90316,
+      17.97185,
+      44.14316
+    ],
+    "osmType": "node",
+    "osmId": 11871306300
+  },
+  {
+    "name": "Najran",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 18,
+    "lon": 45.666667,
+    "bbox": [
+      16.95,
+      43.59569,
+      19.44889,
+      52.00175
+    ],
+    "osmType": "relation",
+    "osmId": 3667317,
+    "region": "NAJRAN"
+  },
+  {
+    "name": "Sharurah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 17.491225,
+    "lon": 47.1126055,
+    "bbox": [
+      16.95,
+      45.54139,
+      19.3333,
+      52.00175
+    ],
+    "osmType": "relation",
+    "osmId": 12424984,
+    "region": "NAJRAN"
+  },
+  {
+    "name": "Arar",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 30.916667,
+    "lon": 41.5,
+    "bbox": [
+      30.54625,
+      39.5557,
+      31.99403,
+      42.216
+    ],
+    "osmType": "relation",
+    "osmId": 12413339,
+    "region": "NORTHERN_BORDERS"
+  },
+  {
+    "name": "Rafha",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "NORTHERN_BORDERS",
+    "lat": 29.2065307,
+    "lon": 43.3553666,
+    "bbox": [
+      27.9308,
+      41.87591,
+      30.48025,
+      45.17198
+    ],
+    "osmType": "relation",
+    "osmId": 12413338
+  },
+  {
+    "name": "Turaif",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 31.6725877,
+    "lon": 38.6615532,
+    "bbox": [
+      31.51259,
+      38.50155,
+      31.83259,
+      38.82155
+    ],
+    "osmType": "node",
+    "osmId": 1236745370,
+    "region": "NORTHERN_BORDERS"
+  },
+  {
+    "name": "Al Badai",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "QASSIM",
+    "lat": 25.8189399,
+    "lon": 43.7581871,
+    "bbox": [
+      25.47056,
+      43.62535,
+      26.16181,
+      43.95467
+    ],
+    "osmType": "relation",
+    "osmId": 12406849
+  },
+  {
+    "name": "Al Bukayriyah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "QASSIM",
+    "lat": 26.1499429,
+    "lon": 43.665355,
+    "bbox": [
+      26.06194,
+      42.60412,
+      26.75808,
+      43.77508
+    ],
+    "osmType": "relation",
+    "osmId": 12406850
+  },
+  {
+    "name": "Al Mithnab",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "QASSIM",
+    "lat": 25.8596075,
+    "lon": 44.2209063,
+    "bbox": [
+      25.3336,
+      43.76876,
+      25.95274,
+      44.47984
+    ],
+    "osmType": "relation",
+    "osmId": 12406843
+  },
+  {
+    "name": "Ar Rass",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "QASSIM",
+    "lat": 25.5729395,
+    "lon": 43.5843786,
+    "bbox": [
+      25.16703,
+      43.33723,
+      25.97914,
+      43.83906
+    ],
+    "osmType": "relation",
+    "osmId": 12406853
+  },
+  {
+    "name": "Buraydah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.9252275,
+    "lon": 43.6378715,
+    "bbox": [
+      25.07413,
+      42.35376,
+      27.70827,
+      44.45119
+    ],
+    "osmType": "relation",
+    "osmId": 12406852,
+    "region": "QASSIM"
+  },
+  {
+    "name": "Riyadh Al Khabra",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "QASSIM",
+    "lat": 26.3383651,
+    "lon": 42.3197633,
+    "bbox": [
+      25.87309,
+      42.13752,
+      26.58319,
+      43.59203
+    ],
+    "osmType": "relation",
+    "osmId": 12406845
+  },
+  {
+    "name": "Unaizah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.0908582,
+    "lon": 43.9864354,
+    "bbox": [
+      25.92458,
+      43.84479,
+      26.24458,
+      44.16479
+    ],
+    "osmType": "way",
+    "osmId": 785290146,
+    "region": "QASSIM"
+  },
+  {
+    "name": "Ad Dawadimi",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 24.494167,
+    "lon": 44.383333,
+    "bbox": [
+      24.33417,
+      44.22333,
+      24.65417,
+      44.54333
+    ],
+    "osmType": "node",
+    "osmId": 1236695687,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Afif",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 23.9023697,
+    "lon": 42.9150847,
+    "bbox": [
+      22.41814,
+      41.68113,
+      24.7334,
+      43.68309
+    ],
+    "osmType": "relation",
+    "osmId": 12423683,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Al Aflaj",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "RIYADH",
+    "lat": 22.25,
+    "lon": 46.825,
+    "bbox": [
+      20.9276,
+      45.35968,
+      23.23609,
+      48.2582
+    ],
+    "osmType": "relation",
+    "osmId": 12423673
+  },
+  {
+    "name": "Al Kharj",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 23.8304401,
+    "lon": 47.6840134,
+    "bbox": [
+      23.07291,
+      46.93071,
+      24.58403,
+      48.15413
+    ],
+    "osmType": "relation",
+    "osmId": 12423676,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Al Majmaah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.5411549,
+    "lon": 45.777715,
+    "bbox": [
+      25.3811,
+      44.82173,
+      27.7021,
+      46.63197
+    ],
+    "osmType": "relation",
+    "osmId": 12423675,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Al Quway'iyah",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 24.065056,
+    "lon": 45.284381,
+    "bbox": [
+      21.92795,
+      43.26991,
+      24.67027,
+      45.97166
+    ],
+    "osmType": "relation",
+    "osmId": 12423672,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Az Zulfi",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.2995806,
+    "lon": 44.8151967,
+    "bbox": [
+      25.97023,
+      44.38393,
+      27.01695,
+      45.09648
+    ],
+    "osmType": "relation",
+    "osmId": 12423674,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Hotat Bani Tamim",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "RIYADH",
+    "lat": 23.4874984,
+    "lon": 46.8787064,
+    "bbox": [
+      22.77844,
+      45.92632,
+      23.76115,
+      47.32785
+    ],
+    "osmType": "relation",
+    "osmId": 12423669
+  },
+  {
+    "name": "Riyadh",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 23.333333,
+    "lon": 45.333333,
+    "bbox": [
+      19.20833,
+      41.68113,
+      27.7021,
+      48.2582
+    ],
+    "osmType": "relation",
+    "osmId": 3678409,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Shaqra",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 25.248333,
+    "lon": 45.252778,
+    "bbox": [
+      24.91571,
+      44.62229,
+      25.81044,
+      45.75437
+    ],
+    "osmType": "relation",
+    "osmId": 12423677,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Wadi ad-Dawasir",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 20.4602516,
+    "lon": 44.799553,
+    "bbox": [
+      19.2687,
+      43.42441,
+      22.57712,
+      45.81256
+    ],
+    "osmType": "relation",
+    "osmId": 12423662,
+    "region": "RIYADH"
+  },
+  {
+    "name": "Al Wajh",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 26.6270634,
+    "lon": 36.66529,
+    "bbox": [
+      25.75675,
+      36.04105,
+      27.49729,
+      37.69519
+    ],
+    "osmType": "relation",
+    "osmId": 12420156,
+    "region": "TABUK"
+  },
+  {
+    "name": "Duba",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 27.5626296,
+    "lon": 36.092896,
+    "bbox": [
+      26.813,
+      34.8991,
+      28.31302,
+      36.73169
+    ],
+    "osmType": "relation",
+    "osmId": 12420157,
+    "region": "TABUK"
+  },
+  {
+    "name": "Haql",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "TABUK",
+    "lat": 29.2864157,
+    "lon": 34.9469118,
+    "bbox": [
+      28.71653,
+      34.80385,
+      29.35738,
+      35.97802
+    ],
+    "osmType": "relation",
+    "osmId": 12420160
+  },
+  {
+    "name": "Tabuk",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "lat": 28.3251866,
+    "lon": 37.6328648,
+    "bbox": [
+      24.56184,
+      34.49441,
+      29.97559,
+      39.94176
+    ],
+    "osmType": "relation",
+    "osmId": 3679867,
+    "region": "TABUK"
+  },
+  {
+    "name": "Tayma",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "TABUK",
+    "lat": 27.6225952,
+    "lon": 38.539257,
+    "bbox": [
+      26.74772,
+      37.65558,
+      28.93675,
+      39.94176
+    ],
+    "osmType": "relation",
+    "osmId": 12420155
+  },
+  {
+    "name": "Umluj",
+    "country": "Saudi Arabia",
+    "countryCode": "SA",
+    "region": "TABUK",
+    "lat": 25.2339627,
+    "lon": 37.4983349,
+    "bbox": [
+      24.56184,
+      36.4821,
+      25.90611,
+      38.03816
+    ],
+    "osmType": "relation",
+    "osmId": 12420154
   }
 ]

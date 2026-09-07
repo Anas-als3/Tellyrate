@@ -44,6 +44,9 @@ export function SiteHeader({
 
   const navLinks = [
     { href: "/facilities", label: nav.facilities },
+    // Ahead of the cities, in the order a placement is actually chosen: a
+    // region first, then somewhere inside it.
+    { href: "/regions", label: nav.regions },
     { href: "/cities", label: nav.cities },
     { href: "/guidelines", label: nav.guidelines },
   ];

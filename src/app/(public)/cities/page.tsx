@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listCities } from "@/lib/queries";
+import { REGIONS } from "@/lib/labels";
 import {
   getDictionary,
   lookup,
@@ -37,48 +38,50 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type CityRow = Awaited<ReturnType<typeof listCities>>[number];
 
-type CountryGroup = {
-  code: string;
+type RegionGroup = {
+  key: string;
+  slug: string;
   name: string;
   cities: CityRow[];
   facilityCount: number;
-  reviewCount: number;
 };
 
 /**
- * Group by country, then order countries the way the city list itself is
- * ordered: by how much testimony is behind them, not alphabetically. A reader
- * arriving here is looking for somewhere with reviews to read.
+ * Group by region, in the fixed order `REGIONS` carries.
+ *
+ * Not by how much testimony sits behind each one, the way the cities inside a
+ * group are ordered: this list is how a reader finds a place they already have
+ * in mind, and a heading that moves down the page whenever someone posts a
+ * review is a heading nobody can learn the position of. A region with no
+ * listed city yet is skipped here — /regions is the page that accounts for
+ * all thirteen.
  */
-function groupByCountry(cities: CityRow[], t: Dictionary): CountryGroup[] {
-  const groups = new Map<string, CountryGroup>();
+function groupByRegion(cities: CityRow[], t: Dictionary): RegionGroup[] {
+  const byRegion = new Map<string, CityRow[]>();
 
   for (const city of cities) {
-    const code = city.countryCode;
-    let group = groups.get(code);
-    if (!group) {
-      group = {
-        code,
-        // The country column holds an English name; the dictionary has the
-        // Arabic one, so the translation wins wherever it exists.
-        name: lookup(t.labels.country, code, city.country ?? code),
-        cities: [],
-        facilityCount: 0,
-        reviewCount: 0,
-      };
-      groups.set(code, group);
-    }
-    group.cities.push(city);
-    group.facilityCount += city.facilityCount;
-    group.reviewCount += city.reviewCount;
+    const group = byRegion.get(city.region);
+    if (group) group.push(city);
+    else byRegion.set(city.region, [city]);
   }
 
-  return [...groups.values()].sort(
-    (a, b) =>
-      b.reviewCount - a.reviewCount ||
-      b.facilityCount - a.facilityCount ||
-      a.name.localeCompare(b.name),
-  );
+  return REGIONS.flatMap(({ key, slug }) => {
+    const cityRows = byRegion.get(key);
+    if (!cityRows) return [];
+
+    return [
+      {
+        key,
+        slug,
+        name: lookup(t.labels.region, key, key),
+        cities: cityRows,
+        facilityCount: cityRows.reduce(
+          (sum, city) => sum + city.facilityCount,
+          0,
+        ),
+      },
+    ];
+  });
 }
 
 function CityLink({
@@ -116,7 +119,7 @@ export default async function CitiesPage() {
   const locale = await getLocale();
   const t = getDictionary(locale);
   const cities = await listCities();
-  const groups = groupByCountry(cities, t);
+  const groups = groupByRegion(cities, t);
   const totalFacilities = groups.reduce((sum, g) => sum + g.facilityCount, 0);
 
   return (
@@ -143,8 +146,8 @@ export default async function CitiesPage() {
       ) : (
         groups.map((group) => (
           <section
-            key={group.code}
-            aria-labelledby={`country-${group.code}`}
+            key={group.key}
+            aria-labelledby={`region-${group.slug}`}
             style={{ marginBlockStart: "var(--space-xl)" }}
           >
             <div
@@ -158,13 +161,15 @@ export default async function CitiesPage() {
                 marginBlockEnd: "var(--space-m)",
               }}
             >
-              <h2 id={`country-${group.code}`} style={{ fontSize: "var(--step-1)" }}>
-                <bdi dir="auto">{group.name}</bdi>
+              <h2 id={`region-${group.slug}`} style={{ fontSize: "var(--step-1)" }}>
+                {/* The heading is the way into the region itself: its own page
+                    carries the cities that have nothing listed yet, which this
+                    index leaves out. */}
+                <Link href={`/regions/${group.slug}`} style={{ color: "inherit" }}>
+                  <bdi dir="auto">{group.name}</bdi>
+                </Link>
               </h2>
-              <Link
-                className="hint"
-                href={`/facilities?country=${group.code.toLowerCase()}`}
-              >
+              <Link className="hint" href={`/facilities?region=${group.slug}`}>
                 {t.cities.allFacilitiesIn(group.facilityCount)}
               </Link>
             </div>

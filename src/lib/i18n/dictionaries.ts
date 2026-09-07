@@ -186,6 +186,7 @@ const en = {
     sections: "Sections",
     facilities: "Facilities",
     cities: "Cities",
+    regions: "Regions",
     guidelines: "Guidelines",
     about: "About",
     privacy: "Privacy",
@@ -432,6 +433,27 @@ const en = {
     loadingStatus: "Loading this facility…",
   },
 
+  regions: {
+    metaTitle: "Regions",
+    metaDescription:
+      "Saudi Arabia's thirteen regions, and the hospitals and clinics where students train in each.",
+    heading: "Browse by region",
+    breadcrumb: "Regions",
+    lede: (regions: number, cities: number, facilities: number) =>
+      `${formatNumber(regions)} regions, ${formatNumber(cities)} cities, ${formatNumber(facilities)} places to train.`,
+    citiesHeading: "Cities in this region",
+    allFacilitiesIn: (n: number) =>
+      `All ${formatNumber(n)} ${n === 1 ? "facility" : "facilities"} in this region`,
+    noFacilitiesYet: "Nothing listed here yet",
+    noFacilitiesBody:
+      "No hospitals or clinics have been added in this region so far. If you trained somewhere here, you can add it.",
+    loadingStatus: "Loading regions…",
+    notFoundTitle: "We could not find that region",
+    notFoundBody:
+      "There are thirteen regions in Saudi Arabia, and this is not one of them. Browse them all instead.",
+    cityCount: (n: number) =>
+      `${formatNumber(n)} ${n === 1 ? "city" : "cities"}`,
+  },
   cities: {
     metaTitle: "Cities",
     metaDescription:
@@ -1116,6 +1138,21 @@ const en = {
     healthcareFallback: "Healthcare",
     notVisible: "Not visible",
 
+    region: {
+      RIYADH: "Riyadh",
+      MAKKAH: "Makkah",
+      MADINAH: "Madinah",
+      QASSIM: "Qassim",
+      EASTERN_PROVINCE: "Eastern Province",
+      ASIR: "Asir",
+      TABUK: "Tabuk",
+      HAIL: "Hail",
+      NORTHERN_BORDERS: "Northern Borders",
+      JAZAN: "Jazan",
+      NAJRAN: "Najran",
+      AL_BAHAH: "Al Bahah",
+      AL_JAWF: "Al Jawf",
+    },
     facilityKind: {
       HOSPITAL: "Hospital",
       CLINIC: "Clinic",
@@ -1427,6 +1464,7 @@ const ar: Dictionary = {
     sections: "الأقسام",
     facilities: "المنشآت",
     cities: "المدن",
+    regions: "المناطق",
     guidelines: "إرشادات المراجعات",
     about: "عن الموقع",
     privacy: "الخصوصية",
@@ -1715,6 +1753,26 @@ const ar: Dictionary = {
     loadingStatus: "جاري تحميل بيانات المنشأة…",
   },
 
+  regions: {
+    metaTitle: "المناطق",
+    metaDescription:
+      "مناطق المملكة العربية السعودية الثلاث عشرة، والمستشفيات والعيادات التي يتدرّب فيها الطلاب في كل منطقة.",
+    heading: "تصفَّح حسب المنطقة",
+    breadcrumb: "المناطق",
+    lede: (regions: number, cities: number, facilities: number) =>
+      `${formatNumber(regions)} مناطق، و${formatNumber(cities)} مدينة، و${formatNumber(facilities)} مكان للتدريب.`,
+    citiesHeading: "مدن هذه المنطقة",
+    allFacilitiesIn: (n: number) =>
+      `كل المنشآت في هذه المنطقة (${formatNumber(n)})`,
+    noFacilitiesYet: "لا يوجد شيء مُدرَج هنا بعد",
+    noFacilitiesBody:
+      "لم تُضَف أي مستشفيات أو عيادات في هذه المنطقة حتى الآن. إن تدرّبت في مكان هنا، يمكنك إضافته.",
+    loadingStatus: "جارٍ تحميل المناطق…",
+    notFoundTitle: "لم نتمكن من إيجاد هذه المنطقة",
+    notFoundBody:
+      "في المملكة العربية السعودية ثلاث عشرة منطقة، وهذه ليست إحداها. تصفَّح المناطق جميعها بدلًا من ذلك.",
+    cityCount: (n: number) => `${formatNumber(n)} مدينة`,
+  },
   cities: {
     metaTitle: "المدن",
     metaDescription:
@@ -2499,6 +2557,21 @@ const ar: Dictionary = {
     healthcareFallback: "تخصص صحي",
     notVisible: "غير ظاهرة",
 
+    region: {
+      RIYADH: "الرياض",
+      MAKKAH: "مكة المكرمة",
+      MADINAH: "المدينة المنورة",
+      QASSIM: "القصيم",
+      EASTERN_PROVINCE: "المنطقة الشرقية",
+      ASIR: "عسير",
+      TABUK: "تبوك",
+      HAIL: "حائل",
+      NORTHERN_BORDERS: "الحدود الشمالية",
+      JAZAN: "جازان",
+      NAJRAN: "نجران",
+      AL_BAHAH: "الباحة",
+      AL_JAWF: "الجوف",
+    },
     facilityKind: {
       HOSPITAL: "مستشفى",
       CLINIC: "عيادة",

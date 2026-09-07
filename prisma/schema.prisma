@@ -25,6 +25,28 @@ enum UserRole {
   ADMIN
 }
 
+/// Saudi Arabia's thirteen administrative regions.
+///
+/// Students think in regions before cities — "I want something in Qassim" comes
+/// before "Buraydah or Unaizah". Stored as a fixed enum rather than derived
+/// from coordinates, because a city belongs to the region that administers it,
+/// not the one it happens to sit nearest.
+enum Region {
+  RIYADH
+  MAKKAH
+  MADINAH
+  QASSIM
+  EASTERN_PROVINCE
+  ASIR
+  TABUK
+  HAIL
+  NORTHERN_BORDERS
+  JAZAN
+  NAJRAN
+  AL_BAHAH
+  AL_JAWF
+}
+
 enum FacilityKind {
   HOSPITAL
   CLINIC
@@ -182,6 +204,7 @@ model City {
 
   country     String
   countryCode String @db.Char(2)
+  region      Region
 
   lat Float
   lon Float
@@ -202,6 +225,8 @@ model City {
 
   @@unique([nameFold, countryCode])
   @@index([countryCode, name])
+  @@index([region, name])
+  @@index([region, facilityCount(sort: Desc)])
   @@index([facilityCount(sort: Desc)])
   @@index([reviewCount(sort: Desc)])
 }

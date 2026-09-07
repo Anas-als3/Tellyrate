@@ -8,7 +8,7 @@ import {
   type ReviewSortKey,
   type SortKey,
 } from "@/lib/ranking";
-import type { FacilityKind, Prisma } from "@/generated/prisma/client";
+import type { FacilityKind, Prisma, Region } from "@/generated/prisma/client";
 
 export const PAGE_SIZE = 24;
 export const REVIEWS_PAGE_SIZE = 10;
@@ -17,6 +17,12 @@ export type FacilityFilters = {
   sort: SortKey;
   citySlug?: string;
   countryCode?: string;
+  /**
+   * A `Region` enum value, not the URL slug — `toFacilityFilters` in
+   * lib/facility-query.ts does that conversion, the way it upper-cases the
+   * country code.
+   */
+  regionKey?: string;
   kind?: string;
   query?: string;
   minRating?: number;
@@ -53,9 +59,12 @@ function orderFor(sort: SortKey): Prisma.FacilityOrderByWithRelationInput[] {
 function facilityWhere(filters: FacilityFilters): Prisma.FacilityWhereInput {
   const where: Prisma.FacilityWhereInput = { status: "PUBLISHED" };
 
+  // Region lives on City, so it narrows through the same relation filter the
+  // city and country do — one join, whichever of the three is in force.
   const city: Prisma.CityWhereInput = {};
   if (filters.citySlug) city.slug = filters.citySlug;
   if (filters.countryCode) city.countryCode = filters.countryCode;
+  if (filters.regionKey) city.region = filters.regionKey as Region;
   if (Object.keys(city).length > 0) where.city = city;
 
   if (filters.kind) where.kind = filters.kind as FacilityKind;
@@ -197,6 +206,9 @@ export async function listCities(options: { query?: string; countryCode?: string
       name: true,
       country: true,
       countryCode: true,
+      // Carried so callers can group the flat list by region without a second
+      // query — /cities is a list of regions before it is a list of cities.
+      region: true,
       facilityCount: true,
       reviewCount: true,
     },

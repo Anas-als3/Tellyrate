@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCityBySlug, listFacilities } from "@/lib/queries";
+import { REGION_SLUGS } from "@/lib/labels";
 import {
   buildHref,
   parseFacilityQuery,
@@ -50,12 +51,18 @@ export async function generateStaticParams() {
 }
 
 /**
- * The route already fixes the city, so `city` and `country` are stripped from
- * the URL state: leaving them in would let `/cities/riyadh?city=jeddah` exist
- * as a second address for the same result set.
+ * The route already fixes the city, so every place filter is stripped from the
+ * URL state: leaving them in would let `/cities/riyadh?city=jeddah` exist as a
+ * second address for the same result set, and `?region=qassim` narrow a
+ * Riyadh page to nothing.
  */
 function cityUrlQuery(sp: { [key: string]: string | string[] | undefined }): FacilityQuery {
-  return { ...parseFacilityQuery(sp), city: undefined, country: undefined };
+  return {
+    ...parseFacilityQuery(sp),
+    city: undefined,
+    region: undefined,
+    country: undefined,
+  };
 }
 
 /**
@@ -136,18 +143,21 @@ export default async function CityPage({
     toFacilityFilters({ ...query, city: city.slug }),
   );
 
-  const countryName = lookup(t.labels.country, city.countryCode, city.country);
+  const regionName = lookup(t.labels.region, city.region, city.region);
+  const regionSlug = REGION_SLUGS[city.region];
 
   return (
     <div className="page" style={{ paddingBlock: "var(--space-xl)" }}>
       <header style={{ display: "grid", gap: "var(--space-2xs)" }}>
         {/* Source order is crumb-then-place; the direction of the page decides
-            which end of the line that lands on. */}
+            which end of the line that lands on. The crumb is the region rather
+            than the country, and rather than the city index: it is the one
+            level up that narrows anything on a site with a single country. */}
         <p className="label" style={{ margin: 0 }}>
-          <Link href="/cities" style={{ color: "inherit" }}>
-            {t.cities.breadcrumb}
+          <Link href={`/regions/${regionSlug}`} style={{ color: "inherit" }}>
+            <bdi dir="auto">{regionName}</bdi>
           </Link>{" "}
-          / <bdi dir="auto">{countryName}</bdi>
+          / <bdi dir="auto">{cityName}</bdi>
         </p>
         <h1 style={{ fontSize: "var(--step-3)" }}>
           <bdi dir="auto">{cityName}</bdi>

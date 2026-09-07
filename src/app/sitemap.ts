@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { REGIONS } from "@/lib/labels";
 import { prisma } from "@/lib/db";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -34,6 +35,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    {
+      url: url("/regions"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    // The thirteen regions are fixed, so they belong with the static routes
+    // rather than being queried — and they are the entry point students use.
+    ...REGIONS.map((region) => ({
+      url: url(`/regions/${region.slug}`),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
     {
       url: url("/cities"),
       lastModified: now,

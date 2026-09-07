@@ -166,6 +166,54 @@ export const COUNTRY_NAMES: Record<string, string> = {
   SA: "Saudi Arabia",
 };
 
+
+/**
+ * The thirteen administrative regions, in the order they are shown.
+ *
+ * Ordered by population rather than alphabetically: a student scanning the list
+ * is far likelier to want Riyadh or Makkah than Al Jawf, and alphabetical order
+ * would bury them. Display names come from the dictionary; this file owns only
+ * the order and the URL slugs.
+ */
+export const REGIONS = [
+  { key: "RIYADH", slug: "riyadh" },
+  { key: "MAKKAH", slug: "makkah" },
+  { key: "MADINAH", slug: "madinah" },
+  { key: "QASSIM", slug: "qassim" },
+  { key: "EASTERN_PROVINCE", slug: "eastern-province" },
+  { key: "ASIR", slug: "asir" },
+  { key: "TABUK", slug: "tabuk" },
+  { key: "HAIL", slug: "hail" },
+  { key: "NORTHERN_BORDERS", slug: "northern-borders" },
+  { key: "JAZAN", slug: "jazan" },
+  { key: "NAJRAN", slug: "najran" },
+  { key: "AL_BAHAH", slug: "al-bahah" },
+  { key: "AL_JAWF", slug: "al-jawf" },
+] as const;
+
+export type RegionKey = (typeof REGIONS)[number]["key"];
+
+export const REGION_SLUGS: Record<string, string> = {
+  RIYADH: "riyadh",
+  MAKKAH: "makkah",
+  MADINAH: "madinah",
+  QASSIM: "qassim",
+  EASTERN_PROVINCE: "eastern-province",
+  ASIR: "asir",
+  TABUK: "tabuk",
+  HAIL: "hail",
+  NORTHERN_BORDERS: "northern-borders",
+  JAZAN: "jazan",
+  NAJRAN: "najran",
+  AL_BAHAH: "al-bahah",
+  AL_JAWF: "al-jawf",
+};
+
+/** Reverse lookup, for resolving a URL segment back to an enum value. */
+export const REGION_BY_SLUG: Record<string, string> = Object.fromEntries(
+  REGIONS.map((r) => [r.slug, r.key]),
+);
+
 /**
  * Coarsen a rotation date when a facility has few reviews.
  *

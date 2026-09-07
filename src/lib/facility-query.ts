@@ -22,7 +22,7 @@
 
 import { z } from "zod";
 import { DEFAULT_SORT, SORT_OPTIONS, type SortKey } from "@/lib/ranking";
-import { FACILITY_KINDS } from "@/lib/labels";
+import { FACILITY_KINDS, REGION_BY_SLUG } from "@/lib/labels";
 
 /** Longer than this is a paste accident, not a facility name. */
 export const MAX_QUERY_LENGTH = 80;
@@ -71,6 +71,8 @@ export type FacilityQuery = {
   sort: SortKey;
   /** ISO-3166-1 alpha-2, lower-cased for the URL. */
   country?: string;
+  /** Region slug, e.g. "qassim". Resolved to the enum on the way to the query. */
+  region?: string;
   /** City slug. */
   city?: string;
   /** FacilityKind enum value, upper-cased. Serialised lower-case. */
@@ -81,15 +83,34 @@ export type FacilityQuery = {
 
 export type FacilityQueryOverrides = Partial<FacilityQuery>;
 
-/** The filter families the rail offers, in the order it shows them. */
+/**
+ * The families that show as a removable chip above the results, in chip order.
+ */
 export const FILTER_FAMILIES = ["city", "country", "kind", "min"] as const;
 
 export type FilterFamily = (typeof FILTER_FAMILIES)[number];
+
+/**
+ * The rail offers one family more than the chips do.
+ *
+ * Region leads it — a student weighing a training year thinks "somewhere in
+ * Qassim" before they think "Buraydah" — but it has no chip of its own, so its
+ * row in the rail is both how it is set and how it is cleared.
+ */
+export type RailFamily = FilterFamily | "region";
 
 const SORT_KEYS = Object.keys(SORT_OPTIONS) as [SortKey, ...SortKey[]];
 
 /** Slug shape: lower-case words joined by single hyphens. */
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * `hasOwn`, not `in`: `REGION_BY_SLUG` carries Object's prototype, so `in`
+ * would accept `?region=constructor` and hand its value on to the database.
+ */
+function isRegionSlug(value: string): boolean {
+  return Object.hasOwn(REGION_BY_SLUG, value);
+}
 
 function clampPage(value: number): number {
   if (!Number.isFinite(value)) return 1;
@@ -115,6 +136,11 @@ export const facilityQuerySchema = z.object({
   country: z
     .string()
     .regex(/^[a-z]{2}$/)
+    .optional()
+    .catch(undefined),
+  region: z
+    .string()
+    .refine(isRegionSlug)
     .optional()
     .catch(undefined),
   city: z
@@ -150,6 +176,7 @@ function normaliseRaw(sp: SearchParamsInput) {
     q: first(sp.q),
     sort: first(sp.sort)?.trim().toLowerCase(),
     country: first(sp.country)?.trim().toLowerCase(),
+    region: first(sp.region)?.trim().toLowerCase(),
     city: first(sp.city)?.trim().toLowerCase(),
     kind: first(sp.kind)?.trim().toUpperCase(),
     min: first(sp.min)?.trim(),
@@ -165,6 +192,7 @@ export function parseFacilityQuery(
     q: parsed.q,
     sort: parsed.sort,
     country: parsed.country,
+    region: parsed.region,
     city: parsed.city,
     kind: parsed.kind,
     min: parsed.min as MinRating | undefined,
@@ -195,6 +223,7 @@ export function buildHref(
   const search = new URLSearchParams();
   if (next.q) search.set("q", next.q);
   if (next.country) search.set("country", next.country);
+  if (next.region) search.set("region", next.region);
   if (next.city) search.set("city", next.city);
   if (next.kind) search.set("kind", next.kind.toLowerCase());
   if (next.min !== undefined) search.set("min", String(next.min));
@@ -215,13 +244,17 @@ export function activeFamilies(query: FacilityQuery): FilterFamily[] {
 }
 
 export function hasActiveFilters(query: FacilityQuery): boolean {
-  return query.q !== "" || activeFamilies(query).length > 0;
+  return (
+    query.q !== "" ||
+    query.region !== undefined ||
+    activeFamilies(query).length > 0
+  );
 }
 
 /** The selected value of one family, as the string its option links carry. */
 export function familyValue(
   query: FacilityQuery,
-  family: FilterFamily,
+  family: RailFamily,
 ): string | undefined {
   const value = query[family];
   return value === undefined ? undefined : String(value);
@@ -234,10 +267,12 @@ export function familyValue(
  * its type and a typo in a family name is a compile error.
  */
 export function familyOverride(
-  family: FilterFamily,
+  family: RailFamily,
   value: string | undefined,
 ): FacilityQueryOverrides {
   switch (family) {
+    case "region":
+      return { region: value };
     case "city":
       return { city: value };
     case "country":
@@ -263,7 +298,8 @@ export function familyOverride(
 export function shouldNoIndex(query: FacilityQuery): boolean {
   if (query.q) return true;
   if (query.page > MAX_INDEXED_PAGE) return true;
-  return activeFamilies(query).length > 2;
+  const narrowed = activeFamilies(query).length + (query.region ? 1 : 0);
+  return narrowed > 2;
 }
 
 /**
@@ -273,13 +309,15 @@ export function shouldNoIndex(query: FacilityQuery): boolean {
 export function describeFacilityQuery(input: {
   kind?: string;
   cityName?: string;
+  regionName?: string;
   countryName?: string;
   q?: string;
 }): string {
   const noun = input.kind
     ? (KIND_PLURAL_LABELS[input.kind] ?? "Facilities")
     : "Facilities";
-  const place = input.cityName ?? input.countryName;
+  // Narrowest place first: "Hospitals in Buraydah" beats "in Qassim".
+  const place = input.cityName ?? input.regionName ?? input.countryName;
 
   const parts = [noun];
   if (place) parts.push(`in ${place}`);
@@ -302,6 +340,8 @@ export function toFacilityFilters(query: FacilityQuery) {
     query: query.q || undefined,
     citySlug: query.city,
     countryCode: query.country?.toUpperCase(),
+    // The URL carries the slug; the column holds the enum value.
+    regionKey: query.region ? REGION_BY_SLUG[query.region] : undefined,
     kind: query.kind,
     minRating: query.min,
   };

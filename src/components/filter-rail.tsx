@@ -5,9 +5,10 @@ import {
   familyOverride,
   familyValue,
   type FacilityQuery,
-  type FilterFamily,
+  type RailFamily,
 } from "@/lib/facility-query";
-import { formatNumber, type Dictionary } from "@/lib/i18n/dictionaries";
+import { REGIONS } from "@/lib/labels";
+import { formatNumber, lookup, type Dictionary } from "@/lib/i18n/dictionaries";
 import { getT } from "@/lib/i18n/server";
 
 /**
@@ -38,11 +39,40 @@ export type FilterFacets = {
   countries: FilterOption[];
   kinds: FilterOption[];
   ratings: FilterOption[];
+  /**
+   * Optional, and the only family that is: a region is a place to start
+   * browsing as much as it is a filter, so the rail offers all thirteen
+   * whether or not the page counted them first.
+   */
+  regions?: FilterOption[];
 };
 
+/**
+ * The thirteen regions as filter options, counted where the page counted them.
+ *
+ * Uncounted is not the same as empty — an option with no count is always shown
+ * (see `FilterGroup`), which is what keeps Qassim on the rail even before a
+ * facility in it is listed. That absence is the complaint this whole layer
+ * exists to answer.
+ */
+function regionOptions(t: Dictionary, facets: FilterFacets): FilterOption[] {
+  return (
+    facets.regions ??
+    REGIONS.map(({ key, slug }) => ({
+      value: slug,
+      label: lookup(t.labels.region, key, key),
+    }))
+  );
+}
+
 /** The "no filter" row at the top of each family. */
-function anyLabel(t: Dictionary, family: FilterFamily): string {
+function anyLabel(t: Dictionary, family: RailFamily): string {
   switch (family) {
+    // TODO(dictionary): `facilities.anyRegion`. Borrowing the country string
+    // until it exists; the country family is never rendered, so nothing reads
+    // the same phrase twice.
+    case "region":
+      return t.facilities.anyCountry;
     case "city":
       return t.facilities.anyCity;
     case "country":
@@ -55,8 +85,11 @@ function anyLabel(t: Dictionary, family: FilterFamily): string {
 }
 
 /** Written as switches so a new filter family is a compile error, not a blank. */
-function groupTitle(t: Dictionary, family: FilterFamily): string {
+function groupTitle(t: Dictionary, family: RailFamily): string {
   switch (family) {
+    // TODO(dictionary): `facilities.regionFamily`.
+    case "region":
+      return t.facilities.countryFamily;
     case "city":
       return t.facilities.cityFamily;
     case "country":
@@ -165,7 +198,7 @@ function FilterGroup({
   t: Dictionary;
   base: string;
   query: FacilityQuery;
-  family: FilterFamily;
+  family: RailFamily;
   options: FilterOption[];
   footer?: React.ReactNode;
 }) {
@@ -232,6 +265,15 @@ function FilterGroups({
 }) {
   return (
     <div style={{ display: "grid", gap: "var(--space-l)" }}>
+      {/* Above the cities, because that is the order the question arrives in:
+          a student picks a part of the country before a city inside it. */}
+      <FilterGroup
+        t={t}
+        base={base}
+        query={query}
+        family="region"
+        options={regionOptions(t, facets)}
+      />
       <FilterGroup
         t={t}
         base={base}

@@ -11,7 +11,7 @@ import {
   isReviewSortKey,
   type ReviewSortKey,
 } from "@/lib/ranking";
-import { RATING_AXES } from "@/lib/labels";
+import { RATING_AXES, REGION_SLUGS } from "@/lib/labels";
 import {
   getDictionary,
   lookup,
@@ -294,11 +294,12 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
     facility.kind,
     t.labels.facilityFallback,
   );
-  const country = lookup(
-    t.labels.country,
-    facility.city.countryCode,
-    facility.city.country,
+  const regionName = lookup(
+    t.labels.region,
+    facility.city.region,
+    facility.city.region,
   );
+  const regionSlug = REGION_SLUGS[facility.city.region];
   const rated = facility.reviewCount > 0;
   const canonicalPath = reviewsPath(facility.slug, sort, page);
   const writeHref = `/facilities/${facility.slug}/review`;
@@ -330,7 +331,14 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             padding: 0,
           }}
         >
-          <li>{country}</li>
+          {/* The country was here until every facility on the site was in the
+              same one. The region is the level that actually tells a reader
+              where this is — and where to look for alternatives to it. */}
+          <li>
+            <Link href={`/regions/${regionSlug}`}>
+              <bdi dir="auto">{regionName}</bdi>
+            </Link>
+          </li>
           <li aria-hidden="true">/</li>
           <li>
             <Link href={`/cities/${facility.city.slug}`}>
