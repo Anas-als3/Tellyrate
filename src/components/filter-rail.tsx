@@ -68,11 +68,8 @@ function regionOptions(t: Dictionary, facets: FilterFacets): FilterOption[] {
 /** The "no filter" row at the top of each family. */
 function anyLabel(t: Dictionary, family: RailFamily): string {
   switch (family) {
-    // TODO(dictionary): `facilities.anyRegion`. Borrowing the country string
-    // until it exists; the country family is never rendered, so nothing reads
-    // the same phrase twice.
     case "region":
-      return t.facilities.anyCountry;
+      return t.facilities.anyRegion;
     case "city":
       return t.facilities.anyCity;
     case "country":
@@ -87,9 +84,8 @@ function anyLabel(t: Dictionary, family: RailFamily): string {
 /** Written as switches so a new filter family is a compile error, not a blank. */
 function groupTitle(t: Dictionary, family: RailFamily): string {
   switch (family) {
-    // TODO(dictionary): `facilities.regionFamily`.
     case "region":
-      return t.facilities.countryFamily;
+      return t.facilities.regionFamily;
     case "city":
       return t.facilities.cityFamily;
     case "country":
