@@ -26,6 +26,8 @@ import {
   type Locale,
 } from "@/lib/i18n/dictionaries";
 import { cityNameFor } from "@/lib/i18n/names";
+import { REGIONS, REGION_BY_SLUG } from "@/lib/labels";
+import type { Region as CityRegion } from "@/generated/prisma/client";
 import { getLocale } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { FilterRail, type FilterOption } from "@/components/filter-rail";
@@ -89,15 +91,21 @@ function headingFor(
  * The duplication is deliberate but unwanted; see the note in the handover
  * about exporting the builder from lib/queries.ts instead.
  */
+type FacetFamily = FilterFamily | "region";
+
 function facetWhere(
   query: FacilityQuery,
-  omit: FilterFamily[] = [],
+  omit: FacetFamily[] = [],
 ): Prisma.FacilityWhereInput {
-  const drop = new Set(omit);
+  const drop = new Set<FacetFamily>(omit);
   const where: Prisma.FacilityWhereInput = { status: "PUBLISHED" };
 
   const city: Prisma.CityWhereInput = {};
   if (query.city && !drop.has("city")) city.slug = query.city;
+  if (query.region && !drop.has("region")) {
+    const key = REGION_BY_SLUG[query.region];
+    if (key) city.region = key as CityRegion;
+  }
   if (query.country && !drop.has("country")) {
     city.countryCode = query.country.toUpperCase();
   }
@@ -125,7 +133,7 @@ async function loadFacets(
   t: Dictionary,
   locale: Locale,
 ) {
-  const [kindGroups, cityGroups, countryGroups] = await Promise.all([
+  const [kindGroups, cityGroups, regionGroups, countryGroups] = await Promise.all([
     prisma.facility.groupBy({
       by: ["kind"],
       where: facetWhere(query, ["kind"]),
@@ -134,6 +142,11 @@ async function loadFacets(
     prisma.facility.groupBy({
       by: ["cityId"],
       where: facetWhere(query, ["city"]),
+      _count: { _all: true },
+    }),
+    prisma.facility.groupBy({
+      by: ["cityId"],
+      where: facetWhere(query, ["city", "region"]),
       _count: { _all: true },
     }),
     // A city implies its country, so the country facet has to ignore both or
@@ -150,7 +163,9 @@ async function loadFacets(
   const cityCounts = new Map(
     cityGroups.map((row) => [row.cityId, row._count._all]),
   );
+  const activeRegion = query.region ? REGION_BY_SLUG[query.region] : undefined;
   const cityOptions: FilterOption[] = cities
+    .filter((city) => !activeRegion || city.region === activeRegion)
     .map((city) => ({
       value: city.slug,
       label: cityNameFor(locale, city.name),
@@ -158,6 +173,18 @@ async function loadFacets(
     }))
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0) || a.label.localeCompare(b.label))
     .filter((option, index) => index < CITY_FACET_LIMIT || option.value === query.city);
+
+  const regionCounts = new Map<string, number>();
+  for (const row of regionGroups) {
+    const region = cityById.get(row.cityId)?.region;
+    if (!region) continue;
+    regionCounts.set(region, (regionCounts.get(region) ?? 0) + row._count._all);
+  }
+  const regionOptions: FilterOption[] = REGIONS.map(({ key, slug }) => ({
+    value: slug,
+    label: lookup(t.labels.region, key, key),
+    count: regionCounts.get(key) ?? 0,
+  })).sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 
   const countryCounts = new Map<string, number>();
   for (const row of countryGroups) {
@@ -194,6 +221,7 @@ async function loadFacets(
     }));
 
   return {
+    regions: regionOptions,
     cities: cityOptions,
     countries: countryOptions,
     kinds: kindOptions,
