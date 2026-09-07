@@ -91,6 +91,17 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Run an Overpass query, rotating endpoints and backing off on the 429 and 504
  * responses the public instances routinely return when busy.
  */
+/**
+ * Mirrors that failed to connect at all during this run.
+ *
+ * A 429 or a 504 means "busy, come back" and is worth retrying. A refused
+ * connection or a DNS failure means the mirror is down, and it will still be
+ * down for the next of eighty-one cities — retrying it every time turns one
+ * dead host into eighty-one wasted round trips. Learned per process, so a
+ * mirror that recovers is picked up again on the next run.
+ */
+const unreachable = new Set<string>();
+
 export async function runOverpass(
   query: string,
   options: { attempts?: number; signal?: AbortSignal } = {},
@@ -100,6 +111,7 @@ export async function runOverpass(
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     const endpoint = OVERPASS_ENDPOINTS[attempt % OVERPASS_ENDPOINTS.length];
+    if (unreachable.has(endpoint)) continue;
 
     try {
       const res = await fetch(endpoint, {
@@ -134,7 +146,14 @@ export async function runOverpass(
       return json.elements ?? [];
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      await sleep(1500);
+      // The request never reached the server, so this is the host, not the load.
+      unreachable.add(endpoint);
+      if (unreachable.size >= OVERPASS_ENDPOINTS.length) {
+        // Everything is unreachable: that is the local network, not the
+        // mirrors. Clear the marks so the next call can prove it either way.
+        unreachable.clear();
+        await sleep(1500);
+      }
     }
   }
 
