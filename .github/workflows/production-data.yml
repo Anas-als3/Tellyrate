@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       apply_country_audit:
-        description: Hide unreviewed OSM facilities outside Saudi Arabia
+        description: Hide invalid facilities and re-moderate legacy submissions
         required: true
         type: boolean
         default: false
@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  deployments: read
 
 concurrency:
   group: production-data-maintenance
@@ -44,6 +45,26 @@ jobs:
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::The DIRECT_URL repository secret is not configured."
+            exit 1
+          fi
+
+      - name: Require this commit to be live on Vercel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          deployment_id="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/deployments?sha=${GITHUB_SHA}&environment=Production&per_page=1" \
+            --jq '.[0].id // empty')"
+          if [ -z "$deployment_id" ]; then
+            echo "::error::No Vercel production deployment exists for ${GITHUB_SHA}."
+            exit 1
+          fi
+
+          deployment_state="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/deployments/${deployment_id}/statuses?per_page=1" \
+            --jq '.[0].state // empty')"
+          if [ "$deployment_state" != "success" ]; then
+            echo "::error::The matching Vercel deployment is '${deployment_state:-unknown}', not successful."
             exit 1
           fi
 

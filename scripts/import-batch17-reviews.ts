@@ -249,110 +249,123 @@ async function main() {
     });
     if (!riyadh) throw new Error("Riyadh city row is missing");
 
-    await prisma.$transaction(async (tx) => {
-      for (const facility of CURATED_FACILITIES) {
-        await tx.facility.upsert({
-          where: { slug: facility.slug },
-          create: {
-            slug: facility.slug,
-            name: facility.nameEn,
-            nameEn: facility.nameEn,
-            nameLocal: facility.nameLocal,
-            kind: facility.kind,
-            source: "CURATED",
-            status: "PUBLISHED",
-            cityId: riyadh.id,
-          },
-          update: {
-            name: facility.nameEn,
-            nameEn: facility.nameEn,
-            nameLocal: facility.nameLocal,
-            kind: facility.kind,
-            status: "PUBLISHED",
-            cityId: riyadh.id,
-          },
-        });
-      }
-
-      for (const facility of VERIFIED_NAMES) {
-        const updated = await tx.facility.updateMany({
-          where: { slug: facility.slug },
-          data: {
-            name: facility.nameEn,
-            nameEn: facility.nameEn,
-            nameLocal: facility.nameLocal,
-            kind: facility.kind,
-          },
-        });
-        if (updated.count !== 1) {
-          throw new Error(`Expected existing facility ${facility.slug}`);
+    await prisma.$transaction(
+      async (tx) => {
+        for (const facility of CURATED_FACILITIES) {
+          await tx.facility.upsert({
+            where: { slug: facility.slug },
+            create: {
+              slug: facility.slug,
+              name: facility.nameEn,
+              nameEn: facility.nameEn,
+              nameLocal: facility.nameLocal,
+              kind: facility.kind,
+              source: "CURATED",
+              status: "PUBLISHED",
+              cityId: riyadh.id,
+            },
+            update: {
+              name: facility.nameEn,
+              nameEn: facility.nameEn,
+              nameLocal: facility.nameLocal,
+              kind: facility.kind,
+              cityId: riyadh.id,
+            },
+          });
         }
-      }
 
-      const facilities = await tx.facility.findMany({
-        where: { slug: { in: [...byFacility.keys()] }, status: "PUBLISHED" },
-        select: { id: true, slug: true },
-      });
-      const ids = new Map(facilities.map((facility) => [facility.slug, facility.id]));
-      if (ids.size !== byFacility.size) {
-        const missing = [...byFacility.keys()].filter((slug) => !ids.has(slug));
-        throw new Error(`Missing target facilities: ${missing.join(", ")}`);
-      }
+        for (const facility of VERIFIED_NAMES) {
+          const updated = await tx.facility.updateMany({
+            where: { slug: facility.slug },
+            data: {
+              name: facility.nameEn,
+              nameEn: facility.nameEn,
+              nameLocal: facility.nameLocal,
+              kind: facility.kind,
+            },
+          });
+          if (updated.count !== 1) {
+            throw new Error(`Expected existing facility ${facility.slug}`);
+          }
+        }
 
-      for (const row of rows) {
-        const facilityId = ids.get(row.facilitySlug)!;
-        const data = {
-          facilityId,
-          authorId: null,
-          overall: null,
-          supervision: null,
-          handsOn: null,
-          staffRespect: null,
-          workload: null,
-          resources: null,
-          safety: null,
-          title: null,
-          body: row.body.trim(),
-          field: row.field as (typeof StudentField)[keyof typeof StudentField],
-          role: row.role as (typeof TraineeRole)[keyof typeof TraineeRole],
-          specialty:
-            row.specialty as (typeof RotationSpecialty)[keyof typeof RotationSpecialty],
-          department: row.department?.trim() || null,
-          trainingYear: null,
-          source: "BATCH17_SURVEY" as const,
-          status: "PUBLISHED" as const,
-        };
-        await tx.review.upsert({
-          where: { sourceKey: sourceKey(row.sourceRow) },
-          create: { ...data, sourceKey: sourceKey(row.sourceRow) },
-          update: data,
+        const facilities = await tx.facility.findMany({
+          where: { slug: { in: [...byFacility.keys()] }, status: "PUBLISHED" },
+          select: { id: true, slug: true },
         });
-      }
+        const ids = new Map(
+          facilities.map((facility) => [facility.slug, facility.id]),
+        );
+        if (ids.size !== byFacility.size) {
+          const missing = [...byFacility.keys()].filter((slug) => !ids.has(slug));
+          throw new Error(`Missing target facilities: ${missing.join(", ")}`);
+        }
 
-      for (const facilityId of ids.values()) {
-        const reviewCount = await tx.review.count({
-          where: { facilityId, status: "PUBLISHED" },
+        for (const row of rows) {
+          const facilityId = ids.get(row.facilitySlug)!;
+          const data = {
+            facilityId,
+            authorId: null,
+            overall: null,
+            supervision: null,
+            handsOn: null,
+            staffRespect: null,
+            workload: null,
+            resources: null,
+            safety: null,
+            title: null,
+            body: row.body.trim(),
+            field: row.field as (typeof StudentField)[keyof typeof StudentField],
+            role: row.role as (typeof TraineeRole)[keyof typeof TraineeRole],
+            specialty:
+              row.specialty as (typeof RotationSpecialty)[keyof typeof RotationSpecialty],
+            department: row.department?.trim() || null,
+            trainingYear: null,
+            source: "BATCH17_SURVEY" as const,
+          };
+          await tx.review.upsert({
+            where: { sourceKey: sourceKey(row.sourceRow) },
+            create: {
+              ...data,
+              sourceKey: sourceKey(row.sourceRow),
+              status: "PUBLISHED",
+            },
+            update: data,
+          });
+        }
+
+        for (const facilityId of ids.values()) {
+          const reviewCount = await tx.review.count({
+            where: { facilityId, status: "PUBLISHED" },
+          });
+          await tx.facility.update({
+            where: { id: facilityId },
+            data: { reviewCount },
+          });
+        }
+
+        const [facilityCount, reviewCount, totalReviews] = await Promise.all([
+          tx.facility.count({ where: { cityId: riyadh.id, status: "PUBLISHED" } }),
+          tx.review.count({
+            where: {
+              facility: { cityId: riyadh.id, status: "PUBLISHED" },
+              status: "PUBLISHED",
+            },
+          }),
+          tx.review.count({ where: { status: "PUBLISHED" } }),
+        ]);
+        await tx.city.update({
+          where: { id: riyadh.id },
+          data: { facilityCount, reviewCount },
         });
-        await tx.facility.update({ where: { id: facilityId }, data: { reviewCount } });
-      }
-
-      const [facilityCount, reviewCount, totalReviews] = await Promise.all([
-        tx.facility.count({ where: { cityId: riyadh.id, status: "PUBLISHED" } }),
-        tx.review.count({
-          where: { facility: { cityId: riyadh.id, status: "PUBLISHED" }, status: "PUBLISHED" },
-        }),
-        tx.review.count({ where: { status: "PUBLISHED" } }),
-      ]);
-      await tx.city.update({
-        where: { id: riyadh.id },
-        data: { facilityCount, reviewCount },
-      });
-      await tx.siteStat.upsert({
-        where: { id: "global" },
-        create: { id: "global", reviewCount: totalReviews },
-        update: { reviewCount: totalReviews },
-      });
-    });
+        await tx.siteStat.upsert({
+          where: { id: "global" },
+          create: { id: "global", reviewCount: totalReviews },
+          update: { reviewCount: totalReviews },
+        });
+      },
+      { maxWait: 10_000, timeout: 120_000 },
+    );
 
     const imported = await prisma.review.count({
       where: { source: "BATCH17_SURVEY" },
