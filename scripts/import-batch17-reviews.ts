@@ -93,7 +93,11 @@ const CURATED_FACILITIES: CuratedFacility[] = [
   },
 ];
 
-/** Better bilingual display names for the OSM records used by this import. */
+/**
+ * Known Riyadh facilities used by the survey. Update the matching OSM record
+ * when it exists; create a curated fallback when an older production snapshot
+ * does not contain it. Existing moderation status is always preserved.
+ */
 const VERIFIED_NAMES: Array<CuratedFacility & { slug: string }> = [
   {
     slug: "medical-city-a4fykz",
@@ -275,18 +279,26 @@ async function main() {
         }
 
         for (const facility of VERIFIED_NAMES) {
-          const updated = await tx.facility.updateMany({
+          await tx.facility.upsert({
             where: { slug: facility.slug },
-            data: {
+            create: {
+              slug: facility.slug,
               name: facility.nameEn,
               nameEn: facility.nameEn,
               nameLocal: facility.nameLocal,
               kind: facility.kind,
+              source: "CURATED",
+              status: "PUBLISHED",
+              cityId: riyadh.id,
+            },
+            update: {
+              name: facility.nameEn,
+              nameEn: facility.nameEn,
+              nameLocal: facility.nameLocal,
+              kind: facility.kind,
+              cityId: riyadh.id,
             },
           });
-          if (updated.count !== 1) {
-            throw new Error(`Expected existing facility ${facility.slug}`);
-          }
         }
 
         const facilities = await tx.facility.findMany({
