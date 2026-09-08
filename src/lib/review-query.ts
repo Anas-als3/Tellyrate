@@ -21,6 +21,7 @@ const REVIEW_SORT_KEYS = Object.keys(REVIEW_SORT_OPTIONS) as [
   ReviewSortKey,
   ...ReviewSortKey[],
 ];
+const REVIEW_ID = /^[a-z0-9_-]{1,128}$/i;
 
 const schema = z.object({
   sort: z.enum(REVIEW_SORT_KEYS).catch(DEFAULT_REVIEW_SORT),
@@ -78,6 +79,35 @@ export function buildReviewHref(
 
   const qs = search.toString();
   return `/facilities/${slug}${qs ? `?${qs}` : ""}${withHash ? "#reviews" : ""}`;
+}
+
+/**
+ * A stable public link to one review on its facility page.
+ *
+ * The target id lets the facility page resolve the correct newest-sorted page
+ * at request time; the fragment then moves directly to the rendered card.
+ */
+export function buildReviewPermalink(slug: string, reviewId: string): string {
+  const search = new URLSearchParams({
+    rsort: "newest",
+    rreview: reviewId,
+  });
+  return `/facilities/${slug}?${search}#review-${encodeURIComponent(reviewId)}`;
+}
+
+/** Ignore malformed or repeated deep-link ids before they reach a DB query. */
+export function parseLinkedReviewId(
+  value: string | string[] | undefined,
+): string | undefined {
+  const id = first(value)?.trim();
+  return id && REVIEW_ID.test(id) ? id : undefined;
+}
+
+export function reviewPageForPrecedingCount(
+  precedingReviews: number,
+  pageSize: number,
+): number {
+  return Math.floor(precedingReviews / pageSize) + 1;
 }
 
 export function hasReviewFilters(query: ReviewQuery): boolean {

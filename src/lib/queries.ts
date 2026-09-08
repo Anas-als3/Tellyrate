@@ -8,6 +8,7 @@ import {
   type ReviewSortKey,
   type SortKey,
 } from "@/lib/ranking";
+import { reviewPageForPrecedingCount } from "@/lib/review-query";
 import type {
   FacilityKind,
   Prisma,
@@ -171,22 +172,30 @@ export async function getFacilityBySlug(slug: string) {
 function reviewOrder(sort: ReviewSortKey): Prisma.ReviewOrderByWithRelationInput[] {
   switch (sort) {
     case "newest":
-      return [{ createdAt: "desc" }];
+      return [{ createdAt: "desc" }, { id: "desc" }];
     case "oldest":
-      return [{ createdAt: "asc" }];
+      return [{ createdAt: "asc" }, { id: "asc" }];
     case "highest":
       return [
         { overall: { sort: "desc", nulls: "last" } },
         { helpfulScore: "desc" },
+        { createdAt: "desc" },
+        { id: "desc" },
       ];
     case "lowest":
       return [
         { overall: { sort: "asc", nulls: "last" } },
         { helpfulScore: "desc" },
+        { createdAt: "desc" },
+        { id: "desc" },
       ];
     case "helpful":
     default:
-      return [{ helpfulScore: "desc" }, { createdAt: "desc" }];
+      return [
+        { helpfulScore: "desc" },
+        { createdAt: "desc" },
+        { id: "desc" },
+      ];
   }
 }
 
@@ -199,6 +208,7 @@ export async function listReviews(
     specialty?: RotationSpecialty;
   },
   viewerId?: string | null,
+  linkedReviewId?: string,
 ) {
   const where: Prisma.ReviewWhereInput = {
     facilityId,
@@ -207,11 +217,44 @@ export async function listReviews(
     specialty: filters.specialty,
   };
 
+  let page = filters.page;
+  if (
+    linkedReviewId &&
+    filters.sort === "newest" &&
+    filters.field === undefined &&
+    filters.specialty === undefined
+  ) {
+    const linkedReview = await prisma.review.findFirst({
+      where: { id: linkedReviewId, facilityId, status: "PUBLISHED" },
+      select: { id: true, createdAt: true },
+    });
+
+    if (linkedReview) {
+      const precedingReviews = await prisma.review.count({
+        where: {
+          facilityId,
+          status: "PUBLISHED",
+          OR: [
+            { createdAt: { gt: linkedReview.createdAt } },
+            {
+              createdAt: linkedReview.createdAt,
+              id: { gt: linkedReview.id },
+            },
+          ],
+        },
+      });
+      page = reviewPageForPrecedingCount(
+        precedingReviews,
+        REVIEWS_PAGE_SIZE,
+      );
+    }
+  }
+
   const [reviews, total] = await Promise.all([
     prisma.review.findMany({
       where,
       orderBy: reviewOrder(filters.sort),
-      skip: (filters.page - 1) * REVIEWS_PAGE_SIZE,
+      skip: (page - 1) * REVIEWS_PAGE_SIZE,
       take: REVIEWS_PAGE_SIZE,
       include: {
         author: { select: { id: true, username: true } },
@@ -228,7 +271,7 @@ export async function listReviews(
   return {
     reviews,
     total,
-    page: filters.page,
+    page,
     pageCount: Math.max(1, Math.ceil(total / REVIEWS_PAGE_SIZE)),
   };
 }

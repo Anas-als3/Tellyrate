@@ -6,7 +6,10 @@ import {
 } from "../src/lib/facility-query";
 import {
   buildReviewHref,
+  buildReviewPermalink,
+  parseLinkedReviewId,
   parseReviewQuery,
+  reviewPageForPrecedingCount,
 } from "../src/lib/review-query";
 
 test("facility directory parses and serialises field and specialty filters", () => {
@@ -54,4 +57,25 @@ test("facility review links preserve specialty context and use the review anchor
     buildReviewHref("example-hospital", query),
     "/facilities/example-hospital?rsort=newest&rfield=medicine&rspecialty=pediatrics&rpage=2#reviews",
   );
+});
+
+test("review previews link to the exact review in newest order", () => {
+  assert.equal(
+    buildReviewPermalink("example-hospital", "review-123"),
+    "/facilities/example-hospital?rsort=newest&rreview=review-123#review-review-123",
+  );
+});
+
+test("review deep links accept one safe id and reject malformed input", () => {
+  assert.equal(parseLinkedReviewId(" cm123_ABC-9 "), "cm123_ABC-9");
+  assert.equal(parseLinkedReviewId(["first", "second"]), "first");
+  assert.equal(parseLinkedReviewId("../../../account"), undefined);
+  assert.equal(parseLinkedReviewId("x".repeat(129)), undefined);
+});
+
+test("review deep links resolve pagination boundaries", () => {
+  assert.equal(reviewPageForPrecedingCount(0, 10), 1);
+  assert.equal(reviewPageForPrecedingCount(9, 10), 1);
+  assert.equal(reviewPageForPrecedingCount(10, 10), 2);
+  assert.equal(reviewPageForPrecedingCount(25, 10), 3);
 });

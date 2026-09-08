@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSiteCounts } from "@/lib/queries";
 import { listRegions } from "@/lib/regions";
 import { rotationStamp } from "@/lib/labels";
+import { buildReviewPermalink } from "@/lib/review-query";
 import {
   formatNumber,
   getDictionary,
@@ -76,7 +77,7 @@ export default async function HomePage() {
       }),
       prisma.review.findMany({
         where: { status: "PUBLISHED", facility: { status: "PUBLISHED" } },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: LATEST_REVIEW_COUNT,
         select: {
           id: true,
@@ -483,62 +484,75 @@ function ReviewPreview({
     review.field,
     t.home.studentFallback,
   );
+  const reviewHref = buildReviewPermalink(review.facility.slug, review.id);
 
   return (
-    <article
-      className="card"
-      style={{
-        padding: "var(--space-m)",
-        display: "flex",
-        flexDirection: "column",
-        gap: "var(--space-xs)",
-      }}
-    >
-      <span className="label">
-        {field}
-        {review.specialty
-          ? `${t.common.separator}${lookup(
-              t.labels.rotationSpecialty,
-              review.specialty,
-              review.specialty,
-            )}`
-          : ""}
-        {stamp ? `${t.common.separator}${stamp}` : ""}
-        {review.source === "BATCH17_SURVEY"
-          ? `${t.common.separator}${t.review.importedSurvey}`
-          : ""}
-      </span>
-
-      {review.overall === null ? (
-        <span className="chip" style={{ alignSelf: "flex-start" }}>
-          {t.review.unratedExperience}
-        </span>
-      ) : (
-        <Stars value={review.overall} size={14} showValue t={t} />
-      )}
-
-      {review.title ? (
-        <h3 dir="auto" style={{ fontSize: "var(--step-1)" }}>
-          {review.title}
-        </h3>
-      ) : null}
-
-      <p
-        className="prose"
-        dir="auto"
-        style={{ fontSize: "var(--step-0)", maxInlineSize: "none" }}
+    <article style={{ minInlineSize: 0 }}>
+      <Link
+        href={reviewHref}
+        className="card review-preview-link"
+        aria-label={t.home.readExperienceAt(facilityNames.primary)}
+        style={{
+          minBlockSize: "100%",
+          padding: "var(--space-m)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--space-xs)",
+        }}
       >
-        {excerpt(review.body)}
-      </p>
+        <span className="label">
+          {field}
+          {review.specialty
+            ? `${t.common.separator}${lookup(
+                t.labels.rotationSpecialty,
+                review.specialty,
+                review.specialty,
+              )}`
+            : ""}
+          {stamp ? `${t.common.separator}${stamp}` : ""}
+          {review.source === "BATCH17_SURVEY"
+            ? `${t.common.separator}${t.review.importedSurvey}`
+            : ""}
+        </span>
 
-      <div className="stamp" style={{ marginBlockStart: "auto" }}>
-        <Link
-          href={`/facilities/${review.facility.slug}`}
-          style={{ color: "var(--ink-2)", textDecoration: "none" }}
+        {review.overall === null ? (
+          <span className="chip" style={{ alignSelf: "flex-start" }}>
+            {t.review.unratedExperience}
+          </span>
+        ) : (
+          <Stars value={review.overall} size={14} showValue t={t} />
+        )}
+
+        {review.title ? (
+          <h3 dir="auto" style={{ fontSize: "var(--step-1)" }}>
+            {review.title}
+          </h3>
+        ) : null}
+
+        <p
+          className="prose"
+          dir="auto"
+          style={{ fontSize: "var(--step-0)", maxInlineSize: "none" }}
+        >
+          {excerpt(review.body)}
+        </p>
+
+        <span
+          className="stamp"
+          style={{
+            marginBlockStart: "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "var(--space-xs)",
+          }}
         >
           <bdi dir="auto">{facilityNames.primary}</bdi>
-        </Link>
-      </div>
+          <span className="review-preview-link__arrow" aria-hidden="true">
+            →
+          </span>
+        </span>
+      </Link>
     </article>
   );
 }

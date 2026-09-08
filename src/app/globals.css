@@ -314,6 +314,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  scroll-padding-block-start: 72px;
 }
 
 body {
@@ -538,6 +539,52 @@ textarea {
   border: 1px solid var(--line);
   border-radius: var(--r-1);
   box-shadow: var(--shadow-1);
+}
+
+/* A latest-experience preview has one destination, so the whole card is the
+   link instead of making readers hunt for the facility name in its footer. */
+.review-preview-link {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.review-preview-link:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-2);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.review-preview-link:focus-visible {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-2);
+}
+
+/* Keep the linked testimony clear of the sticky header and make it obvious
+   which card a shared/home-page link selected. */
+[id^="review-"] {
+  scroll-margin-block-start: 72px;
+}
+
+[id^="review-"]:target,
+[id^="review-"][data-linked-review] {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft), var(--shadow-1);
+}
+
+[dir="rtl"] .review-preview-link__arrow {
+  transform: scaleX(-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-preview-link {
+    transition: none;
+  }
 }
 
 /* --------------------------------------------------------------------------

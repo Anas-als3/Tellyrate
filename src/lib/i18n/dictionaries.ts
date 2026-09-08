@@ -255,6 +255,8 @@ const en = {
 
     /** The card footer on a review preview, when the reviewer's field is unknown. */
     studentFallback: "Student",
+    readExperienceAt: (facility: string) =>
+      `Read this experience at ${facility}`,
   },
 
   facilities: {
@@ -1636,6 +1638,8 @@ const ar: Dictionary = {
     howThisWorks: "اعرف كيف نحمي خصوصيتك",
 
     studentFallback: "طالب",
+    readExperienceAt: (facility: string) =>
+      `اقرأ هذه التجربة في ${facility}`,
   },
 
   facilities: {

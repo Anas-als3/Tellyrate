@@ -16,6 +16,7 @@ import {
 import {
   buildReviewHref,
   hasReviewFilters,
+  parseLinkedReviewId,
   parseReviewQuery,
 } from "@/lib/review-query";
 import {
@@ -35,6 +36,7 @@ import {
   coarseAge,
   reportStrings,
 } from "@/components/review-card";
+import { ReviewHashScroller } from "@/components/review-hash-scroller";
 import { ReportControl } from "@/components/vote-buttons";
 import type { ThreadComment, ThreadViewer } from "@/components/comment-thread";
 import type {
@@ -162,8 +164,9 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
 
   // A separate `r*` namespace means review filtering and paging can never be
   // confused with the facility-directory URL that linked here.
-  const reviewQuery = parseReviewQuery(sp);
-  const { sort, page } = reviewQuery;
+  const requestedReviewQuery = parseReviewQuery(sp);
+  const linkedReviewId = parseLinkedReviewId(sp.rreview);
+  const { sort } = requestedReviewQuery;
 
   const viewer = await getCurrentUser();
 
@@ -182,11 +185,14 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
         facility.id,
         {
           sort,
-          page,
-          field: reviewQuery.field as StudentField | undefined,
-          specialty: reviewQuery.specialty as RotationSpecialty | undefined,
+          page: requestedReviewQuery.page,
+          field: requestedReviewQuery.field as StudentField | undefined,
+          specialty: requestedReviewQuery.specialty as
+            | RotationSpecialty
+            | undefined,
         },
         viewer?.id,
+        linkedReviewId,
       ),
 
       prisma.review.groupBy({
@@ -254,8 +260,8 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
         where: {
           facilityId: facility.id,
           status: "PUBLISHED",
-          specialty: reviewQuery.specialty
-            ? (reviewQuery.specialty as RotationSpecialty)
+          specialty: requestedReviewQuery.specialty
+            ? (requestedReviewQuery.specialty as RotationSpecialty)
             : undefined,
         },
         _count: { _all: true },
@@ -266,8 +272,8 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
         where: {
           facilityId: facility.id,
           status: "PUBLISHED",
-          field: reviewQuery.field
-            ? (reviewQuery.field as StudentField)
+          field: requestedReviewQuery.field
+            ? (requestedReviewQuery.field as StudentField)
             : undefined,
           specialty: { not: null },
         },
@@ -275,6 +281,10 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
       }),
     ]);
 
+  // A deep link can resolve to any pagination page. Keep every link generated
+  // below in that resolved page context, not the page number from the URL.
+  const reviewQuery = { ...requestedReviewQuery, page: reviewPage.page };
+  const page = reviewPage.page;
   const reviews = reviewPage.reviews;
 
   // One query for every thread on the page rather than one per review; the
@@ -830,6 +840,8 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                 ))}
               </ol>
             )}
+
+            <ReviewHashScroller navigationKey={canonicalPath} />
 
             {reviewPage.pageCount > 1 ? (
               <nav
