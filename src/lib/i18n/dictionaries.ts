@@ -404,6 +404,7 @@ const en = {
     writeReview: "Write a review",
     editYourReview: "Edit your review",
     writeFirstReview: "Write the first review",
+    writeFirstRating: "Add the first star rating",
     readReviews: (n: number) => `Read ${enCount(n, "experience", "experiences")}`,
 
     scoreHeading: "Student rating",
@@ -1692,7 +1693,7 @@ const ar: Dictionary = {
     countryFamily: "الدولة",
     regionFamily: "المنطقة",
     kindFamily: "النوع",
-    fieldFamily: "التخصص الصحي",
+    fieldFamily: "المجال الصحي",
     specialtyFamily: "تخصص التدريب",
     ratingFamily: "الحد الأدنى للتقييم",
     ratingOption: (value: number) =>
@@ -1770,7 +1771,7 @@ const ar: Dictionary = {
       rating: string,
       reviews: number,
     ) =>
-      `${name}، ${kind} في ${place}. تقييم المتدربين ${rating} من 5، بناء على ${arCount(reviews, {
+      `${name}، ${kind} في ${place}. تقييم المتدربين ${rating} من 5، بناءً على ${arCount(reviews, {
         zero: "لا تجارب",
         one: "تجربة واحدة",
         two: "تجربتين",
@@ -1784,6 +1785,7 @@ const ar: Dictionary = {
     writeReview: "شارك تجربتك",
     editYourReview: "عدّل تجربتك",
     writeFirstReview: "شارك أول تجربة",
+    writeFirstRating: "أضف أول تقييم بالنجوم",
     readReviews: (n: number) =>
       `اقرأ ${arCount(n, {
         zero: "التجارب",
@@ -1835,7 +1837,7 @@ const ar: Dictionary = {
     sortReviews: "ترتيب التجارب",
     applyReviewSort: "رتّب",
     filterReviews: "تصفية التجارب",
-    reviewerField: "التخصص الصحي للمراجع",
+    reviewerField: "مجال صاحب التجربة",
     rotationSpecialty: "تخصص التدريب",
     allReviewerFields: "كل المجالات الصحية",
     allRotationSpecialties: "كل تخصصات التدريب",
@@ -1869,7 +1871,7 @@ const ar: Dictionary = {
 
     flagHeading: "وجدت معلومة غير صحيحة؟",
     flagBody:
-      "إذا كان الاسم خاطئا، أو أغلقت المنشأة، أو كانت مكررة، أرسل لنا بلاغا.",
+      "إذا كان الاسم خاطئًا، أو أغلقت المنشأة، أو كانت مكررة، أرسل لنا بلاغًا.",
 
     moreIn: (city: string) => `المزيد في ${city}`,
     allFacilitiesIn: (city: string) => `كل المنشآت في ${city}`,

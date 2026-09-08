@@ -543,7 +543,9 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                 </p>
                 <div>
                   <Link className="btn btn--primary" href={writeHref}>
-                    {t.facility.writeFirstReview}
+                    {facility.reviewCount > 0
+                      ? t.facility.writeFirstRating
+                      : t.facility.writeFirstReview}
                   </Link>
                 </div>
               </div>
