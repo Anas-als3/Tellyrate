@@ -399,6 +399,13 @@ const en = {
       `${name} is a ${kind} in ${place}, rated ${rating} out of 5 across ${enCount(reviews, "anonymous review", "anonymous reviews")} by healthcare students who trained there — supervision, hands-on experience, workload and how students are treated.`,
     metaUnrated: (name: string, kind: string, place: string) =>
       `${name} is a ${kind} in ${place}. No student reviews yet. If you did a rotation, an internship or summer training here, write the first one — anonymously.`,
+    metaUnratedWithExperiences: (
+      name: string,
+      kind: string,
+      place: string,
+      reviews: number,
+    ) =>
+      `${name} is a ${kind} in ${place}. Read ${enCount(reviews, "anonymous student training experience", "anonymous student training experiences")}; the source survey did not collect star ratings.`,
 
     pendingBadge: "Added by a user — not yet verified",
     writeReview: "Write a review",
@@ -1780,6 +1787,19 @@ const ar: Dictionary = {
       })}. اقرأ تجاربهم عن الإشراف والتطبيق العملي وحجم العمل وتعامل الفريق.`,
     metaUnrated: (name: string, kind: string, place: string) =>
       `${name}، ${kind} في ${place}. لا توجد تجارب عن التدريب هنا حتى الآن. إذا تدربت في هذه المنشأة، شارك أول تجربة عنها من دون ذكر معلومات تكشف هويتك.`,
+    metaUnratedWithExperiences: (
+      name: string,
+      kind: string,
+      place: string,
+      reviews: number,
+    ) =>
+      `${name}، ${kind} في ${place}. اقرأ ${arCount(reviews, {
+        zero: "التجارب المتاحة",
+        one: "تجربة واحدة لطالب",
+        two: "تجربتين لطالبين",
+        few: "{n} تجارب لطلاب",
+        many: "{n} تجربة لطلاب",
+      })} عن التدريب؛ وقد نُقلت من استبيان سابق لم يطلب تقييمًا بالنجوم.`,
 
     pendingBadge: "أضافها أحد المستخدمين ولم نتحقق منها بعد",
     writeReview: "شارك تجربتك",

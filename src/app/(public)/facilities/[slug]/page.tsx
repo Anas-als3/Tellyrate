@@ -124,7 +124,14 @@ export async function generateMetadata({
           facility.ratingAvg.toFixed(1),
           facility.ratingCount,
         )
-      : t.facility.metaUnrated(names.primary, kind, place);
+      : facility.reviewCount > 0
+        ? t.facility.metaUnratedWithExperiences(
+            names.primary,
+            kind,
+            place,
+            facility.reviewCount,
+          )
+        : t.facility.metaUnrated(names.primary, kind, place);
 
   return {
     title,
