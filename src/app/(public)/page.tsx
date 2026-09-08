@@ -43,6 +43,7 @@ const facilityCardSelect = {
   nameLocal: true,
   kind: true,
   reviewCount: true,
+  ratingCount: true,
   ratingAvg: true,
   city: { select: { name: true, slug: true, countryCode: true } },
 } as const;
@@ -68,8 +69,8 @@ export default async function HomePage() {
         select: facilityCardSelect,
       }),
       prisma.facility.findMany({
-        where: { status: "PUBLISHED", reviewCount: { gte: RATED_THRESHOLD } },
-        orderBy: [{ bayesScore: "desc" }, { reviewCount: "desc" }, { name: "asc" }],
+        where: { status: "PUBLISHED", ratingCount: { gte: RATED_THRESHOLD } },
+        orderBy: [{ bayesScore: "desc" }, { ratingCount: "desc" }, { name: "asc" }],
         take: HOME_CARD_COUNT,
         select: facilityCardSelect,
       }),
@@ -80,9 +81,11 @@ export default async function HomePage() {
         select: {
           id: true,
           overall: true,
+          source: true,
           title: true,
           body: true,
           field: true,
+          specialty: true,
           trainingYear: true,
           facility: {
             select: {
@@ -188,13 +191,12 @@ export default async function HomePage() {
             and thirteen regions cover the whole country, where six cities
             silently left most of it out. */}
         <div style={{ marginBlockStart: "var(--space-l)" }}>
-          {/* TODO(dictionary): `home.browseByRegion`. */}
           <Link
             className="label"
             href="/regions"
             style={{ color: "var(--brand-ink)", textDecoration: "none" }}
           >
-            {t.home.browseByCity}
+            {t.home.browseByRegion}
           </Link>
           <ul
             style={{
@@ -449,10 +451,12 @@ function Section({
 
 type ReviewPreviewData = {
   id: string;
-  overall: number;
+  overall: number | null;
+  source: string;
   title: string | null;
   body: string;
   field: string;
+  specialty: string | null;
   trainingYear: number | null;
   facility: {
     slug: string;
@@ -492,19 +496,39 @@ function ReviewPreview({
     >
       <span className="label">
         {field}
+        {review.specialty
+          ? `${t.common.separator}${lookup(
+              t.labels.rotationSpecialty,
+              review.specialty,
+              review.specialty,
+            )}`
+          : ""}
         {stamp ? `${t.common.separator}${stamp}` : ""}
+        {review.source === "BATCH17_SURVEY"
+          ? `${t.common.separator}${t.review.importedSurvey}`
+          : ""}
       </span>
 
-      <Stars value={review.overall} size={14} showValue t={t} />
+      {review.overall === null ? (
+        <span className="chip" style={{ alignSelf: "flex-start" }}>
+          {t.review.unratedExperience}
+        </span>
+      ) : (
+        <Stars value={review.overall} size={14} showValue t={t} />
+      )}
 
       {review.title ? (
-        <h3 style={{ fontSize: "var(--step-1)" }}>
-          <bdi dir="auto">{review.title}</bdi>
+        <h3 dir="auto" style={{ fontSize: "var(--step-1)" }}>
+          {review.title}
         </h3>
       ) : null}
 
-      <p className="prose" style={{ fontSize: "var(--step-0)", maxInlineSize: "none" }}>
-        <bdi dir="auto">{excerpt(review.body)}</bdi>
+      <p
+        className="prose"
+        dir="auto"
+        style={{ fontSize: "var(--step-0)", maxInlineSize: "none" }}
+      >
+        {excerpt(review.body)}
       </p>
 
       <div className="stamp" style={{ marginBlockStart: "auto" }}>

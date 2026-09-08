@@ -49,15 +49,35 @@ const AMENITY_MATCH = "^(hospital|clinic|doctors|dentist|pharmacy|nursing_home)$
 export function buildBboxQuery(
   bbox: [number, number, number, number],
   timeoutSeconds = 120,
+  countryCode = "SA",
 ): string {
   const [south, west, north, east] = bbox;
   const box = `${south},${west},${north},${east}`;
+  const country = countryArea(countryCode);
   return `[out:json][timeout:${timeoutSeconds}];
+${country}
 (
-  nwr["amenity"~"${AMENITY_MATCH}"](${box});
-  nwr["healthcare"](${box});
+  nwr["amenity"~"${AMENITY_MATCH}"](area.country)(${box});
+  nwr["healthcare"](area.country)(${box});
 );
 out center tags;`;
+}
+
+/** One country-wide inventory, used by the offline audit to reject stale
+ * records that a historical city bounding box accidentally imported from
+ * across a border. It returns ids and tags only; geometry is unnecessary. */
+export function buildCountryFacilityQuery(
+  countryCode = "SA",
+  timeoutSeconds = 600,
+): string {
+  const country = countryArea(countryCode);
+  return `[out:json][timeout:${timeoutSeconds}];
+${country}
+(
+  nwr["amenity"~"${AMENITY_MATCH}"](area.country);
+  nwr["healthcare"](area.country);
+);
+out tags;`;
 }
 
 /** Narrow, fast query used by the in-app "search OpenStreetMap" step. */
@@ -65,17 +85,28 @@ export function buildNameSearchQuery(
   name: string,
   bbox: [number, number, number, number],
   timeoutSeconds = 30,
+  countryCode = "SA",
 ): string {
   const [south, west, north, east] = bbox;
   const box = `${south},${west},${north},${east}`;
   // Escape for an Overpass regex string literal.
   const safe = name.replace(/["\\]/g, "\\$&").slice(0, 80);
+  const country = countryArea(countryCode);
   return `[out:json][timeout:${timeoutSeconds}];
+${country}
 (
-  nwr["amenity"~"${AMENITY_MATCH}"]["name"~"${safe}",i](${box});
-  nwr["healthcare"]["name"~"${safe}",i](${box});
+  nwr["amenity"~"${AMENITY_MATCH}"]["name"~"${safe}",i](area.country)(${box});
+  nwr["healthcare"]["name"~"${safe}",i](area.country)(${box});
 );
 out center tags 40;`;
+}
+
+function countryArea(countryCode: string): string {
+  const code = countryCode.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) {
+    throw new Error("countryCode must be a two-letter ISO code");
+  }
+  return `area["ISO3166-1"="${code}"]["boundary"="administrative"]["admin_level"="2"]->.country;`;
 }
 
 export class OverpassError extends Error {

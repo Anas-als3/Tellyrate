@@ -16,7 +16,12 @@ import {
   type Dictionary,
   type Locale,
 } from "@/lib/i18n/dictionaries";
-import { RATING_AXES, STUDENT_FIELDS, TRAINEE_ROLES } from "@/lib/labels";
+import {
+  RATING_AXES,
+  ROTATION_SPECIALTIES,
+  STUDENT_FIELDS,
+  TRAINEE_ROLES,
+} from "@/lib/labels";
 
 /**
  * The review form.
@@ -52,6 +57,7 @@ export type ReviewFormValues = {
   title: string | null;
   field: string | null;
   role: string | null;
+  specialty: string | null;
   department: string | null;
   trainingYear: number | null;
   supervision: number | null;
@@ -576,6 +582,30 @@ export function ReviewForm({
           {t.bodyWarning}
         </p>
 
+        <aside
+          style={{
+            borderInlineStart: "3px solid var(--brand)",
+            paddingInlineStart: "var(--space-s)",
+            marginBlockEnd: "var(--space-s)",
+          }}
+        >
+          <strong style={{ fontSize: "var(--step--1)" }}>
+            {t.writingPrompts}
+          </strong>
+          <ul
+            className="hint"
+            style={{
+              margin: "var(--space-2xs) 0 0",
+              paddingInlineStart: "var(--space-m)",
+              columns: "2 16rem",
+            }}
+          >
+            {t.writingPromptItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </aside>
+
         <textarea
           id="review-body"
           name="body"
@@ -692,6 +722,33 @@ export function ReviewForm({
         </select>
         <p className="hint">{t.roleHint}</p>
         <FieldError locale={locale} message={errorFor("role")} />
+      </div>
+
+      {/* -- 5. broad rotation specialty ---------------------------------- */}
+      <div className="field" style={{ maxInlineSize: "26rem" }}>
+        <label className="label" htmlFor="review-specialty">
+          {t.specialtyLabel}
+        </label>
+        <select
+          id="review-specialty"
+          name="specialty"
+          className="select"
+          defaultValue={initial?.specialty ?? ""}
+          aria-invalid={errorFor("specialty") ? true : undefined}
+        >
+          <option value="">{t.specialtyPlaceholder}</option>
+          {ROTATION_SPECIALTIES.map((value) => (
+            <option key={value} value={value}>
+              {lookup(
+                d.labels.rotationSpecialty,
+                value,
+                d.labels.healthcareFallback,
+              )}
+            </option>
+          ))}
+        </select>
+        <p className="hint">{t.specialtyHint}</p>
+        <FieldError locale={locale} message={errorFor("specialty")} />
       </div>
 
       {/* -- everything else ------------------------------------------------ */}

@@ -26,8 +26,17 @@ import {
   type Locale,
 } from "@/lib/i18n/dictionaries";
 import { cityNameFor } from "@/lib/i18n/names";
-import { REGIONS, REGION_BY_SLUG } from "@/lib/labels";
-import type { Region as CityRegion } from "@/generated/prisma/client";
+import {
+  REGIONS,
+  REGION_BY_SLUG,
+  ROTATION_SPECIALTIES,
+  STUDENT_FIELDS,
+} from "@/lib/labels";
+import type {
+  Region as CityRegion,
+  RotationSpecialty,
+  StudentField,
+} from "@/generated/prisma/client";
 import { getLocale } from "@/lib/i18n/server";
 import { FacilityCard } from "@/components/facility-card";
 import { FilterRail, type FilterOption } from "@/components/filter-rail";
@@ -62,11 +71,12 @@ function headingFor(
   input: {
     kind?: string;
     cityName?: string;
+    regionName?: string;
     countryName?: string;
     q?: string;
   },
 ): string {
-  const place = input.cityName ?? input.countryName;
+  const place = input.cityName ?? input.regionName ?? input.countryName;
 
   // Nothing narrowed at all: say so plainly rather than "Facilities".
   if (!input.kind && !place && !input.q) return t.facilities.allFacilities;
@@ -113,8 +123,22 @@ function facetWhere(
 
   if (query.kind && !drop.has("kind")) where.kind = query.kind as FacilityKind;
 
+  const matchingReview: Prisma.ReviewWhereInput = { status: "PUBLISHED" };
+  if (query.field && !drop.has("field")) {
+    matchingReview.field = query.field as StudentField;
+  }
+  if (query.specialty && !drop.has("specialty")) {
+    matchingReview.specialty = query.specialty as RotationSpecialty;
+  }
+  if (
+    (query.field && !drop.has("field")) ||
+    (query.specialty && !drop.has("specialty"))
+  ) {
+    where.reviews = { some: matchingReview };
+  }
+
   if (query.min !== undefined && !drop.has("min")) {
-    where.reviewCount = { gt: 0 };
+    where.ratingCount = { gt: 0 };
     where.ratingAvg = { gte: query.min };
   }
 
@@ -133,7 +157,14 @@ async function loadFacets(
   t: Dictionary,
   locale: Locale,
 ) {
-  const [kindGroups, cityGroups, regionGroups, countryGroups] = await Promise.all([
+  const [
+    kindGroups,
+    cityGroups,
+    regionGroups,
+    countryGroups,
+    fieldRows,
+    specialtyRows,
+  ] = await Promise.all([
     prisma.facility.groupBy({
       by: ["kind"],
       where: facetWhere(query, ["kind"]),
@@ -155,6 +186,29 @@ async function loadFacets(
       by: ["cityId"],
       where: facetWhere(query, ["city", "country"]),
       _count: { _all: true },
+    }),
+    // Distinct facility/field pairs make these facility counts, not review
+    // counts. A hospital with twenty medical reviews still contributes one.
+    prisma.review.findMany({
+      where: {
+        status: "PUBLISHED",
+        specialty: query.specialty
+          ? (query.specialty as RotationSpecialty)
+          : undefined,
+        facility: facetWhere(query, ["field", "specialty"]),
+      },
+      distinct: ["facilityId", "field"],
+      select: { facilityId: true, field: true },
+    }),
+    prisma.review.findMany({
+      where: {
+        status: "PUBLISHED",
+        field: query.field ? (query.field as StudentField) : undefined,
+        specialty: { not: null },
+        facility: facetWhere(query, ["field", "specialty"]),
+      },
+      distinct: ["facilityId", "specialty"],
+      select: { facilityId: true, specialty: true },
     }),
   ]);
 
@@ -211,6 +265,32 @@ async function loadFacets(
     }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 
+  const fieldCounts = new Map<string, number>();
+  for (const row of fieldRows) {
+    fieldCounts.set(row.field, (fieldCounts.get(row.field) ?? 0) + 1);
+  }
+  const fieldOptions: FilterOption[] = STUDENT_FIELDS.map((field) => ({
+    value: field,
+    label: lookup(t.labels.studentField, field, field),
+    count: fieldCounts.get(field) ?? 0,
+  })).sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+
+  const specialtyCounts = new Map<string, number>();
+  for (const row of specialtyRows) {
+    if (!row.specialty) continue;
+    specialtyCounts.set(
+      row.specialty,
+      (specialtyCounts.get(row.specialty) ?? 0) + 1,
+    );
+  }
+  const specialtyOptions: FilterOption[] = ROTATION_SPECIALTIES.map(
+    (specialty) => ({
+      value: specialty,
+      label: lookup(t.labels.rotationSpecialty, specialty, specialty),
+      count: specialtyCounts.get(specialty) ?? 0,
+    }),
+  ).sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+
   // No counts on the rating family: they would cost a scan of every rated
   // facility per threshold, and the thresholds are self-explanatory anyway.
   const ratingOptions: FilterOption[] = [...MIN_RATING_OPTIONS]
@@ -225,6 +305,8 @@ async function loadFacets(
     cities: cityOptions,
     countries: countryOptions,
     kinds: kindOptions,
+    fields: fieldOptions,
+    specialties: specialtyOptions,
     ratings: ratingOptions,
   };
 }
@@ -244,7 +326,11 @@ function placeNames(
   const countryName = query.country
     ? lookup(t.labels.country, query.country.toUpperCase(), query.country.toUpperCase())
     : undefined;
-  return { cityName, countryName };
+  const regionKey = query.region ? REGION_BY_SLUG[query.region] : undefined;
+  const regionName = regionKey
+    ? lookup(t.labels.region, regionKey, regionKey)
+    : undefined;
+  return { cityName, regionName, countryName };
 }
 
 export async function generateMetadata({
@@ -255,7 +341,7 @@ export async function generateMetadata({
   const locale = await getLocale();
   const t = getDictionary(locale);
   const query = parseFacilityQuery(await searchParams);
-  const { cityName, countryName } = placeNames(
+  const { cityName, regionName, countryName } = placeNames(
     query,
     await cachedCities(),
     t,
@@ -265,6 +351,7 @@ export async function generateMetadata({
   const heading = headingFor(t, {
     kind: query.kind,
     cityName,
+    regionName,
     countryName,
     q: query.q || undefined,
   });
@@ -288,9 +375,11 @@ function chipLabel(
   t: Dictionary,
   family: FilterFamily,
   query: FacilityQuery,
-  names: { cityName?: string; countryName?: string },
+  names: { cityName?: string; regionName?: string; countryName?: string },
 ): string {
   switch (family) {
+    case "region":
+      return t.facilities.chipRegion(names.regionName ?? query.region ?? "");
     case "city":
       return t.facilities.chipCity(names.cityName ?? query.city ?? "");
     case "country":
@@ -298,6 +387,18 @@ function chipLabel(
     case "kind":
       return t.facilities.chipKind(
         lookup(t.labels.facilityKind, query.kind ?? "", query.kind ?? ""),
+      );
+    case "field":
+      return t.facilities.chipField(
+        lookup(t.labels.studentField, query.field ?? "", query.field ?? ""),
+      );
+    case "specialty":
+      return t.facilities.chipSpecialty(
+        lookup(
+          t.labels.rotationSpecialty,
+          query.specialty ?? "",
+          query.specialty ?? "",
+        ),
       );
     case "min":
       return t.facilities.chipMinRating(query.min ?? 0);
@@ -323,6 +424,7 @@ export default async function FacilitiesPage({
   const heading = headingFor(t, {
     kind: query.kind,
     cityName: names.cityName,
+    regionName: names.regionName,
     countryName: names.countryName,
     q: query.q || undefined,
   });
@@ -398,8 +500,21 @@ export default async function FacilitiesPage({
           {query.city ? (
             <input type="hidden" name="city" value={query.city} />
           ) : null}
+          {query.region ? (
+            <input type="hidden" name="region" value={query.region} />
+          ) : null}
           {query.kind ? (
             <input type="hidden" name="kind" value={query.kind.toLowerCase()} />
+          ) : null}
+          {query.field ? (
+            <input type="hidden" name="field" value={query.field.toLowerCase()} />
+          ) : null}
+          {query.specialty ? (
+            <input
+              type="hidden"
+              name="specialty"
+              value={query.specialty.toLowerCase()}
+            />
           ) : null}
           {query.min !== undefined ? (
             <input type="hidden" name="min" value={String(query.min)} />
@@ -510,7 +625,14 @@ export default async function FacilitiesPage({
               >
                 {result.facilities.map((facility) => (
                   <li key={facility.slug}>
-                    <FacilityCard facility={facility} locale={locale} />
+                    <FacilityCard
+                      facility={facility}
+                      locale={locale}
+                      reviewFilters={{
+                        field: query.field,
+                        specialty: query.specialty,
+                      }}
+                    />
                   </li>
                 ))}
               </ul>

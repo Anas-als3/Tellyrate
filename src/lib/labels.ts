@@ -64,6 +64,41 @@ export const TRAINEE_ROLE_SHORT: Record<string, string> = {
   OTHER: "Trainee",
 };
 
+/** Broad, filterable placement areas. The optional department remains free
+ * text for a hospital's own unit or team name. */
+export const ROTATION_SPECIALTY_LABELS: Record<string, string> = {
+  FAMILY_MEDICINE: "Family medicine",
+  EMERGENCY_MEDICINE: "Emergency medicine",
+  INTERNAL_MEDICINE: "Internal medicine",
+  GENERAL_SURGERY: "General surgery",
+  PEDIATRICS: "Paediatrics",
+  OBSTETRICS_GYNECOLOGY: "Obstetrics & gynaecology",
+  ANESTHESIOLOGY: "Anaesthesiology",
+  INTENSIVE_CARE: "Intensive care",
+  OTOLARYNGOLOGY: "ENT",
+  UROLOGY: "Urology",
+  ORTHOPEDICS: "Orthopaedics",
+  PSYCHIATRY: "Psychiatry",
+  RADIOLOGY: "Radiology",
+  PATHOLOGY: "Pathology",
+  ONCOLOGY: "Oncology",
+  OPHTHALMOLOGY: "Ophthalmology",
+  DERMATOLOGY: "Dermatology",
+  NEUROLOGY: "Neurology",
+  NEONATOLOGY: "Neonatology / NICU",
+  PEDIATRIC_EMERGENCY: "Paediatric emergency",
+  PEDIATRIC_SUBSPECIALTY: "Paediatric subspecialty",
+  SURGICAL_SUBSPECIALTY: "Surgical subspecialty",
+  PHARMACY: "Pharmacy",
+  DENTISTRY: "Dentistry",
+  LABORATORY: "Laboratory medicine",
+  REHABILITATION: "Rehabilitation",
+  PUBLIC_HEALTH: "Public health",
+  OTHER: "Other",
+};
+
+export const ROTATION_SPECIALTIES = Object.keys(ROTATION_SPECIALTY_LABELS);
+
 /**
  * Suggestions for the free-text department field. Offered through a
  * `<datalist>` rather than a `<select>`, because departments are named

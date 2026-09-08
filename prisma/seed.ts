@@ -881,7 +881,7 @@ async function main() {
   for (const facilityId of touchedFacilities) {
     const stats = await prisma.review.aggregate({
       where: { facilityId, status: "PUBLISHED" },
-      _count: { _all: true },
+      _count: { _all: true, overall: true },
       _sum: { overall: true },
       _avg: {
         supervision: true,
@@ -894,14 +894,16 @@ async function main() {
     });
 
     const reviewCount = stats._count._all;
+    const ratingCount = stats._count.overall;
     const ratingSum = stats._sum.overall ?? 0;
 
     await prisma.facility.update({
       where: { id: facilityId },
       data: {
         reviewCount,
+        ratingCount,
         ratingSum,
-        ratingAvg: roundRating(reviewCount > 0 ? ratingSum / reviewCount : 0),
+        ratingAvg: roundRating(ratingCount > 0 ? ratingSum / ratingCount : 0),
         avgSupervision: round1(stats._avg.supervision),
         avgHandsOn: round1(stats._avg.handsOn),
         avgStaffRespect: round1(stats._avg.staffRespect),
@@ -929,14 +931,14 @@ async function main() {
 
   // 4e. Rescore every rated facility against the mean that now exists.
   const rated = await prisma.facility.findMany({
-    where: { reviewCount: { gt: 0 } },
-    select: { id: true, ratingSum: true, reviewCount: true },
+    where: { ratingCount: { gt: 0 } },
+    select: { id: true, ratingSum: true, ratingCount: true },
   });
   for (const f of rated) {
     await prisma.facility.update({
       where: { id: f.id },
       data: {
-        bayesScore: bayesianScore(f.ratingSum, f.reviewCount, meanRating),
+        bayesScore: bayesianScore(f.ratingSum, f.ratingCount, meanRating),
       },
     });
   }
@@ -963,13 +965,14 @@ async function main() {
   // -- 5. Report ----------------------------------------------------------
 
   const top = await prisma.facility.findMany({
-    where: { reviewCount: { gt: 0 } },
+    where: { ratingCount: { gt: 0 } },
     orderBy: { bayesScore: "desc" },
     take: 5,
     select: {
       name: true,
       ratingAvg: true,
       reviewCount: true,
+      ratingCount: true,
       bayesScore: true,
       city: { select: { name: true } },
     },
@@ -994,7 +997,7 @@ async function main() {
   for (const f of top) {
     console.log(
       `    ${f.bayesScore.toFixed(2)}  (avg ${f.ratingAvg.toFixed(1)} from ${String(
-        f.reviewCount,
+        f.ratingCount,
       ).padStart(2)})  ${f.name} — ${f.city.name}`,
     );
   }

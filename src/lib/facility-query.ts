@@ -22,7 +22,12 @@
 
 import { z } from "zod";
 import { DEFAULT_SORT, SORT_OPTIONS, type SortKey } from "@/lib/ranking";
-import { FACILITY_KINDS, REGION_BY_SLUG } from "@/lib/labels";
+import {
+  FACILITY_KINDS,
+  REGION_BY_SLUG,
+  ROTATION_SPECIALTIES,
+  STUDENT_FIELDS,
+} from "@/lib/labels";
 
 /** Longer than this is a paste accident, not a facility name. */
 export const MAX_QUERY_LENGTH = 80;
@@ -77,6 +82,10 @@ export type FacilityQuery = {
   city?: string;
   /** FacilityKind enum value, upper-cased. Serialised lower-case. */
   kind?: string;
+  /** StudentField enum value: who wrote the matching experiences. */
+  field?: string;
+  /** RotationSpecialty enum value: what the matching placement was in. */
+  specialty?: string;
   min?: MinRating;
   page: number;
 };
@@ -86,18 +95,19 @@ export type FacilityQueryOverrides = Partial<FacilityQuery>;
 /**
  * The families that show as a removable chip above the results, in chip order.
  */
-export const FILTER_FAMILIES = ["city", "country", "kind", "min"] as const;
+export const FILTER_FAMILIES = [
+  "region",
+  "city",
+  "country",
+  "kind",
+  "field",
+  "specialty",
+  "min",
+] as const;
 
 export type FilterFamily = (typeof FILTER_FAMILIES)[number];
 
-/**
- * The rail offers one family more than the chips do.
- *
- * Region leads it — a student weighing a training year thinks "somewhere in
- * Qassim" before they think "Buraydah" — but it has no chip of its own, so its
- * row in the rail is both how it is set and how it is cleared.
- */
-export type RailFamily = FilterFamily | "region";
+export type RailFamily = FilterFamily;
 
 const SORT_KEYS = Object.keys(SORT_OPTIONS) as [SortKey, ...SortKey[]];
 
@@ -154,6 +164,16 @@ export const facilityQuerySchema = z.object({
     .refine((value) => FACILITY_KINDS.includes(value))
     .optional()
     .catch(undefined),
+  field: z
+    .string()
+    .refine((value) => STUDENT_FIELDS.includes(value))
+    .optional()
+    .catch(undefined),
+  specialty: z
+    .string()
+    .refine((value) => ROTATION_SPECIALTIES.includes(value))
+    .optional()
+    .catch(undefined),
   min: z.coerce
     .number()
     .refine(isMinRating)
@@ -179,6 +199,8 @@ function normaliseRaw(sp: SearchParamsInput) {
     region: first(sp.region)?.trim().toLowerCase(),
     city: first(sp.city)?.trim().toLowerCase(),
     kind: first(sp.kind)?.trim().toUpperCase(),
+    field: first(sp.field)?.trim().toUpperCase(),
+    specialty: first(sp.specialty)?.trim().toUpperCase(),
     min: first(sp.min)?.trim(),
     page: first(sp.page)?.trim(),
   };
@@ -195,6 +217,8 @@ export function parseFacilityQuery(
     region: parsed.region,
     city: parsed.city,
     kind: parsed.kind,
+    field: parsed.field,
+    specialty: parsed.specialty,
     min: parsed.min as MinRating | undefined,
     page: parsed.page,
   };
@@ -219,6 +243,10 @@ export function buildHref(
   const changesResultSet = Object.keys(overrides).some((key) => key !== "page");
   if (changesResultSet && !("page" in overrides)) next.page = 1;
 
+  // A city belongs to one region. Carrying Riyadh city into a newly selected
+  // Makkah region can only produce an empty result, so region changes cascade.
+  if ("region" in overrides && !("city" in overrides)) next.city = undefined;
+
   // Fixed key order: two links that mean the same thing must be byte-identical.
   const search = new URLSearchParams();
   if (next.q) search.set("q", next.q);
@@ -226,6 +254,8 @@ export function buildHref(
   if (next.region) search.set("region", next.region);
   if (next.city) search.set("city", next.city);
   if (next.kind) search.set("kind", next.kind.toLowerCase());
+  if (next.field) search.set("field", next.field.toLowerCase());
+  if (next.specialty) search.set("specialty", next.specialty.toLowerCase());
   if (next.min !== undefined) search.set("min", String(next.min));
   if (next.sort !== DEFAULT_SORT) search.set("sort", next.sort);
   if (next.page > 1) search.set("page", String(next.page));
@@ -244,11 +274,7 @@ export function activeFamilies(query: FacilityQuery): FilterFamily[] {
 }
 
 export function hasActiveFilters(query: FacilityQuery): boolean {
-  return (
-    query.q !== "" ||
-    query.region !== undefined ||
-    activeFamilies(query).length > 0
-  );
+  return query.q !== "" || activeFamilies(query).length > 0;
 }
 
 /** The selected value of one family, as the string its option links carry. */
@@ -279,6 +305,10 @@ export function familyOverride(
       return { country: value };
     case "kind":
       return { kind: value };
+    case "field":
+      return { field: value };
+    case "specialty":
+      return { specialty: value };
     case "min": {
       if (value === undefined) return { min: undefined };
       const parsed = Number(value);
@@ -298,7 +328,7 @@ export function familyOverride(
 export function shouldNoIndex(query: FacilityQuery): boolean {
   if (query.q) return true;
   if (query.page > MAX_INDEXED_PAGE) return true;
-  const narrowed = activeFamilies(query).length + (query.region ? 1 : 0);
+  const narrowed = activeFamilies(query).length;
   return narrowed > 2;
 }
 
@@ -343,6 +373,8 @@ export function toFacilityFilters(query: FacilityQuery) {
     // The URL carries the slug; the column holds the enum value.
     regionKey: query.region ? REGION_BY_SLUG[query.region] : undefined,
     kind: query.kind,
+    field: query.field,
+    specialty: query.specialty,
     minRating: query.min,
   };
 }

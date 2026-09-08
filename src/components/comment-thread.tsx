@@ -200,12 +200,15 @@ function CommentItem({
   const isAuthor = viewer !== null && comment.author?.id === viewer.id;
   const canDelete = isAuthor || (viewer?.canModerate ?? false);
   const username = comment.author?.username ?? strings.authorDeleted;
+  const authorLabel = comment.author
+    ? `@${comment.author.username}`
+    : strings.authorDeleted;
 
   return (
     <article style={{ display: "grid", gap: "var(--space-2xs)" }}>
       <p className="label" style={{ margin: 0 }}>
         {/* An account whose user was deleted keeps its words and loses its name. */}
-        <bdi dir="auto">@{username}</bdi>
+        <bdi dir="auto">{authorLabel}</bdi>
         <span style={{ textTransform: "none", letterSpacing: 0 }}>
           {strings.separator}
           {comment.age}

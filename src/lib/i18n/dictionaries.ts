@@ -216,6 +216,7 @@ const en = {
     searchButton: "Search",
 
     browseByCity: "Browse by city",
+    browseByRegion: "Browse by region",
 
     /** The counter under the hero: facilities · cities · reviews. */
     stats: (facilities: number, cities: number, reviews: number) =>
@@ -283,12 +284,16 @@ const en = {
       `${formatNumber(total)} facilities match. Showing page ${formatNumber(page)} of ${formatNumber(pageCount)}.`,
 
     clearAll: "Clear all",
+    applyFilters: "Show results",
     clearFilters: "Clear filters",
     removeFilter: "— remove this filter",
     chipSearch: (q: string) => `Search: “${q}”`,
+    chipRegion: (name: string) => `Region: ${name}`,
     chipCity: (name: string) => `City: ${name}`,
     chipCountry: (name: string) => `Country: ${name}`,
     chipKind: (name: string) => `Kind: ${name}`,
+    chipField: (name: string) => `Reviewer field: ${name}`,
+    chipSpecialty: (name: string) => `Rotation: ${name}`,
     chipMinRating: (min: number) => `Rated ${formatNumber(min)} and up`,
 
     emptyTitleQuery: (q: string) => `Nothing here matches “${q}”`,
@@ -307,11 +312,15 @@ const en = {
     anyCountry: "Any country",
     anyRegion: "Any region",
     anyKind: "Any kind",
+    anyField: "Any healthcare field",
+    anySpecialty: "Any rotation specialty",
     anyRating: "Any rating",
     cityFamily: "City",
     countryFamily: "Country",
     regionFamily: "Region",
     kindFamily: "Kind",
+    fieldFamily: "Reviewer’s field",
+    specialtyFamily: "Rotation specialty",
     ratingFamily: "Minimum rating",
     ratingOption: (value: number) => `${formatNumber(value)} stars and up`,
 
@@ -352,7 +361,7 @@ const en = {
 
       createHeading: "Add it to Tellyrate",
       createHint:
-        "New places stay off the directory listings until they have their first review, so nothing appears that nobody has been to.",
+        "New places stay off the directory until a moderator verifies that the facility is real and in Saudi Arabia. You can write your review while it is checked.",
       needAccount: "You need an account to add a place.",
       needAccountToSave:
         "You will need an account to save this — a username and a password, no email.",
@@ -395,16 +404,32 @@ const en = {
     writeReview: "Write a review",
     editYourReview: "Edit your review",
     writeFirstReview: "Write the first review",
+    readReviews: (n: number) => `Read ${enCount(n, "experience", "experiences")}`,
 
     scoreHeading: "Student rating",
+    ratingBreakdown: "Rating breakdown",
     notRatedYet: "Not rated yet",
+    ratedReviewCount: (n: number) => enCount(n, "rated review", "rated reviews"),
+    totalExperienceCount: (n: number) => enCount(n, "experience", "experiences"),
     notRatedBody: (kind: string) =>
       `Nobody has reviewed this ${kind} yet. If you trained here, yours would be the first — and the only account anyone gets of what the placement is actually like.`,
+    unratedWithExperiences: (n: number) =>
+      `${enCount(n, "student experience is", "student experiences are")} available, but the source survey did not ask for stars. The first Tellyrate rating will set the score.`,
 
     reviewsHeading: "Reviews",
     reviewsHeadingCount: (n: number) => enCount(n, "review", "reviews"),
     sortReviews: "Sort reviews",
+    applyReviewSort: "Sort",
+    filterReviews: "Filter these experiences",
+    reviewerField: "Reviewer’s field",
+    rotationSpecialty: "Rotation specialty",
+    allReviewerFields: "All fields",
+    allRotationSpecialties: "All specialties",
+    applyReviewFilters: "Apply filters",
+    clearReviewFilters: "Clear review filters",
+    matchingReviews: (n: number) => enCount(n, "matching experience", "matching experiences"),
     noReviewsYet: "No reviews yet.",
+    noMatchingReviews: "No experiences match those filters.",
     noReviewsOnPage: "No reviews on this page.",
     writeTheFirstOne: "Write the first one.",
     backToFirstPage: "Back to the first page.",
@@ -498,7 +523,9 @@ const en = {
   },
 
   review: {
-    authorDeleted: "deleted",
+    authorDeleted: "deleted account",
+    importedSurvey: "Batch 17 survey",
+    unratedExperience: "Experience shared without a star rating",
     edited: "edited",
     readTheRest: "Read the rest",
     outOfFive: "out of 5",
@@ -534,6 +561,7 @@ const en = {
 
     comments: "Comments",
     commentsCount: (n: number) => enCount(n, "comment", "comments"),
+    commentSignInSuffix: " to add a comment.",
     addComment: "Add a comment",
     addCommentPlaceholder:
       "Ask a question, or add what you saw on the same rotation.",
@@ -577,6 +605,13 @@ const en = {
       "Write about the place, not the people. Don’t name staff, patients, or yourself — that’s how anonymity breaks.",
     bodyPlaceholder:
       "What did a normal day look like? How much did you actually get to do? What would you want to know before you started?",
+    writingPrompts: "Useful details to include",
+    writingPromptItems: [
+      "What the day-to-day training was actually like",
+      "The strongest parts of the rotation",
+      "What made the rotation difficult",
+      "Practical tips for the next trainee",
+    ],
     bodyHelp: (min: number) =>
       `At least ${formatNumber(min)} characters. Specifics beat adjectives — one concrete morning tells a reader more than a paragraph of “great experience”.`,
     bodyCountRemaining: (written: number, remaining: number) =>
@@ -603,6 +638,11 @@ const en = {
     rolePlaceholder: "Choose your role",
     roleHint:
       "A reader weighs the same placement differently depending on whether it came from a first-week student or a second-year resident.",
+
+    specialtyLabel: "Rotation specialty",
+    specialtyPlaceholder: "Choose a broad specialty (optional)",
+    specialtyHint:
+      "This powers the specialty filter. Keep the exact unit or team optional below if it could identify you.",
 
     detailsSummary: "Add details — optional",
     titleLabel: "A one-line summary",
@@ -1217,6 +1257,37 @@ const en = {
       OTHER: "Trainee",
     },
 
+    rotationSpecialty: {
+      FAMILY_MEDICINE: "Family medicine",
+      EMERGENCY_MEDICINE: "Emergency medicine",
+      INTERNAL_MEDICINE: "Internal medicine",
+      GENERAL_SURGERY: "General surgery",
+      PEDIATRICS: "Paediatrics",
+      OBSTETRICS_GYNECOLOGY: "Obstetrics & gynaecology",
+      ANESTHESIOLOGY: "Anaesthesiology",
+      INTENSIVE_CARE: "Intensive care",
+      OTOLARYNGOLOGY: "ENT",
+      UROLOGY: "Urology",
+      ORTHOPEDICS: "Orthopaedics",
+      PSYCHIATRY: "Psychiatry",
+      RADIOLOGY: "Radiology",
+      PATHOLOGY: "Pathology",
+      ONCOLOGY: "Oncology",
+      OPHTHALMOLOGY: "Ophthalmology",
+      DERMATOLOGY: "Dermatology",
+      NEUROLOGY: "Neurology",
+      NEONATOLOGY: "Neonatology / NICU",
+      PEDIATRIC_EMERGENCY: "Paediatric emergency",
+      PEDIATRIC_SUBSPECIALTY: "Paediatric subspecialty",
+      SURGICAL_SUBSPECIALTY: "Surgical subspecialty",
+      PHARMACY: "Pharmacy",
+      DENTISTRY: "Dentistry",
+      LABORATORY: "Laboratory medicine",
+      REHABILITATION: "Rehabilitation",
+      PUBLIC_HEALTH: "Public health",
+      OTHER: "Other",
+    },
+
     ratingAxis: {
       supervision: {
         label: "Supervision & teaching",
@@ -1345,11 +1416,11 @@ const ar: Dictionary = {
       }),
     reviewCount: (n: number) =>
       arCount(n, {
-        zero: "0 مراجعة",
-        one: "مراجعة واحدة",
-        two: "مراجعتان",
-        few: "{n} مراجعات",
-        many: "{n} مراجعة",
+        zero: "لا تجارب",
+        one: "تجربة واحدة",
+        two: "تجربتان",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
       }),
     cityCount: (n: number) =>
       arCount(n, {
@@ -1408,15 +1479,15 @@ const ar: Dictionary = {
         many: "{n} سنة",
       }),
 
-    noReviewsYet: "لا توجد مراجعات حتى الآن",
+    noReviewsYet: "لا توجد تجارب حتى الآن",
     outOfFive: (value: string) => `${value} من 5`,
     outOfFiveFrom: (value: string, n: number) =>
       `${value} من 5، بناءً على ${arCount(n, {
-        zero: "0 مراجعة",
-        one: "مراجعة واحدة",
-        two: "مراجعتين",
-        few: "{n} مراجعات",
-        many: "{n} مراجعة",
+        zero: "لا تجارب",
+        one: "تجربة واحدة",
+        two: "تجربتين",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
       })}`,
     pageOf: (page: number, total: number) =>
       `صفحة ${formatNumber(page)} من ${formatNumber(total)}`,
@@ -1438,7 +1509,7 @@ const ar: Dictionary = {
       switchTo: "عرض الموقع بالإنجليزية",
       targetName: "English",
       currentName: "العربية",
-      switching: "جاري تغيير اللغة…",
+      switching: "جارٍ تغيير اللغة…",
     },
 
     theme: {
@@ -1452,12 +1523,12 @@ const ar: Dictionary = {
       anonymousHeading: "خصوصيتك من البداية",
       anonymousLine: "بدون بريد إلكتروني أو اسم حقيقي. فقط اسم مستخدم.",
       anonymousNote:
-        "نطلب حسابا فقط لمنع تكرار المراجعات من الشخص نفسه للمكان نفسه.",
+        "نطلب إنشاء حساب فقط لمنع الشخص نفسه من مشاركة أكثر من تجربة عن المكان نفسه.",
       dataHeading: "مصدر البيانات",
       osmAttribution:
         "بيانات المنشآت © مساهمو OpenStreetMap، رخصة ODbL",
       disclaimer:
-        "المراجعات تعبر عن تجارب الطلاب الذين كتبوها، وليست رأي المنشآت المذكورة.",
+        "التجارب المنشورة تعبّر عن آراء الطلاب الذين كتبوها، ولا تعبّر عن رأي المنشآت المذكورة.",
     },
   },
 
@@ -1467,7 +1538,7 @@ const ar: Dictionary = {
     facilities: "المنشآت",
     cities: "المدن",
     regions: "المناطق",
-    guidelines: "إرشادات المراجعات",
+    guidelines: "إرشادات الكتابة",
     about: "عن الموقع",
     privacy: "الخصوصية",
     search: "بحث",
@@ -1496,6 +1567,7 @@ const ar: Dictionary = {
     searchButton: "بحث",
 
     browseByCity: "تصفّح حسب المدينة",
+    browseByRegion: "تصفّح حسب المنطقة",
 
     stats: (facilities: number, cities: number, reviews: number) =>
       `${arCount(facilities, {
@@ -1512,39 +1584,45 @@ const ar: Dictionary = {
         many: "{n} مدينة",
       })} · ${
         reviews === 0
-          ? "لا توجد مراجعات حتى الآن"
+          ? "لا توجد تجارب حتى الآن"
           : arCount(reviews, {
-              zero: "0 مراجعة",
-              one: "مراجعة واحدة",
-              two: "مراجعتان",
-              few: "{n} مراجعات",
-              many: "{n} مراجعة",
+              zero: "لا تجارب",
+              one: "تجربة واحدة",
+              two: "تجربتان",
+              few: "{n} تجارب",
+              many: "{n} تجربة",
             })
       }`,
 
     mostReviewed: "الأكثر مراجعةً",
     recentlyAdded: "أضيفت مؤخرا",
-    recentlyAddedNote: "بانتظار أول مراجعة",
+    recentlyAddedNote: "بانتظار أول تجربة",
     highestRated: "الأعلى تقييما",
     highestRatedNote: (threshold: number) =>
-      `${formatNumber(threshold)} مراجعات فأكثر`,
-    latestReviews: "أحدث المراجعات",
+      `${arCount(threshold, {
+        zero: "لا تقييمات",
+        one: "تقييم واحد",
+        two: "تقييمان",
+        few: "{n} تقييمات",
+        many: "{n} تقييمًا",
+      })} فأكثر`,
+    latestReviews: "أحدث التجارب",
 
     allFacilities: "كل المنشآت",
     allFacilitiesByRating: "كل المنشآت حسب التقييم",
     browseFacilities: "تصفّح المنشآت",
 
     noReviewsBody:
-      "لا توجد مراجعات حتى الآن. إذا تدربت في إحدى هذه المنشآت، شارك تجربتك وكن أول من يكتب عنها.",
+      "لا توجد تجارب حتى الآن. إذا تدربت في إحدى هذه المنشآت، شارك تجربتك وكن أول من يكتب عنها.",
     noReviewsHint:
       "ابحث عن مكان تدريبك، وضع تقييما واكتب باختصار ما الذي أعجبك وما الذي يحتاج إلى تحسين. سيظهر اسم المستخدم فقط.",
     writeFirstReview: "شارك أول تجربة",
 
-    privacyHeading: "اكتب براحتك، بدون معلوماتك الشخصية",
+    privacyHeading: "شارك تجربتك بخصوصية",
     promiseAccount:
       "لإنشاء حساب، تحتاج اسم مستخدم وكلمة مرور فقط. لا نطلب بريدك الإلكتروني أو اسمك الحقيقي.",
     promiseReviews:
-      "لا يظهر في المراجعة اسمك الحقيقي أو جامعتك أو التاريخ الدقيق لتدريبك.",
+      "لا نطلب في التجربة اسمك الحقيقي أو جامعتك أو التاريخ الدقيق لتدريبك.",
     promiseTracking:
       "لا نستخدم أدوات تحليل أو تتبع، ولا نحمل خطوطا أو محتوى من مواقع خارجية.",
     howThisWorks: "اعرف كيف نحمي خصوصيتك",
@@ -1566,28 +1644,32 @@ const ar: Dictionary = {
     titleWithPage: (heading: string, page: number) =>
       `${heading} — صفحة ${formatNumber(page)}`,
 
-    lede: "جميع التقييمات كتبها طلاب تدربوا في هذه المنشآت فعلا.",
+    lede: "كل منشأة هنا مكان حقيقي للتدريب، وكل تقييم كتبه طالب تدرب فيها فعلًا.",
     searchLabel: "ابحث في المنشآت",
     searchFieldLabel: "ابحث عن منشأة بالاسم",
     searchPlaceholder: "ابحث بالاسم — مثل: الملك فهد",
     searchButton: "بحث",
 
     resultsHeading: "النتائج",
-    resultsStatusEmpty: "لا توجد منشآت مطابقة لخيارات البحث.",
+    resultsStatusEmpty: "لا توجد منشآت تطابق عوامل التصفية.",
     resultsStatus: (total: number, page: number, pageCount: number) =>
-      `وجدنا ${formatNumber(total)} منشأة. الصفحة ${formatNumber(page)} من ${formatNumber(pageCount)}.`,
+      `عدد المنشآت المطابقة: ${formatNumber(total)}. الصفحة ${formatNumber(page)} من ${formatNumber(pageCount)}.`,
 
     clearAll: "مسح الكل",
-    clearFilters: "مسح خيارات التصفية",
-    removeFilter: "— إزالة هذا الخيار",
+    applyFilters: "عرض النتائج",
+    clearFilters: "مسح عوامل التصفية",
+    removeFilter: "إزالة عامل التصفية",
     chipSearch: (q: string) => `بحث: «${q}»`,
+    chipRegion: (name: string) => `المنطقة: ${name}`,
     chipCity: (name: string) => `المدينة: ${name}`,
     chipCountry: (name: string) => `الدولة: ${name}`,
     chipKind: (name: string) => `النوع: ${name}`,
+    chipField: (name: string) => `التخصص الصحي: ${name}`,
+    chipSpecialty: (name: string) => `تخصص التدريب: ${name}`,
     chipMinRating: (min: number) =>
-      `تقييم ${formatNumber(min)} فأعلى`,
+      `التقييم: ${formatNumber(min)} أو أعلى`,
 
-    emptyTitleQuery: (q: string) => `لا شيء هنا يطابق «${q}»`,
+    emptyTitleQuery: (q: string) => `لا توجد نتائج لـ«${q}»`,
     emptyTitle: "لا توجد نتائج مطابقة",
     emptyBodyPrefix: "لم نجد في Tellyrate منشأة باسم",
     emptyBodyInCity: (city: string) => ` في ${city}`,
@@ -1603,17 +1685,21 @@ const ar: Dictionary = {
     anyCountry: "كل الدول",
     anyRegion: "كل المناطق",
     anyKind: "كل الأنواع",
+    anyField: "كل التخصصات الصحية",
+    anySpecialty: "كل تخصصات التدريب",
     anyRating: "كل التقييمات",
     cityFamily: "المدينة",
     countryFamily: "الدولة",
     regionFamily: "المنطقة",
     kindFamily: "النوع",
+    fieldFamily: "التخصص الصحي",
+    specialtyFamily: "تخصص التدريب",
     ratingFamily: "الحد الأدنى للتقييم",
     ratingOption: (value: number) =>
-      `${formatNumber(value)} نجوم فأعلى`,
+      `${formatNumber(value)} نجوم أو أكثر`,
 
     sortLabel: "ترتيب النتائج",
-    loadingStatus: "جاري تحميل المنشآت…",
+    loadingStatus: "جارٍ تحميل المنشآت…",
 
     addPage: {
       metaTitle: "أضف مكانًا",
@@ -1621,7 +1707,7 @@ const ar: Dictionary = {
         "إذا لم تجد المستشفى أو العيادة التي تدربت فيها، ابحث عنها أولا ثم أضفها إذا لم تكن موجودة.",
       eyebrow: "لم تجد مكان تدريبك؟",
       heading: "أضف منشأة",
-      lede: "معظم المنشآت موجودة مسبقا. ابحث عن مكان تدريبك أولا، وإذا وجدته يمكنك الانتقال مباشرة إلى كتابة مراجعتك.",
+      lede: "معظم المنشآت موجودة مسبقًا. ابحث عن مكان تدريبك أولًا، وإذا وجدته يمكنك الانتقال مباشرة إلى مشاركة تجربتك.",
       signedOutPrefix: "البحث متاح للجميع، لكن إضافة منشأة تحتاج إلى حساب. ",
       signIn: "سجّل الدخول",
       or: " أو ",
@@ -1637,32 +1723,26 @@ const ar: Dictionary = {
       everywhere: "كل المدن",
       typeMore:
         "اكتب حرفين على الأقل. معظم مستشفيات وعيادات المملكة موجودة بالفعل.",
-      searching: "جاري البحث…",
+      searching: "جارٍ البحث…",
       searchFailed: "تعذر البحث الآن. حاول مرة أخرى بعد قليل.",
       matches: (n: number, q: string) =>
-        `${arCount(n, {
-          zero: "0 مكان",
-          one: "مكان واحد",
-          two: "مكانان",
-          few: "{n} أماكن",
-          many: "{n} مكانًا",
-        })} مطابق لبحث «${q}».`,
+        `عدد النتائج المطابقة لبحث «${q}»: ${formatNumber(n)}.`,
       noMatches: (q: string) => `لم نجد نتيجة مطابقة لبحث «${q}».`,
       reviewIt: "شارك تجربتك",
-      noneOfThese: "ليست ضمن النتائج — أضفها",
+      noneOfThese: "ولا واحدة منها — أضف منشأة جديدة",
       searchFirst:
-        "ابحث أولا حتى لا تضيف منشأة موجودة مسبقا وتتوزع مراجعاتها على صفحتين.",
+        "ابحث أولًا حتى لا تضيف منشأة موجودة مسبقًا وتتوزع تجارب المتدربين على صفحتين.",
 
-      createHeading: "أضفه إلى Tellyrate",
+      createHeading: "أضف المنشأة إلى Tellyrate",
       createHint:
-        "لن تظهر المنشأة الجديدة في الدليل إلا بعد نشر أول مراجعة عنها.",
+        "لن تظهر المنشأة الجديدة في الدليل حتى يتأكد مشرف المحتوى أنها منشأة حقيقية داخل السعودية. يمكنك كتابة تجربتك أثناء التحقق منها.",
       needAccount: "تحتاج إلى حساب لإضافة منشأة.",
       needAccountToSave:
-        "تحتاج إلى حساب لحفظها. اسم مستخدم وكلمة مرور فقط، بدون بريد إلكتروني.",
-      duplicateIn: (city: string) => `في ${city} ولديها`,
-      thatsTheOne: "هذه هي — شارك تجربتك",
+        "تحتاج إلى حساب لإضافة المنشأة. اسم مستخدم وكلمة مرور فقط، من دون بريد إلكتروني.",
+      duplicateIn: (city: string) => `— ${city} —`,
+      thatsTheOne: "هذا هو المكان — شارك تجربتك",
       lookFirst: "عرض المنشأة",
-      createdRedirect: "جاري فتح صفحة المراجعة…",
+      createdRedirect: "جارٍ فتح صفحة التجربة…",
 
       nameLabel: "الاسم — مطلوب",
       cityLabel: "المدينة — مطلوبة",
@@ -1675,7 +1755,7 @@ const ar: Dictionary = {
         "يساعد الآخرين على العثور عليها سواء بحثوا بالعربية أو الإنجليزية.",
       addressLabel: "الشارع أو الحي — اختياري",
       submit: "أضف هذا المكان",
-      submitting: "جاري الإضافة…",
+      submitting: "جارٍ الإضافة…",
     },
   },
 
@@ -1690,52 +1770,102 @@ const ar: Dictionary = {
       rating: string,
       reviews: number,
     ) =>
-      `${name}، ${kind} في ${place}. تقييم الطلاب ${rating} من 5، بناء على ${arCount(reviews, {
-        zero: "0 مراجعة",
-        one: "مراجعة واحدة",
-        two: "مراجعتين",
-        few: "{n} مراجعات",
-        many: "{n} مراجعة",
+      `${name}، ${kind} في ${place}. تقييم المتدربين ${rating} من 5، بناء على ${arCount(reviews, {
+        zero: "لا تجارب",
+        one: "تجربة واحدة",
+        two: "تجربتين",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
       })}. اقرأ تجاربهم عن الإشراف والتطبيق العملي وحجم العمل وتعامل الفريق.`,
     metaUnrated: (name: string, kind: string, place: string) =>
-      `${name}، ${kind} في ${place}. لا توجد مراجعات عن التدريب هنا حتى الآن. إذا تدربت في هذه المنشأة، شارك أول تجربة عنها بدون ذكر معلوماتك الشخصية.`,
+      `${name}، ${kind} في ${place}. لا توجد تجارب عن التدريب هنا حتى الآن. إذا تدربت في هذه المنشأة، شارك أول تجربة عنها من دون ذكر معلومات تكشف هويتك.`,
 
     pendingBadge: "أضافها أحد المستخدمين ولم نتحقق منها بعد",
     writeReview: "شارك تجربتك",
-    editYourReview: "عدّل مراجعتك",
+    editYourReview: "عدّل تجربتك",
     writeFirstReview: "شارك أول تجربة",
+    readReviews: (n: number) =>
+      `اقرأ ${arCount(n, {
+        zero: "التجارب",
+        one: "تجربة واحدة",
+        two: "تجربتين",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
+      })}`,
 
-    scoreHeading: "تقييم الطلبة",
+    scoreHeading: "تقييم المتدربين",
+    ratingBreakdown: "تفاصيل التقييم",
     notRatedYet: "لا يوجد تقييم حتى الآن",
+    ratedReviewCount: (n: number) =>
+      arCount(n, {
+        zero: "لا تقييمات بالنجوم",
+        one: "تقييم واحد بالنجوم",
+        two: "تقييمان بالنجوم",
+        few: "{n} تقييمات بالنجوم",
+        many: "{n} تقييمًا بالنجوم",
+      }),
+    totalExperienceCount: (n: number) =>
+      arCount(n, {
+        zero: "لا تجارب",
+        one: "تجربة واحدة",
+        two: "تجربتان",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
+      }),
     notRatedBody: () =>
       "لم يشارك أحد تجربة التدريب في هذه المنشأة حتى الآن. إذا تدربت فيها، شارك تجربتك وكن أول من يقيّمها.",
+    unratedWithExperiences: (n: number) =>
+      `توجد ${arCount(n, {
+        zero: "0 تجربة",
+        one: "تجربة واحدة",
+        two: "تجربتان",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
+      })} من استبيان سابق لم يطلب تقييمًا بالنجوم. أول تقييم يُنشر عبر Tellyrate سيحدد الدرجة.`,
 
-    reviewsHeading: "المراجعات",
+    reviewsHeading: "تجارب المتدربين",
     reviewsHeadingCount: (n: number) =>
       arCount(n, {
-        zero: "لا مراجعات",
-        one: "مراجعة واحدة",
-        two: "مراجعتان",
-        few: "{n} مراجعات",
-        many: "{n} مراجعة",
+        zero: "لا تجارب",
+        one: "تجربة واحدة",
+        two: "تجربتان",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
       }),
-    sortReviews: "ترتيب المراجعات",
-    noReviewsYet: "لا توجد مراجعات حتى الآن.",
-    noReviewsOnPage: "لا مراجعات في هذه الصفحة.",
+    sortReviews: "ترتيب التجارب",
+    applyReviewSort: "رتّب",
+    filterReviews: "تصفية التجارب",
+    reviewerField: "التخصص الصحي للمراجع",
+    rotationSpecialty: "تخصص التدريب",
+    allReviewerFields: "كل المجالات الصحية",
+    allRotationSpecialties: "كل تخصصات التدريب",
+    applyReviewFilters: "تطبيق التصفية",
+    clearReviewFilters: "مسح عوامل التصفية",
+    matchingReviews: (n: number) =>
+      arCount(n, {
+        zero: "لا تجارب مطابقة",
+        one: "تجربة واحدة مطابقة",
+        two: "تجربتان مطابقتان",
+        few: "{n} تجارب مطابقة",
+        many: "{n} تجربة مطابقة",
+      }),
+    noReviewsYet: "لا توجد تجارب حتى الآن.",
+    noMatchingReviews: "لا توجد تجارب مطابقة لهذه الخيارات.",
+    noReviewsOnPage: "لا توجد تجارب في هذه الصفحة.",
     writeTheFirstOne: "شارك أول تجربة.",
     backToFirstPage: "العودة إلى الصفحة الأولى.",
-    reviewPages: "صفحات المراجعات",
+    reviewPages: "صفحات التجارب",
     newerPage: "صفحة أحدث",
     olderPage: "صفحة أقدم",
 
-    whereHeading: "الموقع",
+    whereHeading: "موقع المنشأة",
     address: "العنوان",
     coordinates: "الإحداثيات",
     phone: "الهاتف",
     website: "الموقع الإلكتروني",
     openInOsm: "افتحه في OpenStreetMap",
     noMapNote:
-      "لا نعرض خريطة داخل الصفحة حفاظا على خصوصيتك؛ فتح الخريطة الخارجية قد يكشف للجهة المزودة أي منشأة تشاهدها.",
+      "لا نعرض خريطة هنا حفاظًا على خصوصيتك؛ لأن تحميلها سيُطلع مزوّد الخريطة على المنشأة التي تتصفحها.",
 
     flagHeading: "وجدت معلومة غير صحيحة؟",
     flagBody:
@@ -1754,7 +1884,7 @@ const ar: Dictionary = {
         many: "{n} نجمة",
       }),
 
-    loadingStatus: "جاري تحميل بيانات المنشأة…",
+    loadingStatus: "جارٍ تحميل بيانات المنشأة…",
   },
 
   regions: {
@@ -1764,18 +1894,43 @@ const ar: Dictionary = {
     heading: "تصفَّح حسب المنطقة",
     breadcrumb: "المناطق",
     lede: (regions: number, cities: number, facilities: number) =>
-      `${formatNumber(regions)} مناطق، و${formatNumber(cities)} مدينة، و${formatNumber(facilities)} مكان للتدريب.`,
+      `${arCount(regions, {
+        zero: "لا مناطق",
+        one: "منطقة واحدة",
+        two: "منطقتان",
+        few: "{n} مناطق",
+        many: "{n} منطقة",
+      })} · ${arCount(cities, {
+        zero: "لا مدن",
+        one: "مدينة واحدة",
+        two: "مدينتان",
+        few: "{n} مدن",
+        many: "{n} مدينة",
+      })} · ${arCount(facilities, {
+        zero: "لا منشآت",
+        one: "منشأة واحدة",
+        two: "منشأتان",
+        few: "{n} منشآت",
+        many: "{n} منشأة",
+      })}`,
     citiesHeading: "مدن هذه المنطقة",
     allFacilitiesIn: (n: number) =>
       `كل المنشآت في هذه المنطقة (${formatNumber(n)})`,
-    noFacilitiesYet: "لا يوجد شيء مُدرَج هنا بعد",
+    noFacilitiesYet: "لا توجد منشآت مضافة بعد",
     noFacilitiesBody:
       "لم تُضَف أي مستشفيات أو عيادات في هذه المنطقة حتى الآن. إن تدرّبت في مكان هنا، يمكنك إضافته.",
     loadingStatus: "جارٍ تحميل المناطق…",
     notFoundTitle: "لم نتمكن من إيجاد هذه المنطقة",
     notFoundBody:
-      "في المملكة العربية السعودية ثلاث عشرة منطقة، وهذه ليست إحداها. تصفَّح المناطق جميعها بدلًا من ذلك.",
-    cityCount: (n: number) => `${formatNumber(n)} مدينة`,
+      "تضم السعودية ثلاث عشرة منطقة، وهذه ليست إحداها. يمكنك تصفّح جميع المناطق.",
+    cityCount: (n: number) =>
+      arCount(n, {
+        zero: "لا مدن",
+        one: "مدينة واحدة",
+        two: "مدينتان",
+        few: "{n} مدن",
+        many: "{n} مدينة",
+      }),
   },
   cities: {
     metaTitle: "المدن",
@@ -1790,7 +1945,13 @@ const ar: Dictionary = {
         two: "مدينتان",
         few: "{n} مدن",
         many: "{n} مدينة",
-      })} تضم ${formatNumber(facilities)} مكانا للتدريب.`,
+      })} · ${arCount(facilities, {
+        zero: "لا منشآت",
+        one: "منشأة واحدة",
+        two: "منشأتان",
+        few: "{n} منشآت",
+        many: "{n} منشأة",
+      })} للتدريب`,
 
     emptyTitle: "لا مدن بعد",
     emptyBody:
@@ -1798,13 +1959,7 @@ const ar: Dictionary = {
     addFacility: "أضف منشأة",
 
     allFacilitiesIn: (n: number) =>
-      `كل ${arCount(n, {
-        zero: "المنشآت",
-        one: "المنشآت (منشأة واحدة)",
-        two: "المنشأتين",
-        few: "المنشآت الـ{n}",
-        many: "المنشآت الـ{n}",
-      })}`,
+      `عرض جميع المنشآت (${formatNumber(n)})`,
     cityLine: (facilities: number, reviews: number) => {
       const f = arCount(facilities, {
         zero: "0 منشأة",
@@ -1815,11 +1970,11 @@ const ar: Dictionary = {
       });
       if (reviews <= 0) return f;
       const r = arCount(reviews, {
-        zero: "0 مراجعة",
-        one: "مراجعة واحدة",
-        two: "مراجعتان",
-        few: "{n} مراجعات",
-        many: "{n} مراجعة",
+        zero: "لا تجارب",
+        one: "تجربة واحدة",
+        two: "تجربتان",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
       });
       return `${f} · ${r}`;
     },
@@ -1828,7 +1983,7 @@ const ar: Dictionary = {
     titleWithPage: (city: string, page: number) =>
       `${city} — صفحة ${formatNumber(page)}`,
     metaDescriptionFor: (heading: string) =>
-      `${heading} يراجعها طلبة التخصصات الصحية الذين تدرّبوا فيها.`,
+      `${heading} كما وصفها طلاب التخصصات الصحية الذين تدربوا فيها.`,
 
     breadcrumb: "المدن",
     filterByKindAndRating: "تصفية حسب النوع والتقييم",
@@ -1837,7 +1992,7 @@ const ar: Dictionary = {
     resultsStatusEmpty: (city: string) =>
       `لا توجد منشآت في ${city} حتى الآن.`,
     resultsStatus: (city: string, total: number, page: number, pageCount: number) =>
-      `${formatNumber(total)} منشأة في ${city}. الصفحة ${formatNumber(page)} من ${formatNumber(pageCount)}.`,
+      `عدد المنشآت في ${city}: ${formatNumber(total)}. الصفحة ${formatNumber(page)} من ${formatNumber(pageCount)}.`,
     nothingListed: (city: string) => `لا توجد منشآت في ${city} حتى الآن`,
     nothingListedBody:
       "إذا تدربت في مستشفى أو عيادة هنا، أضفها وشارك تجربتك ليستفيد الطلاب بعدك.",
@@ -1845,7 +2000,9 @@ const ar: Dictionary = {
   },
 
   review: {
-    authorDeleted: "محذوف",
+    authorDeleted: "حساب محذوف",
+    importedSurvey: "من استبيان الدفعة 17",
+    unratedExperience: "تجربة دون تقييم بالنجوم",
     edited: "تم التعديل",
     readTheRest: "قراءة المزيد",
     outOfFive: "من 5",
@@ -1875,7 +2032,7 @@ const ar: Dictionary = {
       `سجل الدخول لتصوت بأن ${noun} ${noun === "التعليق" ? "غير مفيد" : "غير مفيدة"}`,
     cannotVoteOwn: (noun: string) =>
       `لا يمكنك التصويت على ${noun} ${noun === "التعليق" ? "الذي كتبته" : "التي كتبتها"}.`,
-    nounReview: "المراجعة",
+    nounReview: "التجربة",
     nounComment: "التعليق",
 
     report: "إبلاغ",
@@ -1885,9 +2042,9 @@ const ar: Dictionary = {
     reportChooseReason: "اختر سببًا",
     reportNoteLabel: "ملاحظة إضافية (اختياري)",
     reportNoteHint:
-      "لا تذكر اسمك أو اسم أي شخص من العاملين.",
+      "لا تذكر اسمك ولا اسم أي موظف أو مريض.",
     reportSubmit: "أرسل البلاغ",
-    reportSubmitting: "جاري الإرسال…",
+    reportSubmitting: "جارٍ الإرسال…",
 
     comments: "التعليقات",
     commentsCount: (n: number) =>
@@ -1898,6 +2055,7 @@ const ar: Dictionary = {
         few: "{n} تعليقات",
         many: "{n} تعليقًا",
       }),
+    commentSignInSuffix: " لإضافة تعليق.",
     addComment: "أضف تعليقًا",
     addCommentPlaceholder:
       "اسأل عن التجربة، أو أضف معلومة من تدريبك في المكان نفسه.",
@@ -1905,9 +2063,9 @@ const ar: Dictionary = {
     replyTo: (username: string) => `الرد على ‎@${username}`,
     replyPlaceholder: "اكتب عن تجربة التدريب في المكان.",
     postComment: "انشر التعليق",
-    postingComment: "جاري النشر…",
+    postingComment: "جارٍ النشر…",
     deleteComment: "حذف",
-    deletingComment: "جاري الحذف…",
+    deletingComment: "جارٍ الحذف…",
   },
 
   reviewForm: {
@@ -1944,10 +2102,10 @@ const ar: Dictionary = {
         many: "{n} يومًا",
       })}`,
     startOver: "ابدأ من جديد",
-    dismiss: "تجاهل",
+    dismiss: "إخفاء التنبيه",
 
-    duplicateLink: (name: string) => `تعديل مراجعتك عن ${name}`,
-    authHeading: "بقيت خطوة واحدة: سجل الدخول لنشر مراجعتك.",
+    duplicateLink: (name: string) => `عدّل تجربتك في ${name}`,
+    authHeading: "بقيت خطوة واحدة: سجّل الدخول لنشر تجربتك.",
     authBody:
       "الحساب يحتاج اسم مستخدم وكلمة مرور فقط. لا نطلب بريدا إلكترونيا أو اسما حقيقيا.",
     createAccount: "أنشئ حسابًا",
@@ -1962,6 +2120,13 @@ const ar: Dictionary = {
       "اكتب عن المكان والتدريب، وليس عن أشخاص بأسمائهم. لا تذكر اسمك أو أسماء العاملين أو أي معلومات عن المرضى.",
     bodyPlaceholder:
       "كيف كان يومك المعتاد؟ هل حصلت على فرص كافية للتطبيق؟ وما الذي تمنيت أن تعرفه قبل أن تبدأ؟",
+    writingPrompts: "معلومات مفيدة يمكنك ذكرها",
+    writingPromptItems: [
+      "كيف كان التدريب اليومي فعليًا",
+      "أفضل جوانب التدريب",
+      "الصعوبات أو السلبيات",
+      "نصائح عملية للمتدرب القادم",
+    ],
     bodyHelp: (min: number) =>
       `اكتب ${formatNumber(min)} حرفا على الأقل. اذكر تفاصيل عملية تفيد الطالب الذي سيتدرب بعدك.`,
     bodyCountRemaining: (written: number, remaining: number) =>
@@ -1971,7 +2136,13 @@ const ar: Dictionary = {
         two: "حرفان",
         few: "{n} أحرف",
         many: "{n} حرفًا",
-      })} — بقي ${formatNumber(remaining)}`,
+      })} — بقي ${arCount(remaining, {
+        zero: "لا أحرف",
+        one: "حرف واحد",
+        two: "حرفان",
+        few: "{n} أحرف",
+        many: "{n} حرفًا",
+      })}`,
     bodyCount: (written: number) =>
       arCount(written, {
         zero: "0 حرف",
@@ -1991,21 +2162,26 @@ const ar: Dictionary = {
     scanHandle: "حساب على منصة تواصل",
     scanDate: "تاريخ محدّد",
 
-    fieldLabel: "تخصصك — مطلوب",
-    fieldPlaceholder: "اختر تخصصك",
+    fieldLabel: "تخصصك الصحي — مطلوب",
+    fieldPlaceholder: "اختر تخصصك الصحي",
     fieldHint:
-      "نستخدم تخصصات عامة حتى لا تكشف المراجعة هويتك داخل دفعة صغيرة.",
+      "نستخدم تخصصات عامة حتى لا تكشف التجربة هويتك داخل دفعة صغيرة.",
 
-    roleLabel: "مرحلة التدريب — مطلوب",
-    rolePlaceholder: "اختر مرحلتك",
+    roleLabel: "صفتك أثناء التدريب — مطلوب",
+    rolePlaceholder: "اختر صفتك أثناء التدريب",
     roleHint:
       "تساعد هذه المعلومة القارئ على فهم تجربتك في سياقها.",
 
+    specialtyLabel: "التخصص الذي تدربت فيه",
+    specialtyPlaceholder: "اختر تخصص التدريب (اختياري)",
+    specialtyHint:
+      "يساعد هذا الخيار الطلاب على تصفية التجارب حسب تخصص التدريب. اترك اسم الوحدة أو الفريق فارغًا إذا كان قد يكشف هويتك.",
+
     detailsSummary: "تفاصيل إضافية — اختيارية",
     titleLabel: "ملخص التجربة في سطر",
-    titlePlaceholder: "مزدحم، وتعليم جيد، ولا مكان للجلوس",
+    titlePlaceholder: "تدريب عملي ممتاز رغم ضغط العمل",
 
-    axesLegend: "قيم جوانب التدريب",
+    axesLegend: "قيّم جوانب التدريب",
 
     departmentLabel: "القسم أو الوحدة",
     departmentPlaceholder: "الطوارئ، العناية المركزة، صيدلية التنويم…",
@@ -2017,11 +2193,11 @@ const ar: Dictionary = {
     yearHint:
       "اذكر السنة فقط. لا تكتب الشهر، خصوصا إذا كان القسم صغيرا.",
 
-    submit: "انشر المراجعة",
-    submitting: "جاري النشر…",
+    submit: "انشر تجربتك",
+    submitting: "جارٍ النشر…",
     saveChanges: "احفظ التعديلات",
     signedInAs: (username: string) =>
-      `ستنشر المراجعة باسم ‎@${username}. حسابك لا يحتوي على بريد إلكتروني أو اسم حقيقي.`,
+      `ستنشر تجربتك باسم ‎@${username}. حسابك لا يحتوي على بريد إلكتروني أو اسم حقيقي.`,
     signedOutNote:
       "يمكنك الكتابة الآن. سنطلب تسجيل الدخول عند النشر، وستبقى مسودتك محفوظة على هذا الجهاز.",
   },
@@ -2029,13 +2205,13 @@ const ar: Dictionary = {
   auth: {
     signInTitle: "تسجيل الدخول",
     signInMetaDescription:
-      "سجل الدخول باستخدام اسم المستخدم وكلمة المرور. لا نستخدم البريد الإلكتروني.",
+      "سجّل الدخول باستخدام اسم المستخدم وكلمة المرور. لا نستخدم البريد الإلكتروني.",
     signInLede:
-      "تحتاج إلى تسجيل الدخول فقط لكتابة مراجعة أو تعليق أو للتصويت. القراءة متاحة للجميع.",
+      "تحتاج إلى تسجيل الدخول لمشاركة تجربة أو كتابة تعليق أو التصويت. أما القراءة فمتاحة للجميع.",
     signInNoReset:
-      "لا يوجد بريد إلكتروني مرتبط بالحساب. إذا فقدت كلمة المرور ورمز الاستعادة معا، فلن نتمكن من استعادة حسابك.",
+      "لا يوجد بريد إلكتروني مرتبط بالحساب. إذا فقدت كلمة المرور ورمز الاستعادة معًا، فلن يكون بالإمكان استعادة الحساب، لا من طرفنا ولا من طرف غيرنا.",
     noAccountYet: "ليس لديك حساب؟",
-    createOne: "أنشئ واحدًا",
+    createOne: "أنشئ حسابًا",
     createOneSuffix: " — اسم مستخدم وكلمة مرور فقط.",
 
     signUpTitle: "إنشاء حساب",
@@ -2048,7 +2224,7 @@ const ar: Dictionary = {
     stored: [
       "اسم المستخدم الذي تختاره، وهو الاسم الوحيد الذي يظهر مع ما تنشره.",
       "بصمة أحادية الاتجاه لكلمة المرور، ولا يمكن تحويلها إلى كلمة المرور الأصلية.",
-      "تاريخ إنشاء الحساب ومراجعاتك وتعليقاتك وتصويتاتك.",
+      "تاريخ إنشاء الحساب وتجاربك وتعليقاتك وتصويتاتك.",
     ],
     notStored: [
       "البريد الإلكتروني؛ لا يوجد له حقل في الموقع.",
@@ -2069,11 +2245,11 @@ const ar: Dictionary = {
       "10 أحرف على الأقل. استخدم عبارة طويلة يسهل عليك تذكرها ويصعب تخمينها.",
     submitSignIn: "تسجيل الدخول",
     submitSignUp: "إنشاء الحساب",
-    signingIn: "جاري تسجيل الدخول…",
-    creatingAccount: "جاري إنشاء الحساب…",
+    signingIn: "جارٍ تسجيل الدخول…",
+    creatingAccount: "جارٍ إنشاء الحساب…",
 
     alreadySignedIn: (username: string) =>
-      `أنت مسجل الدخول بالفعل باسم ${username}. سجل الخروج أولا إذا أردت إنشاء حساب آخر.`,
+      `أنت مسجل الدخول بالفعل باسم ${username}. سجّل الخروج أولًا إذا أردت إنشاء حساب آخر.`,
     yourAccount: "حسابك",
     signOut: "تسجيل الخروج",
 
@@ -2087,7 +2263,7 @@ const ar: Dictionary = {
     copyBlocked: "تعذر النسخ. حدد الرمز وانسخه يدويا.",
     recoveryConfirm: "حفظت الرمز في مكان آمن.",
     continue: "متابعة",
-    tickTheBox: "حدد المربع بعد حفظ الرمز في مكان آمن.",
+    tickTheBox: "ضع علامة في المربع بعد حفظ الرمز في مكان آمن.",
 
     layoutNote: "القراءة متاحة للجميع بدون حساب",
     layoutFooterPrefix:
@@ -2114,7 +2290,7 @@ const ar: Dictionary = {
       `هذا هو الاسم الذي يظهر مع ما تنشره: ‎@${username}. تاريخ إنشاء الحساب: ${joined}.`,
 
     contributions: "مساهماتك",
-    reviews: "المراجعات",
+    reviews: "التجارب",
     comments: "التعليقات",
 
     holdsLabel: "بيانات الحساب",
@@ -2123,10 +2299,10 @@ const ar: Dictionary = {
     holdsBody:
       "نحفظ اسم المستخدم وبصمة آمنة لكلمة المرور وتاريخ إنشاء الحساب وما نشرته فقط. لا توجد لدينا وسيلة للتواصل معك.",
 
-    yourReviews: "مراجعاتك",
+    yourReviews: "تجاربك",
     mostRecentOf: (shown: number, total: number) =>
       `أحدث ${formatNumber(shown)} من ${formatNumber(total)}`,
-    noReviewsPrefix: "لم تكتب أي مراجعة بعد. ",
+    noReviewsPrefix: "لم تشارك أي تجربة بعد. ",
     noReviewsLink: "ابحث عن مكان تدريبك",
     noReviewsSuffix: " وشارك تجربتك.",
 
@@ -2148,23 +2324,23 @@ const ar: Dictionary = {
     newPasswordHint: "10 أحرف على الأقل.",
     confirmPassword: "أعد كتابة كلمة المرور الجديدة",
     changePasswordSubmit: "غيّر كلمة المرور",
-    changingPassword: "جاري التغيير…",
+    changingPassword: "جارٍ التغيير…",
 
     signOutEverywhere: "تسجيل الخروج من كل الأجهزة",
     signOutEverywhereBody:
       "سيتم تسجيل خروجك من جميع الأجهزة، بما فيها هذا الجهاز. لن تتغير كلمة المرور ويمكنك تسجيل الدخول بعدها مباشرة.",
-    signingOut: "جاري تسجيل الخروج…",
+    signingOut: "جارٍ تسجيل الخروج…",
 
     deleteAccount: "حذف الحساب",
     deleteBody:
       "سيتم حذف حسابك وبيانات تسجيل الدخول وتصويتاتك نهائيا، ولا يمكن التراجع عن ذلك.",
     deleteKeepsContent: (reviews: number, comments: number) =>
-      `سيبقى المحتوى الذي نشرته متاحا باسم ‎@deleted حتى لا تتأثر التقييمات والنقاشات. يشمل ذلك ${arCount(reviews, {
-        zero: "0 مراجعة",
-        one: "مراجعة واحدة",
-        two: "مراجعتين",
-        few: "{n} مراجعات",
-        many: "{n} مراجعة",
+      `سيبقى المحتوى الذي نشرته متاحًا باسم «حساب محذوف» حتى لا تتأثر التقييمات والنقاشات. يشمل ذلك ${arCount(reviews, {
+        zero: "لا تجارب",
+        one: "تجربة واحدة",
+        two: "تجربتين",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
       })} و${arCount(comments, {
         zero: "0 تعليق",
         one: "تعليق واحد",
@@ -2176,13 +2352,13 @@ const ar: Dictionary = {
       "لم تنشر أي محتوى، لذلك لن يبقى شيء بعد حذف الحساب.",
     yourPassword: "كلمة مرورك",
     deleteConfirm:
-      "أفهم أن حذف الحساب نهائي، وأن مراجعاتي وتعليقاتي ستبقى منشورة بدون اسم المستخدم.",
+      "أفهم أن حذف الحساب نهائي، وأن تجاربي وتعليقاتي ستبقى منشورة بدون اسم المستخدم.",
     deleteSubmit: "احذف حسابي",
-    deleting: "جاري الحذف…",
+    deleting: "جارٍ الحذف…",
 
     layoutBrowse: "تصفّح المنشآت",
     layoutStore: "ما الذي نحتفظ به",
-    layoutGuidelines: "إرشادات المراجعات",
+    layoutGuidelines: "إرشادات الكتابة",
   },
 
   search: {
@@ -2236,7 +2412,7 @@ const ar: Dictionary = {
     viewInContext: "اعرضه في سياقه",
     removeContent: "احذف المحتوى",
     dismissReport: "تجاهل البلاغ",
-    targetReview: "مراجعة",
+    targetReview: "تجربة",
     targetComment: "تعليق",
     targetFacility: "منشأة",
   },
@@ -2254,11 +2430,11 @@ const ar: Dictionary = {
       whyP1:
         "مكان التدريب يصنع فرقا كبيرا في تجربتك، لكن أغلب المعلومات تنتقل بالكلام بين الطلاب. قد يخبرك زميل أن قسما ممتاز، ويقول آخر إن التدريب في مكان آخر كان مجرد مشاهدة. هذه المعلومات تضيع مع كل دفعة، ويضطر الطلاب إلى البدء من الصفر.",
       whyP2:
-        "Tellyrate يجمع هذه التجارب في مكان واحد. مراجعة واحدة تعبر عن تجربة شخص، لكن تكرار الملاحظات نفسها من طلاب وتخصصات مختلفة يعطي صورة أوضح.",
+        "Tellyrate يجمع هذه التجارب في مكان واحد. تجربة واحدة تعبّر عن رأي شخص، لكن تكرار الملاحظات نفسها من طلاب وتخصصات مختلفة يعطي صورة أوضح.",
 
-      reviewTitle: "ماذا تتضمن المراجعة؟",
+      reviewTitle: "ماذا تتضمن التجربة المنشورة؟",
       reviewP1:
-        "تتضمن كل مراجعة تقييما عاما ووصفا للتجربة. ويمكن للطالب أيضا تقييم ستة جوانب مهمة:",
+        "تتضمن كل تجربة تقييمًا عامًا ونصًا يصف التدريب. ويمكن للطالب أيضًا تقييم ستة جوانب مهمة:",
       reviewAxes: [
         "الإشراف والتعليم — هل وجدت من يشرح لك ويتابعك؟",
         "التطبيق العملي — هل حصلت على فرص حقيقية للمشاركة؟",
@@ -2268,27 +2444,27 @@ const ar: Dictionary = {
         "السلامة والدعم — هل كانت إجراءات السلامة واضحة؟ وهل تم التعامل مع الملاحظات بجدية؟",
       ],
       reviewP2:
-        "تظهر المراجعة أيضا تخصصك ومرحلة تدريبك، مثل «الصيدلة · امتياز». ذكر القسم اختياري لأن أسماء الأقسام تختلف من منشأة إلى أخرى.",
+        "يظهر مع التجربة أيضًا تخصصك وصفتك أثناء التدريب، مثل «الصيدلة · امتياز». ذكر القسم اختياري لأن أسماء الأقسام تختلف من منشأة إلى أخرى.",
       reviewP3:
-        "نطلب سنة التدريب فقط، ولا نعرضها بدقة في المنشآت التي لديها عدد قليل من المراجعات. الهدف هو منع ربط المراجعة بطالب معين.",
+        "نطلب سنة التدريب فقط، ولا نعرضها بدقة في المنشآت التي لديها عدد قليل من التجارب. الهدف هو منع ربط التجربة بطالب معين.",
 
       accountsTitle: "القراءة للجميع، والكتابة تحتاج إلى حساب",
       accountsP1:
-        "يمكن لأي شخص تصفح المنشآت وقراءة المراجعات ومشاركة الصفحات بدون تسجيل الدخول.",
+        "يمكن لأي شخص تصفح المنشآت وقراءة التجارب ومشاركة الصفحات بدون تسجيل الدخول.",
       accountsP2Prefix:
-        "كتابة مراجعة أو تعليق أو التصويت تحتاج إلى حساب حتى نحافظ على موثوقية التقييمات. الحساب عبارة عن اسم مستخدم وكلمة مرور فقط؛ لا نطلب بريدا إلكترونيا أو رقم هاتف أو اسما حقيقيا أو جامعة. ",
+        "مشاركة تجربة أو كتابة تعليق أو التصويت تحتاج إلى حساب حتى نحافظ على موثوقية التقييمات. الحساب عبارة عن اسم مستخدم وكلمة مرور فقط؛ لا نطلب بريدًا إلكترونيًا أو رقم هاتف أو اسمًا حقيقيًا أو جامعة. ",
       accountsP2Link: "صفحة الخصوصية",
       accountsP2Suffix: " توضح بالتفصيل ما الذي نحفظه وما الذي لا نجمعه.",
 
       rankingTitle: "كيف يعمل الترتيب",
       rankingHighestRated: "«الأعلى تقييمًا»",
       rankingP1:
-        " لا يعتمد على المتوسط وحده؛ فتقييم واحد بخمس نجوم لا يجب أن يتفوق على منشأة لديها عشرات المراجعات. نستخدم متوسطا موزونا يأخذ عدد المراجعات في الحسبان، لذلك تتحسن مرتبة المنشأة مع وجود تقييمات متقاربة من عدد كاف من الطلاب.",
+        " لا يعتمد على المتوسط وحده؛ فتقييم واحد بخمس نجوم لا يجب أن يتفوق على منشأة لديها عشرات التقييمات. نستخدم متوسطًا موزونًا يأخذ عدد التقييمات في الحسبان، لذلك تتحسن مرتبة المنشأة مع وجود تقييمات متقاربة من عدد كافٍ من الطلاب.",
       rankingMostHelpful: "«الأكثر إفادة»",
       rankingP2:
-        " يرتب المراجعات بطريقة تراعي عدد التصويتات ونسبة من وجدوها مفيدة، حتى لا تتصدر مراجعة لأنها حصلت على تصويت واحد فقط.",
+        " يرتب التجارب بطريقة تراعي عدد التصويتات ونسبة من وجدوها مفيدة، حتى لا تتصدر تجربة لأنها حصلت على تصويت واحد فقط.",
       rankingP3:
-        "الترتيب غير مدفوع. لا تستطيع أي منشأة الدفع لرفع ترتيبها أو إضافة مراجعة أو حذفها.",
+        "الترتيب غير مدفوع. لا تستطيع أي منشأة الدفع لرفع ترتيبها أو إضافة تجربة أو حذفها.",
 
       dataTitle: "من أين تأتي بيانات المنشآت؟",
       dataP1:
@@ -2305,11 +2481,11 @@ const ar: Dictionary = {
       notItems: [
         {
           strong: "ليس لتجارب المرضى.",
-          text: " المراجعات هنا عن بيئة التدريب والتعليم، وليست عن جودة العلاج أو تجربة المريض.",
+          text: " التجارب هنا عن بيئة التدريب والتعليم، وليست عن جودة العلاج أو تجربة المريض.",
         },
         {
           strong: "ليس قناة رسمية للشكاوى.",
-          text: " إذا حدث أمر يتعلق بالسلامة أو يحتاج إلى تدخل رسمي، استخدم قناة البلاغات المعتمدة في جهتك. كتابة مراجعة هنا لا تستبدل البلاغ الرسمي.",
+          text: " إذا حدث أمر يتعلق بالسلامة أو يحتاج إلى تدخل رسمي، استخدم قناة البلاغات المعتمدة في جهتك. مشاركة تجربة هنا لا تستبدل البلاغ الرسمي.",
         },
         {
           strong: "ليس بدون إشراف على المحتوى.",
@@ -2323,31 +2499,31 @@ const ar: Dictionary = {
       whoP1:
         "Tellyrate مشروع مستقل وغير تابع لأي مستشفى أو جامعة أو وزارة أو هيئة مهنية. لا توجد إعلانات أو رعايات أو نتائج مدفوعة، ولا نبيع بيانات المستخدمين.",
       whoP2:
-        "إذا وجدت مشكلة، استخدم زر الإبلاغ في المراجعة أو التعليق أو صفحة المنشأة. يراجع شخص حقيقي كل بلاغ.",
+        "إذا وجدت مشكلة، استخدم زر الإبلاغ في التجربة أو التعليق أو صفحة المنشأة. يراجع شخص حقيقي كل بلاغ.",
 
       relatedLabel: "صفحات ذات صلة",
-      relatedGuidelines: "إرشادات كتابة المراجعات",
+      relatedGuidelines: "إرشادات مشاركة التجارب",
       relatedPrivacy: "الخصوصية",
       relatedBrowse: "تصفّح المنشآت",
     },
 
     guidelines: {
-      metaTitle: "إرشادات كتابة المراجعات",
+      metaTitle: "إرشادات مشاركة التجارب",
       metaDescription:
-        "كيف تكتب مراجعة مفيدة وتحافظ على خصوصيتك وخصوصية الآخرين.",
+        "كيف تشارك تجربة مفيدة وتحافظ على خصوصيتك وخصوصية الآخرين.",
       eyebrow: "الإرشادات",
-      heading: "اكتب مراجعة مفيدة وآمنة",
-      lede: "شارك تفاصيل تساعد الطالب الذي سيتدرب بعدك، واحرص على أن تكون المراجعة عن المكان والتجربة، لا عن أشخاص بأسمائهم.",
+      heading: "شارك تجربة مفيدة وآمنة",
+      lede: "شارك تفاصيل تساعد الطالب الذي سيتدرب بعدك، واحرص على أن تكون التجربة المنشورة عن المكان والتدريب، لا عن أشخاص بأسمائهم.",
       hardRule:
         "القاعدة الأساسية: اكتب عن المكان والتدريب، ولا تذكر أسماء العاملين أو أي معلومات عن المرضى.",
 
       peopleTitle: "ركز على المكان، وليس الأشخاص",
       peopleP1:
-        "لا تذكر اسم أي شخص من العاملين، ولا تكتب وصفا يجعل التعرف عليه سهلا، مثل المسمى الوظيفي مع القسم واليوم. يمكنك انتقاد أسلوب العمل أو الإشراف في القسم، لكن لا تحول المراجعة إلى هجوم شخصي.",
+        "لا تذكر اسم أي شخص من العاملين، ولا تكتب وصفًا يجعل التعرف عليه سهلًا، مثل المسمى الوظيفي مع القسم واليوم. يمكنك انتقاد أسلوب العمل أو الإشراف في القسم، لكن لا تحول التجربة إلى هجوم شخصي.",
       peopleP2:
         "صف المشكلة بطريقة تساعد على فهمها وإصلاحها. بدلا من «الاستشاري تجاهلنا»، اكتب «لم يكن هناك مشرف متاح للطلاب بعد الساعة الرابعة في أغلب الأيام». بهذه الطريقة توضح ما قد يواجهه الطالب التالي بدون استهداف شخص.",
       peopleP3:
-        "سنحذف أي مراجعة تكشف هوية شخص، وقد نحظر الحساب عند تكرار المخالفة.",
+        "سنحذف أي تجربة تكشف هوية شخص، وقد نحظر الحساب عند تكرار المخالفة.",
 
       patientsTitle: "المرضى ليسوا مادة للكتابة",
       patientsP1:
@@ -2355,7 +2531,7 @@ const ar: Dictionary = {
       patientsP2:
         "إذا لم تستطع شرح الموقف بدون معلومات سريرية، فلا تنشره هنا. ناقشه مع مشرفك عبر القنوات المناسبة.",
 
-      usefulTitle: "ما الذي يجعل المراجعة نافعة",
+      usefulTitle: "ما الذي يجعل التجربة مفيدة؟",
       usefulItems: [
         {
           strong: "اذكر تفاصيل واضحة.",
@@ -2387,46 +2563,46 @@ const ar: Dictionary = {
       ratingsP1:
         "التقييم العام مطلوب، أما الجوانب الستة الأخرى فهي اختيارية. اترك أي جانب فارغا إذا لم تستطع تقييمه؛ فعدم الإجابة أفضل من التخمين.",
       ratingsP2:
-        "قيم كل جانب بشكل مستقل. قد يكون التعليم ممتازا بينما تكون الساعات مرهقة، وإظهار هذا الفرق يجعل المراجعة أكثر فائدة.",
+        "قيّم كل جانب بشكل مستقل. قد يكون التعليم ممتازًا بينما تكون الساعات مرهقة، وإظهار هذا الفرق يجعل التجربة أكثر فائدة.",
 
       protectTitle: "كيف تحمي نفسك",
       protectItems: [
         "اختر اسم مستخدم لا تستخدمه في مواقع أخرى، ولا يتضمن اسمك أو أحرفك الأولى أو سنة تخرجك.",
         "لا تذكر تواريخ دقيقة أو حجم مجموعتك أو تفاصيل فريدة تجعل التعرف عليك سهلا.",
         "إذا كان عدد الطلاب في القسم صغيرا، اكتب عن الأنماط العامة وفكر في ترك خانة القسم فارغة.",
-        "لا تذكر شهر التدريب داخل النص. الموقع يخفي دقة السنة عندما يكون عدد المراجعات قليلا لحماية هويتك.",
+        "لا تذكر شهر التدريب داخل النص. الموقع يخفي دقة السنة عندما يكون عدد التجارب قليلًا لحماية هويتك.",
       ],
       protectPrivacyLink: "صفحة الخصوصية",
       protectPrivacySuffix:
         " توضح ما الذي نحفظه، وما الذي لا يستطيع الموقع حمايتك منه إذا كتبته بنفسك.",
 
-      oneReviewTitle: "مراجعة واحدة لكل مكان تدريب",
+      oneReviewTitle: "تجربة واحدة لكل مكان تدريب",
       oneReviewP1:
-        "يمكن لكل حساب كتابة مراجعة واحدة عن كل منشأة. إذا عدت إلى المكان أو تغير رأيك، عدل مراجعتك بدلا من نشر مراجعة ثانية. سيظهر للقراء أن المراجعة تم تعديلها.",
+        "يمكن لكل حساب مشاركة تجربة واحدة عن كل منشأة. إذا عدت إلى المكان أو تغير رأيك، عدّل تجربتك بدلًا من نشر تجربة ثانية. سيظهر للقراء أن التجربة عُدّلت.",
 
       commentsTitle: "التعليقات والتصويت",
       commentsP1:
         "استخدم التعليقات للسؤال أو إضافة تحديث مفيد، مثل «تغير الجدول في 2024». أبق النقاش مرتبطا بتجربة التدريب ولا تحوله إلى جدال شخصي.",
       commentsP2:
-        "التصويت يجيب عن سؤال واحد: هل كانت المراجعة مفيدة لمن يختار مكان تدريب؟ لا يعني التصويت أنك توافق على رأي الكاتب.",
+        "التصويت يجيب عن سؤال واحد: هل كانت التجربة مفيدة لمن يختار مكان تدريب؟ لا يعني التصويت أنك توافق على رأي الكاتب.",
 
       removedTitle: "ما الذي يُحذف",
       removedItems: [
         "أي محتوى يكشف هوية أحد العاملين أو المرضى.",
         "التحرّش أو الإساءة أو التهديد.",
         "الرسائل المزعجة والإعلانات ومنشورات التوظيف.",
-        "مراجعات عن منشأة لم يتدرب فيها الكاتب.",
+        "تجارب عن منشأة لم يتدرب فيها الكاتب.",
         "معلومات مضللة أو ادعاءات غير صحيحة.",
         "محتوى لا علاقة له بالتدريب السريري.",
       ],
       removedP1:
-        "استخدم زر الإبلاغ الموجود في أي مراجعة أو تعليق أو صفحة منشأة. نحفظ سبب البلاغ والملاحظة الاختيارية والحساب الذي أرسله، ويراجع شخص حقيقي كل بلاغ.",
+        "استخدم زر الإبلاغ الموجود في أي تجربة أو تعليق أو صفحة منشأة. نحفظ سبب البلاغ والملاحظة الاختيارية والحساب الذي أرسله، ويراجع شخص حقيقي كل بلاغ.",
 
-      facilitiesTitle: "إذا كنت تعمل في منشأة لها مراجعات هنا",
+      facilitiesTitle: "إذا كنت تعمل في منشأة لها تجارب منشورة هنا",
       facilitiesP1:
-        "إذا خالفت مراجعة هذه القواعد، مثل ذكر اسم موظف أو معلومات مريض أو الكتابة عن مكان لم يتدرب فيه الكاتب، أرسل بلاغا وسيراجعه مشرف المحتوى.",
+        "إذا خالفت تجربة منشورة هذه القواعد، مثل ذكر اسم موظف أو معلومات مريض أو الكتابة عن مكان لم يتدرب فيه الكاتب، أرسل بلاغًا وسيراجعه مشرف المحتوى.",
       facilitiesP2:
-        "إذا كانت المراجعة سلبية لكنها لا تخالف القواعد، فستبقى منشورة. لا تستطيع المنشآت الدفع لتعديل مراجعة أو حذفها.",
+        "إذا كانت التجربة سلبية لكنها لا تخالف القواعد، فستبقى منشورة. لا تستطيع المنشآت الدفع لتعديل تجربة أو حذفها.",
 
       relatedLabel: "صفحات ذات صلة",
       relatedAbout: "عن Tellyrate",
@@ -2464,7 +2640,7 @@ const ar: Dictionary = {
 
       storageTitle: "التخزين المحلي في متصفحك",
       storageP1:
-        "نحفظ في متصفحك اختيار المظهر الفاتح أو الداكن، ومسودة المراجعة التي تكتبها حتى لا تضيع إذا غادرت الصفحة أو سجلت الدخول. تبقى المسودة لمدة 14 يوما أو حتى تنشرها، ويمكنك حذفها بمسح بيانات الموقع. هذه البيانات تبقى على جهازك ولا ترسل إلى الخادم.",
+        "نحفظ في متصفحك اختيار المظهر الفاتح أو الداكن، ومسودة التجربة التي تكتبها حتى لا تضيع إذا غادرت الصفحة أو سجلت الدخول. تبقى المسودة لمدة 14 يومًا أو حتى تنشرها، ويمكنك حذفها بمسح بيانات الموقع. هذه البيانات تبقى على جهازك ولا تُرسل إلى الخادم.",
 
       addressesTitle: "لا نحفظ عناوين IP",
       addressesP1:
@@ -2484,7 +2660,7 @@ const ar: Dictionary = {
 
       publicTitle: "ما هو علني",
       publicP1:
-        "كل ما تنشره متاح للعامة وقد يظهر في محركات البحث. يشمل ذلك اسم المستخدم، ونص المراجعة وتقييماتها، وتعليقاتك، وتخصصك ومرحلة تدريبك، والقسم إذا ذكرته، ونطاق سنة التدريب، ومجموع التصويتات.",
+        "كل ما تنشره متاح للعامة وقد يظهر في محركات البحث. يشمل ذلك اسم المستخدم، ونص التجربة وتقييماتها، وتعليقاتك، وتخصصك وصفتك أثناء التدريب، والقسم إذا ذكرته، ونطاق سنة التدريب، ومجموع التصويتات.",
       publicP2:
         "لا نعرض أسماء المصوتين. يرى كل مستخدم تصويته فقط، ولا نرسل قائمة المصوتين إلى المتصفح.",
 
@@ -2495,9 +2671,9 @@ const ar: Dictionary = {
         "إذا كنت الطالب الوحيد في قسم معين، أو وصفت موقفا يعرفه كل من كان هناك، فقد يتعرف عليك أحد زملائك. فكر جيدا في التفاصيل التي تنشرها. ",
       limitsP2Link: "إرشادات الكتابة",
       limitsP2Suffix:
-        " تقدم نصائح لكتابة مراجعة مفيدة بدون كشف هويتك أو هوية غيرك.",
+        " تقدم نصائح لمشاركة تجربة مفيدة بدون كشف هويتك أو هوية غيرك.",
       limitsP3:
-        "تذكر أن حذف المراجعة من الموقع لا يضمن حذف نسخة حفظها محرك بحث أو شخص التقط صورة للشاشة.",
+        "تذكر أن حذف التجربة من الموقع لا يضمن حذف نسخة حفظها محرك بحث أو شخص التقط صورة للشاشة.",
 
       hostingTitle: "شركة الاستضافة والشبكة",
       hostingP1:
@@ -2513,7 +2689,7 @@ const ar: Dictionary = {
         "بصمة أحادية الاتجاه لكلمة المرور",
         "بصمة أحادية الاتجاه لرمز الاستعادة إن وجد",
         "صلاحية الحساب وحالة الحظر وتاريخ الإنشاء",
-        "المراجعات والتعليقات والتصويتات المرتبطة بالحساب",
+        "التجارب والتعليقات والتصويتات المرتبطة بالحساب",
       ],
       requestsP2:
         "لا يوجد لدينا بريد إلكتروني أو رقم هاتف أو سجل لعناوين IP أو سجل تصفح، لأننا لا نجمع هذه البيانات من الأصل.",
@@ -2524,7 +2700,7 @@ const ar: Dictionary = {
 
       relatedLabel: "صفحات ذات صلة",
       relatedAbout: "عن Tellyrate",
-      relatedGuidelines: "إرشادات كتابة المراجعات",
+      relatedGuidelines: "إرشادات مشاركة التجارب",
     },
   },
 
@@ -2617,23 +2793,54 @@ const ar: Dictionary = {
     },
 
     traineeRole: {
-      STUDENT: "طالب تدريب سريري",
+      STUDENT: "طالب في تدريب سريري",
       SUMMER_TRAINEE: "متدرب صيفي",
       INTERN: "متدرب امتياز",
       RESIDENT: "مقيم",
       FELLOW: "زميل",
-      OBSERVER: "متدرب ملاحظة",
+      OBSERVER: "متدرب بالملاحظة",
       OTHER: "صفة أخرى",
     },
 
     traineeRoleShort: {
       STUDENT: "طالب",
-      SUMMER_TRAINEE: "تدريب صيفي",
+      SUMMER_TRAINEE: "متدرب صيفي",
       INTERN: "امتياز",
       RESIDENT: "مقيم",
       FELLOW: "زميل",
-      OBSERVER: "ملاحظة",
+      OBSERVER: "ملاحظ",
       OTHER: "متدرب",
+    },
+
+    rotationSpecialty: {
+      FAMILY_MEDICINE: "طب الأسرة",
+      EMERGENCY_MEDICINE: "طب الطوارئ",
+      INTERNAL_MEDICINE: "الطب الباطني",
+      GENERAL_SURGERY: "الجراحة العامة",
+      PEDIATRICS: "طب الأطفال",
+      OBSTETRICS_GYNECOLOGY: "النساء والولادة",
+      ANESTHESIOLOGY: "التخدير",
+      INTENSIVE_CARE: "العناية المركزة",
+      OTOLARYNGOLOGY: "الأنف والأذن والحنجرة",
+      UROLOGY: "المسالك البولية",
+      ORTHOPEDICS: "جراحة العظام",
+      PSYCHIATRY: "الطب النفسي",
+      RADIOLOGY: "الأشعة",
+      PATHOLOGY: "علم الأمراض",
+      ONCOLOGY: "الأورام",
+      OPHTHALMOLOGY: "طب العيون",
+      DERMATOLOGY: "الأمراض الجلدية",
+      NEUROLOGY: "طب الأعصاب",
+      NEONATOLOGY: "حديثو الولادة / عناية حديثي الولادة",
+      PEDIATRIC_EMERGENCY: "طوارئ الأطفال",
+      PEDIATRIC_SUBSPECIALTY: "تخصص دقيق في طب الأطفال",
+      SURGICAL_SUBSPECIALTY: "تخصص دقيق في الجراحة",
+      PHARMACY: "الصيدلة",
+      DENTISTRY: "طب الأسنان",
+      LABORATORY: "المختبرات الطبية",
+      REHABILITATION: "التأهيل",
+      PUBLIC_HEALTH: "الصحة العامة",
+      OTHER: "تخصص آخر",
     },
 
     ratingAxis: {

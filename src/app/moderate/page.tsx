@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { REPORT_REASON_LABELS } from "@/lib/labels";
-import { recalcFacility } from "@/lib/aggregates";
+import { recalcCity, recalcFacility } from "@/lib/aggregates";
 
 export const metadata: Metadata = {
   title: "Moderation queue",
@@ -116,10 +116,11 @@ async function hideContent(formData: FormData) {
       const review = await tx.review.update({
         where: { id: targetId },
         data: { status: "REMOVED" },
-        select: { facilityId: true },
+        select: { facilityId: true, facility: { select: { cityId: true } } },
       });
       // A removed review must stop counting toward the facility's rating.
       await recalcFacility(tx, review.facilityId);
+      await recalcCity(tx, review.facility.cityId);
     } else if (targetType === "comment") {
       const comment = await tx.comment.update({
         where: { id: targetId },
@@ -134,10 +135,12 @@ async function hideContent(formData: FormData) {
         data: { commentCount },
       });
     } else {
-      await tx.facility.update({
+      const facility = await tx.facility.update({
         where: { id: targetId },
         data: { status: "REJECTED" },
+        select: { cityId: true },
       });
+      await recalcCity(tx, facility.cityId);
     }
 
     await tx.report.update({
@@ -162,14 +165,71 @@ async function dismissReport(formData: FormData) {
   revalidatePath("/moderate");
 }
 
+async function decideFacility(formData: FormData) {
+  "use server";
+  const moderator = await requireModerator();
+  const facilityId = String(formData.get("facilityId") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  if (!facilityId || (decision !== "approve" && decision !== "reject")) return;
+
+  const result = await prisma.$transaction(async (tx) => {
+    const facility = await tx.facility.findUnique({
+      where: { id: facilityId },
+      select: { status: true, cityId: true, slug: true },
+    });
+    if (!facility || facility.status !== "PENDING") return null;
+
+    const status = decision === "approve" ? "PUBLISHED" : "REJECTED";
+    await tx.facility.update({ where: { id: facilityId }, data: { status } });
+    await tx.facilityEdit.create({
+      data: {
+        facilityId,
+        editorId: moderator.id,
+        field: "status:moderation",
+        oldValue: "PENDING",
+        newValue: status,
+      },
+    });
+    await recalcCity(tx, facility.cityId);
+    return facility.slug;
+  });
+
+  revalidatePath("/moderate");
+  revalidatePath("/facilities");
+  revalidatePath("/");
+  if (result) revalidatePath(`/facilities/${result}`);
+}
+
 export default async function ModeratePage() {
   await requireModerator();
 
-  const reports = await prisma.report.findMany({
-    where: { status: "OPEN" },
-    orderBy: { createdAt: "asc" },
-    take: 100,
-  });
+  const [reports, pendingFacilities] = await Promise.all([
+    prisma.report.findMany({
+      where: { status: "OPEN" },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+    }),
+    prisma.facility.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        nameEn: true,
+        nameLocal: true,
+        kind: true,
+        source: true,
+        address: true,
+        website: true,
+        phone: true,
+        createdAt: true,
+        city: { select: { name: true } },
+        submittedBy: { select: { username: true } },
+      },
+    }),
+  ]);
 
   const withTargets = await Promise.all(
     reports.map(async (report) => ({
@@ -182,8 +242,72 @@ export default async function ModeratePage() {
     <main id="main" className="page" style={{ paddingBlock: "var(--space-2xl)" }}>
       <p className="label">Moderation</p>
       <h1 style={{ fontSize: "var(--step-3)", marginBlockEnd: "var(--space-l)" }}>
-        Open reports
+        Moderation queue
       </h1>
+      <h2 style={{ fontSize: "var(--step-2)", marginBlockEnd: "var(--space-l)" }}>
+        Pending facilities
+      </h2>
+
+      {pendingFacilities.length === 0 ? (
+        <p className="notice" style={{ marginBlockEnd: "var(--space-2xl)" }}>
+          No facilities are waiting for approval.
+        </p>
+      ) : (
+        <ul
+          style={{
+            listStyle: "none",
+            margin: "0 0 var(--space-2xl)",
+            padding: 0,
+            display: "grid",
+            gap: "var(--space-m)",
+          }}
+        >
+          {pendingFacilities.map((facility) => (
+            <li
+              key={facility.id}
+              className="card"
+              style={{ padding: "var(--space-m)", display: "grid", gap: "var(--space-s)" }}
+            >
+              <div>
+                <h2 style={{ fontSize: "var(--step-1)" }}>
+                  <bdi dir="auto">{facility.name}</bdi>
+                </h2>
+                <p className="label">
+                  {facility.kind} · {facility.city.name} · {facility.source}
+                  {facility.submittedBy ? ` · @${facility.submittedBy.username}` : ""}
+                </p>
+              </div>
+              {facility.nameEn || facility.nameLocal ? (
+                <p><bdi dir="auto">{[facility.nameEn, facility.nameLocal].filter(Boolean).join(" · ")}</bdi></p>
+              ) : null}
+              {facility.address ? <p><bdi dir="auto">{facility.address}</bdi></p> : null}
+              {facility.website ? <p>{facility.website}</p> : null}
+              {facility.phone ? <p>{facility.phone}</p> : null}
+              <div style={{ display: "flex", gap: "var(--space-xs)", flexWrap: "wrap" }}>
+                <Link className="btn btn--small btn--quiet" href={`/facilities/${facility.slug}`}>
+                  Inspect page
+                </Link>
+                <form action={decideFacility}>
+                  <input type="hidden" name="facilityId" value={facility.id} />
+                  <button className="btn btn--small" name="decision" value="approve" type="submit">
+                    Approve
+                  </button>
+                </form>
+                <form action={decideFacility}>
+                  <input type="hidden" name="facilityId" value={facility.id} />
+                  <button className="btn btn--small btn--quiet" name="decision" value="reject" type="submit">
+                    Reject
+                  </button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h2 style={{ fontSize: "var(--step-2)", marginBlockEnd: "var(--space-l)" }}>
+        Open reports
+      </h2>
 
       {withTargets.length === 0 ? (
         <p className="notice">Nothing reported. Nothing to do.</p>

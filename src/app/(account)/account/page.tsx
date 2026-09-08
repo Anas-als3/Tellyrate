@@ -249,7 +249,11 @@ export default async function AccountPage({
                       flexWrap: "wrap",
                     }}
                   >
-                    <Stars value={review.overall} size={14} t={t} />
+                    {review.overall === null ? (
+                      <span className="chip">{t.review.unratedExperience}</span>
+                    ) : (
+                      <Stars value={review.overall} size={14} t={t} />
+                    )}
                     <span className="stamp" style={{ border: 0, padding: 0 }}>
                       {monthYear.format(review.createdAt)}
                     </span>

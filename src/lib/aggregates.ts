@@ -22,7 +22,7 @@ type Tx = Prisma.TransactionClient;
 export async function recalcFacility(tx: Tx, facilityId: string): Promise<void> {
   const stats = await tx.review.aggregate({
     where: { facilityId, status: "PUBLISHED" },
-    _count: { _all: true },
+    _count: { _all: true, overall: true },
     _sum: { overall: true },
     _avg: {
       supervision: true,
@@ -35,8 +35,9 @@ export async function recalcFacility(tx: Tx, facilityId: string): Promise<void> 
   });
 
   const reviewCount = stats._count._all;
+  const ratingCount = stats._count.overall;
   const ratingSum = stats._sum.overall ?? 0;
-  const ratingAvg = reviewCount > 0 ? ratingSum / reviewCount : 0;
+  const ratingAvg = ratingCount > 0 ? ratingSum / ratingCount : 0;
 
   const siteStat = await tx.siteStat.findUnique({ where: { id: "global" } });
   const meanRating = siteStat?.meanRating ?? DEFAULT_MEAN_RATING;
@@ -45,9 +46,10 @@ export async function recalcFacility(tx: Tx, facilityId: string): Promise<void> 
     where: { id: facilityId },
     data: {
       reviewCount,
+      ratingCount,
       ratingSum,
       ratingAvg: roundRating(ratingAvg),
-      bayesScore: bayesianScore(ratingSum, reviewCount, meanRating),
+      bayesScore: bayesianScore(ratingSum, ratingCount, meanRating),
       avgSupervision: round1(stats._avg.supervision),
       avgHandsOn: round1(stats._avg.handsOn),
       avgStaffRespect: round1(stats._avg.staffRespect),
@@ -145,15 +147,15 @@ export async function refreshSiteStats(): Promise<{
   // hospital define the prior that every small clinic is shrunk toward.
   const [rows, reviewCount] = await Promise.all([
     prisma.facility.findMany({
-      where: { reviewCount: { gt: 0 } },
-      select: { ratingSum: true, reviewCount: true },
+      where: { ratingCount: { gt: 0 } },
+      select: { ratingSum: true, ratingCount: true },
     }),
     prisma.review.count({ where: { status: "PUBLISHED" } }),
   ]);
 
   const meanRating =
     rows.length > 0
-      ? rows.reduce((sum, f) => sum + f.ratingSum / f.reviewCount, 0) /
+      ? rows.reduce((sum, f) => sum + f.ratingSum / f.ratingCount, 0) /
         rows.length
       : DEFAULT_MEAN_RATING;
 
@@ -172,14 +174,14 @@ export async function refreshSiteStats(): Promise<{
  */
 export async function rescoreAllFacilities(meanRating: number): Promise<number> {
   const facilities = await prisma.facility.findMany({
-    where: { reviewCount: { gt: 0 } },
-    select: { id: true, ratingSum: true, reviewCount: true },
+    where: { ratingCount: { gt: 0 } },
+    select: { id: true, ratingSum: true, ratingCount: true },
   });
 
   for (const f of facilities) {
     await prisma.facility.update({
       where: { id: f.id },
-      data: { bayesScore: bayesianScore(f.ratingSum, f.reviewCount, meanRating) },
+      data: { bayesScore: bayesianScore(f.ratingSum, f.ratingCount, meanRating) },
     });
   }
 

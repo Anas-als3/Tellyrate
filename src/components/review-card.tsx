@@ -28,7 +28,7 @@ import { getT } from "@/lib/i18n/server";
 
 export type ReviewCardReview = {
   id: string;
-  overall: number;
+  overall: number | null;
   supervision: number | null;
   handsOn: number | null;
   staffRespect: number | null;
@@ -39,11 +39,13 @@ export type ReviewCardReview = {
   body: string;
   field: string;
   role: string;
+  specialty: string | null;
   department: string | null;
   trainingYear: number | null;
   likeCount: number;
   dislikeCount: number;
   editedAt: Date | null;
+  source: string;
   author: { id: string; username: string } | null;
 };
 
@@ -100,7 +102,7 @@ function threadStrings(t: Dictionary, commentCount: number): ThreadStrings {
       commentCount === 0 ? t.review.comments : t.review.commentsCount(commentCount),
     empty: t.review.commentsCount(0),
     logIn: t.nav.logIn,
-    logInSuffix: t.auth.createOneSuffix,
+    logInSuffix: t.review.commentSignInSuffix,
     addComment: t.review.addComment,
     addPlaceholder: t.review.addCommentPlaceholder,
     reply: t.review.reply,
@@ -143,11 +145,22 @@ export async function ReviewCard({
   const stampParts = [
     lookup(t.labels.studentField, review.field, t.labels.healthcareFallback),
     lookup(t.labels.traineeRoleShort, review.role, t.labels.traineeFallback),
+    review.specialty
+      ? lookup(
+          t.labels.rotationSpecialty,
+          review.specialty,
+          review.specialty,
+        )
+      : null,
     review.department,
     rotationStamp(review.trainingYear, facilityReviewCount),
     // A review whose author deleted their account keeps its testimony and
     // loses its name, rather than vanishing and quietly rewriting the average.
-    `@${review.author?.username ?? t.review.authorDeleted}`,
+    review.source === "BATCH17_SURVEY"
+      ? null
+      : review.author
+        ? `@${review.author.username}`
+        : t.review.authorDeleted,
   ].filter((part): part is string => Boolean(part));
 
   const { head, tail } = splitBody(review.body);
@@ -189,20 +202,29 @@ export async function ReviewCard({
           ))}
         </span>
         <span style={{ color: "var(--ink-3)" }}>
-          {age}
+          {review.source === "BATCH17_SURVEY" ? t.review.importedSurvey : age}
           {review.editedAt ? `${t.common.separator}${t.review.edited}` : ""}
         </span>
       </header>
 
       <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", flexWrap: "wrap" }}>
-        <Stars value={review.overall} size={17} t={t} />
-        {/* Stars already announces the value; this is the sighted reading. */}
-        <span className="tnum" aria-hidden="true" style={{ fontWeight: 700 }}>
-          {review.overall.toFixed(1)}
-        </span>
+        {review.overall === null ? (
+          <span className="chip">{t.review.unratedExperience}</span>
+        ) : (
+          <>
+            <Stars value={review.overall} size={17} t={t} />
+            {/* Stars already announces the value; this is the sighted reading. */}
+            <span className="tnum" aria-hidden="true" style={{ fontWeight: 700 }}>
+              {review.overall.toFixed(1)}
+            </span>
+          </>
+        )}
         {review.title ? (
-          <h3 style={{ fontSize: "var(--step-1)", flexBasis: "100%" }}>
-            <bdi dir="auto">{review.title}</bdi>
+          <h3
+            dir="auto"
+            style={{ fontSize: "var(--step-1)", flexBasis: "100%" }}
+          >
+            {review.title}
           </h3>
         ) : null}
       </div>
@@ -295,10 +317,8 @@ function Paragraphs({ text }: { text: string }) {
   return (
     <>
       {paragraphs.map((paragraph, index) => (
-        <p key={index} style={{ whiteSpace: "pre-wrap" }}>
-          {/* Testimony written in either script, inside an interface that may
-              be running in the other one. */}
-          <bdi dir="auto">{paragraph.trim()}</bdi>
+        <p key={index} dir="auto" style={{ whiteSpace: "pre-wrap" }}>
+          {paragraph.trim()}
         </p>
       ))}
     </>

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "vercel-build": "prisma migrate deploy && prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -17,6 +18,8 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "import:facilities": "tsx scripts/import-facilities.ts",
+    "import:batch17": "tsx scripts/import-batch17-reviews.ts",
+    "audit:saudi-facilities": "tsx scripts/audit-saudi-facilities.ts",
     "postinstall": "prisma generate",
     "test": "tsx --test tests/*.test.ts",
     "test:watch": "tsx --test --watch tests/*.test.ts",

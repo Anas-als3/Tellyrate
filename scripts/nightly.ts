@@ -46,13 +46,13 @@ async function main() {
   // reviews directly lets one heavily-reviewed teaching hospital define the
   // prior that every small clinic is shrunk toward.
   const rated = await prisma.facility.findMany({
-    where: { reviewCount: { gt: 0 } },
-    select: { id: true, ratingSum: true, reviewCount: true },
+    where: { ratingCount: { gt: 0 } },
+    select: { id: true, ratingSum: true, ratingCount: true },
   });
 
   const meanRating =
     rated.length > 0
-      ? rated.reduce((sum, f) => sum + f.ratingSum / f.reviewCount, 0) /
+      ? rated.reduce((sum, f) => sum + f.ratingSum / f.ratingCount, 0) /
         rated.length
       : DEFAULT_MEAN_RATING;
 
@@ -68,7 +68,7 @@ async function main() {
 
   let rescored = 0;
   for (const f of rated) {
-    const score = bayesianScore(f.ratingSum, f.reviewCount, meanRating);
+    const score = bayesianScore(f.ratingSum, f.ratingCount, meanRating);
     await prisma.facility.update({
       where: { id: f.id },
       data: { bayesScore: score },

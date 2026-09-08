@@ -113,11 +113,11 @@ export function SiteHeader({
         {/* A plain GET form: search has to work with scripting turned off, and
             each result set has to have a URL somebody can send to a friend. */}
         <form
+          className="hidden sm:flex"
           action="/search"
           method="get"
           role="search"
           style={{
-            display: "flex",
             flex: "1 1 auto",
             minInlineSize: 0,
             maxInlineSize: 300,
@@ -130,6 +130,7 @@ export function SiteHeader({
             id="site-search"
             name="q"
             type="search"
+            dir="auto"
             className="input"
             placeholder={nav.searchPlaceholder}
             autoComplete="off"
@@ -215,10 +216,10 @@ export function SiteHeader({
               style={{
                 display: "inline-flex",
                 listStyle: "none",
-                inlineSize: 34,
-                minInlineSize: 34,
-                blockSize: 34,
-                minBlockSize: 34,
+                inlineSize: 40,
+                minInlineSize: 40,
+                blockSize: 40,
+                minBlockSize: 40,
                 padding: 0,
                 color: "var(--ink-2)",
               }}
@@ -246,6 +247,8 @@ export function SiteHeader({
                 insetBlockStart: "calc(100% + 10px)",
                 zIndex: 60,
                 minInlineSize: 220,
+                maxBlockSize: "calc(100dvh - 70px)",
+                overflowY: "auto",
                 padding: "var(--space-xs)",
                 display: "flex",
                 flexDirection: "column",
@@ -253,6 +256,26 @@ export function SiteHeader({
                 boxShadow: "var(--shadow-2)",
               }}
             >
+              <form
+                action="/search"
+                method="get"
+                role="search"
+                style={{ padding: "var(--space-2xs)" }}
+              >
+                <label htmlFor="mobile-site-search" className="sr-only">
+                  {nav.searchLabel}
+                </label>
+                <input
+                  id="mobile-site-search"
+                  name="q"
+                  type="search"
+                  dir="auto"
+                  className="input"
+                  placeholder={nav.searchPlaceholder}
+                  autoComplete="off"
+                />
+              </form>
+
               {navLinks.map((link) => (
                 <NavLink
                   key={link.href}

@@ -8,7 +8,13 @@ import {
   type ReviewSortKey,
   type SortKey,
 } from "@/lib/ranking";
-import type { FacilityKind, Prisma, Region } from "@/generated/prisma/client";
+import type {
+  FacilityKind,
+  Prisma,
+  Region,
+  RotationSpecialty,
+  StudentField,
+} from "@/generated/prisma/client";
 
 export const PAGE_SIZE = 24;
 export const REVIEWS_PAGE_SIZE = 10;
@@ -24,6 +30,8 @@ export type FacilityFilters = {
    */
   regionKey?: string;
   kind?: string;
+  field?: string;
+  specialty?: string;
   query?: string;
   minRating?: number;
   page: number;
@@ -39,7 +47,7 @@ function orderFor(sort: SortKey): Prisma.FacilityOrderByWithRelationInput[] {
     case "highest_rated":
       return [
         { bayesScore: "desc" },
-        { reviewCount: "desc" },
+        { ratingCount: "desc" },
         { name: "asc" },
       ];
     case "newest":
@@ -70,8 +78,16 @@ function facilityWhere(filters: FacilityFilters): Prisma.FacilityWhereInput {
   if (filters.kind) where.kind = filters.kind as FacilityKind;
   if (filters.minRating !== undefined) {
     // A minimum rating only makes sense among facilities that have been rated.
-    where.reviewCount = { gt: 0 };
+    where.ratingCount = { gt: 0 };
     where.ratingAvg = { gte: filters.minRating };
+  }
+
+  const matchingReview = matchingReviewWhere(filters);
+  if (filters.field || filters.specialty) {
+    // Both values belong to the same experience. Two separate relation
+    // filters would incorrectly match a medical review and an unrelated
+    // pharmacy review from the same facility.
+    where.reviews = { some: matchingReview };
   }
 
   if (filters.query) {
@@ -86,8 +102,20 @@ function facilityWhere(filters: FacilityFilters): Prisma.FacilityWhereInput {
   return where;
 }
 
+function matchingReviewWhere(
+  filters: FacilityFilters,
+): Prisma.ReviewWhereInput {
+  const where: Prisma.ReviewWhereInput = { status: "PUBLISHED" };
+  if (filters.field) where.field = filters.field as StudentField;
+  if (filters.specialty) {
+    where.specialty = filters.specialty as RotationSpecialty;
+  }
+  return where;
+}
+
 export async function listFacilities(filters: FacilityFilters) {
   const where = facilityWhere(filters);
+  const matchingReview = matchingReviewWhere(filters);
   const skip = (filters.page - 1) * PAGE_SIZE;
 
   const [facilities, total] = await Promise.all([
@@ -104,16 +132,26 @@ export async function listFacilities(filters: FacilityFilters) {
         nameLocal: true,
         kind: true,
         reviewCount: true,
+        ratingCount: true,
         ratingAvg: true,
         bayesScore: true,
         city: { select: { name: true, slug: true, countryCode: true } },
+        _count: {
+          select: {
+            reviews: { where: matchingReview },
+          },
+        },
       },
     }),
     prisma.facility.count({ where }),
   ]);
 
   return {
-    facilities,
+    facilities: facilities.map(({ _count, ...facility }) => ({
+      ...facility,
+      matchingReviewCount:
+        filters.field || filters.specialty ? _count.reviews : undefined,
+    })),
     total,
     page: filters.page,
     pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
@@ -137,9 +175,15 @@ function reviewOrder(sort: ReviewSortKey): Prisma.ReviewOrderByWithRelationInput
     case "oldest":
       return [{ createdAt: "asc" }];
     case "highest":
-      return [{ overall: "desc" }, { helpfulScore: "desc" }];
+      return [
+        { overall: { sort: "desc", nulls: "last" } },
+        { helpfulScore: "desc" },
+      ];
     case "lowest":
-      return [{ overall: "asc" }, { helpfulScore: "desc" }];
+      return [
+        { overall: { sort: "asc", nulls: "last" } },
+        { helpfulScore: "desc" },
+      ];
     case "helpful":
     default:
       return [{ helpfulScore: "desc" }, { createdAt: "desc" }];
@@ -148,20 +192,26 @@ function reviewOrder(sort: ReviewSortKey): Prisma.ReviewOrderByWithRelationInput
 
 export async function listReviews(
   facilityId: string,
-  sort: ReviewSortKey,
-  page: number,
+  filters: {
+    sort: ReviewSortKey;
+    page: number;
+    field?: StudentField;
+    specialty?: RotationSpecialty;
+  },
   viewerId?: string | null,
 ) {
   const where: Prisma.ReviewWhereInput = {
     facilityId,
     status: "PUBLISHED",
+    field: filters.field,
+    specialty: filters.specialty,
   };
 
   const [reviews, total] = await Promise.all([
     prisma.review.findMany({
       where,
-      orderBy: reviewOrder(sort),
-      skip: (page - 1) * REVIEWS_PAGE_SIZE,
+      orderBy: reviewOrder(filters.sort),
+      skip: (filters.page - 1) * REVIEWS_PAGE_SIZE,
       take: REVIEWS_PAGE_SIZE,
       include: {
         author: { select: { id: true, username: true } },
@@ -178,7 +228,7 @@ export async function listReviews(
   return {
     reviews,
     total,
-    page,
+    page: filters.page,
     pageCount: Math.max(1, Math.ceil(total / REVIEWS_PAGE_SIZE)),
   };
 }

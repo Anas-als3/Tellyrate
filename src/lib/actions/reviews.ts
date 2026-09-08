@@ -6,7 +6,11 @@ import { recalcCity, recalcFacility } from "@/lib/aggregates";
 import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { getCurrentUser } from "@/lib/session";
-import { StudentField, TraineeRole } from "@/generated/prisma/client";
+import {
+  RotationSpecialty,
+  StudentField,
+  TraineeRole,
+} from "@/generated/prisma/client";
 
 /**
  * Writing, editing and withdrawing a review.
@@ -80,6 +84,10 @@ const reviewSchema = z.object({
   // Paired with `field`, this is what lets a reader weigh the review — a
   // first-week student and a second-year resident describe different places.
   role: z.enum(TraineeRole, "Say what you were there as"),
+  specialty: z.preprocess(
+    emptyToUndefined,
+    z.enum(RotationSpecialty, "Choose a rotation specialty from the list").optional(),
+  ),
   department: z.preprocess(
     emptyToUndefined,
     z
@@ -121,6 +129,7 @@ function readReviewFields(formData: FormData) {
     field: get("field"),
     title: get("title"),
     role: get("role"),
+    specialty: get("specialty"),
     department: get("department"),
     trainingYear: get("trainingYear"),
     supervision: get("supervision"),
@@ -166,6 +175,7 @@ function reviewPayload(input: ReviewInput) {
     field: input.field,
     title: input.title ?? null,
     role: input.role,
+    specialty: input.specialty ?? null,
     department: input.department ?? null,
     trainingYear: input.trainingYear ?? null,
     supervision: input.supervision ?? null,
@@ -184,9 +194,6 @@ function revalidateFacility(facilitySlug: string, citySlug: string) {
   revalidatePath("/facilities");
   revalidatePath("/");
 }
-
-/** A day's grace before a new account can publish a facility by reviewing it. */
-const PROMOTION_ACCOUNT_AGE_MS = 1000 * 60 * 60 * 24;
 
 export async function submitReviewAction(
   _prevState: ReviewActionState,
@@ -222,7 +229,7 @@ export async function submitReviewAction(
   const [account, facility] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
-      select: { isBanned: true, createdAt: true },
+      select: { isBanned: true },
     }),
     prisma.facility.findFirst({
       where: { slug: facilitySlug, status: { in: ["PUBLISHED", "PENDING"] } },
@@ -251,14 +258,6 @@ export async function submitReviewAction(
     return { status: "error", message: RATE_LIMITED, fieldErrors: {} };
   }
 
-  // A user-submitted place is held back from the directory until somebody
-  // actually vouches for it by reviewing it — and a brand-new account is not
-  // enough of a voucher, or creating a place and reviewing it in one sitting
-  // would be a two-minute spam route onto every list page.
-  const shouldPublish =
-    facility.status === "PENDING" &&
-    Date.now() - account.createdAt.getTime() >= PROMOTION_ACCOUNT_AGE_MS;
-
   try {
     await prisma.$transaction(async (tx) => {
       await tx.review.create({
@@ -269,15 +268,10 @@ export async function submitReviewAction(
         },
       });
 
-      if (shouldPublish) {
-        await tx.facility.update({
-          where: { id: facility.id },
-          data: { status: "PUBLISHED" },
-        });
-      }
-
-      // Order matters: the facility's counts must be current before the city
-      // sums them, and the promotion above must land before either.
+      // User-submitted facilities stay pending until a moderator verifies
+      // that the real place is in Saudi Arabia. A review proves somebody has
+      // an experience to share; it does not prove the typed facility name or
+      // location is genuine.
       await recalcFacility(tx, facility.id);
       await recalcCity(tx, facility.cityId);
     });

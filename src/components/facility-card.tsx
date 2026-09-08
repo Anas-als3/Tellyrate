@@ -14,6 +14,8 @@ export type FacilityCardData = {
   nameLocal: string | null;
   kind: string;
   reviewCount: number;
+  ratingCount: number;
+  matchingReviewCount?: number;
   ratingAvg: number;
   city: { name: string; slug: string; countryCode: string };
 };
@@ -21,14 +23,23 @@ export type FacilityCardData = {
 export function FacilityCard({
   facility,
   locale,
+  reviewFilters,
 }: {
   facility: FacilityCardData;
   locale: Locale;
+  reviewFilters?: { field?: string; specialty?: string };
 }) {
   const t = getDictionary(locale);
   const names = facilityNamesFor(locale, facility);
   const cityName = cityNameFor(locale, facility.city.name);
-  const rated = facility.reviewCount > 0;
+  const rated = facility.ratingCount > 0;
+  const facilityHref = filteredFacilityHref(facility.slug, reviewFilters);
+  const experienceLabel =
+    facility.matchingReviewCount === undefined
+      ? t.common.reviewCount(facility.reviewCount)
+      : facility.matchingReviewCount === facility.reviewCount
+        ? t.facility.matchingReviews(facility.matchingReviewCount)
+        : `${t.facility.matchingReviews(facility.matchingReviewCount)}${t.common.separator}${t.facility.totalExperienceCount(facility.reviewCount)}`;
 
   return (
     <article
@@ -46,7 +57,7 @@ export function FacilityCard({
 
       <h3 style={{ fontSize: "var(--step-1)" }}>
         <Link
-          href={`/facilities/${facility.slug}`}
+          href={facilityHref}
           style={{ textDecoration: "none" }}
         >
           {/* Names arrive from OpenStreetMap in either script, so the isolate
@@ -99,9 +110,15 @@ export function FacilityCard({
               style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}
             >
               {t.common.separator}
-              {t.common.reviewCount(facility.reviewCount)}
+              {experienceLabel}
             </span>
           </>
+        ) : facility.reviewCount > 0 ? (
+          <span style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}>
+            {t.review.unratedExperience}
+            {t.common.separator}
+            {experienceLabel}
+          </span>
         ) : (
           <span style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}>
             {t.facility.noReviewsYet} {t.facility.writeTheFirstOne}
@@ -110,4 +127,17 @@ export function FacilityCard({
       </div>
     </article>
   );
+}
+
+function filteredFacilityHref(
+  slug: string,
+  filters?: { field?: string; specialty?: string },
+): string {
+  const search = new URLSearchParams();
+  if (filters?.field) search.set("rfield", filters.field.toLowerCase());
+  if (filters?.specialty) {
+    search.set("rspecialty", filters.specialty.toLowerCase());
+  }
+  const query = search.toString();
+  return `/facilities/${slug}${query ? `?${query}#reviews` : ""}`;
 }

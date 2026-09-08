@@ -92,6 +92,50 @@ enum TraineeRole {
   OTHER
 }
 
+/// The clinical area of the placement, separate from the reviewer's broad
+/// healthcare field. A medical intern can therefore be filtered as
+/// "Medicine · Emergency medicine", while a pharmacy trainee can choose a
+/// pharmacy rotation without pretending that every hospital names its units
+/// the same way.
+enum RotationSpecialty {
+  FAMILY_MEDICINE
+  EMERGENCY_MEDICINE
+  INTERNAL_MEDICINE
+  GENERAL_SURGERY
+  PEDIATRICS
+  OBSTETRICS_GYNECOLOGY
+  ANESTHESIOLOGY
+  INTENSIVE_CARE
+  OTOLARYNGOLOGY
+  UROLOGY
+  ORTHOPEDICS
+  PSYCHIATRY
+  RADIOLOGY
+  PATHOLOGY
+  ONCOLOGY
+  OPHTHALMOLOGY
+  DERMATOLOGY
+  NEUROLOGY
+  NEONATOLOGY
+  PEDIATRIC_EMERGENCY
+  PEDIATRIC_SUBSPECIALTY
+  SURGICAL_SUBSPECIALTY
+  PHARMACY
+  DENTISTRY
+  LABORATORY
+  REHABILITATION
+  PUBLIC_HEALTH
+  OTHER
+}
+
+/// Imported experiences stay distinguishable from reviews posted directly on
+/// Tellyrate. In particular, an old survey response must never be presented as
+/// if its author created a Tellyrate account or supplied a star rating here.
+enum ReviewSource {
+  USER
+  BATCH17_SURVEY
+}
+
 enum ContentStatus {
   PUBLISHED
   PENDING
@@ -111,6 +155,7 @@ enum FacilityStatus {
 enum FacilitySource {
   OPENSTREETMAP
   USER_SUBMITTED
+  CURATED
 }
 
 enum ReportReason {
@@ -272,7 +317,13 @@ model Facility {
   // -- Denormalised aggregates -------------------------------------------
   // Recomputed inside the same transaction as any review write. Sorting a
   // directory by rating cannot afford a join and an aggregate per row.
-  reviewCount Int   @default(0)
+  /// Every published first-hand experience, including imported surveys that
+  /// did not ask for a star rating.
+  reviewCount Int @default(0)
+
+  /// Only reviews that actually supplied an overall rating. Keeping this
+  /// separate prevents an unrated import from quietly lowering the average.
+  ratingCount Int   @default(0)
   ratingSum   Int   @default(0)
   ratingAvg   Float @default(0)
 
@@ -336,9 +387,10 @@ model Review {
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
-  /// The one required rating. Sub-scores below are optional so that leaving a
-  /// review costs one click and a sentence, not a form.
-  overall Int
+  /// Required for reviews submitted on Tellyrate. Nullable only because the
+  /// Batch 17 source survey collected useful experiences without asking for a
+  /// star rating; the import must not invent one.
+  overall Int?
 
   supervision  Int?
   handsOn      Int?
@@ -355,6 +407,10 @@ model Review {
   /// this reads as "Pharmacy · Intern", which is how a reader places a review.
   role  TraineeRole
 
+  /// Broad, filterable rotation area. `department` below remains free text for
+  /// the local unit/team name, which varies between facilities.
+  specialty RotationSpecialty?
+
   /// Free text, e.g. "Emergency", "ICU", "Inpatient pharmacy". Optional, and
   /// deliberately not an enum: departments are named differently everywhere.
   department String?
@@ -362,6 +418,10 @@ model Review {
   /// Coarse timing only — a month and year would, in a small department,
   /// narrow a reviewer down to one person.
   trainingYear Int?
+
+  source    ReviewSource @default(USER)
+  /// Stable identifier for idempotent imports. Null for user-written reviews.
+  sourceKey String?      @unique
 
   status ContentStatus @default(PUBLISHED)
 
@@ -383,6 +443,8 @@ model Review {
   @@unique([facilityId, authorId])
   @@index([facilityId, status, helpfulScore(sort: Desc)])
   @@index([facilityId, status, createdAt(sort: Desc)])
+  @@index([facilityId, status, field])
+  @@index([facilityId, status, specialty])
   @@index([status, createdAt(sort: Desc)])
   @@index([authorId])
 }

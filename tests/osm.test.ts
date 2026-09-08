@@ -1,6 +1,30 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normaliseElement } from "../src/lib/osm";
+import {
+  buildBboxQuery,
+  buildCountryFacilityQuery,
+  buildNameSearchQuery,
+  normaliseElement,
+} from "../src/lib/osm";
+
+test("every facility query is constrained to Saudi Arabia", () => {
+  for (const query of [
+    buildBboxQuery([24, 46, 25, 47]),
+    buildNameSearchQuery("hospital", [24, 46, 25, 47]),
+    buildCountryFacilityQuery(),
+  ]) {
+    assert.match(query, /ISO3166-1"="SA/);
+    assert.match(query, /boundary"="administrative/);
+    assert.match(query, /\(area\.country\)/);
+  }
+});
+
+test("facility queries reject an invalid country code", () => {
+  assert.throws(
+    () => buildBboxQuery([24, 46, 25, 47], 30, "Saudi Arabia"),
+    /two-letter ISO code/,
+  );
+});
 
 test("OSM Arabic names are retained when the default name is English", () => {
   const facility = normaliseElement({

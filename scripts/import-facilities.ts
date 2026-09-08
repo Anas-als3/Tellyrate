@@ -100,7 +100,9 @@ async function main() {
 
     let elements;
     try {
-      elements = await runOverpass(buildBboxQuery(city.bbox));
+      elements = await runOverpass(
+        buildBboxQuery(city.bbox, 120, city.countryCode),
+      );
     } catch (error) {
       console.log(`FAILED (${(error as Error).message})`);
       continue;
@@ -232,6 +234,13 @@ async function main() {
 
     // Be a good citizen of shared community servers.
     if (index < cities.length - 1) await sleep(args.pauseMs);
+  }
+
+  if (args.dryRun) {
+    console.log("\nDry run complete. No database rows or counters were changed.");
+    console.log("Facility data © OpenStreetMap contributors (ODbL).");
+    await prisma.$disconnect();
+    return;
   }
 
   // Reassignment moves a facility from one city to another, and only the

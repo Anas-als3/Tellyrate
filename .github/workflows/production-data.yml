@@ -1,0 +1,65 @@
+name: Production data maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_country_audit:
+        description: Hide unreviewed OSM facilities outside Saudi Arabia
+        required: true
+        type: boolean
+        default: false
+      import_batch17:
+        description: Import the reviewed Batch 17 survey experiences
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-data-maintenance
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    name: Audit facilities and import reviewed data
+    runs-on: ubuntu-latest
+    env:
+      # Long-running maintenance and migrations use Neon's direct connection.
+      DATABASE_URL: ${{ secrets.DIRECT_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Require the production database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::The DIRECT_URL repository secret is not configured."
+            exit 1
+          fi
+
+      - name: Apply pending schema migrations
+        run: npx prisma migrate deploy
+
+      - name: Preview the Saudi boundary audit
+        run: npm run audit:saudi-facilities
+
+      - name: Apply the Saudi boundary audit
+        if: ${{ inputs.apply_country_audit }}
+        run: npm run audit:saudi-facilities -- --apply
+
+      - name: Validate the Batch 17 import
+        run: npm run import:batch17
+
+      - name: Import the Batch 17 experiences
+        if: ${{ inputs.import_batch17 }}
+        run: npm run import:batch17 -- --apply

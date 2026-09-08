@@ -6,13 +6,20 @@ import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getCurrentUser } from "@/lib/session";
 import { getFacilityBySlug, listReviews } from "@/lib/queries";
+import { REVIEW_SORT_OPTIONS, type ReviewSortKey } from "@/lib/ranking";
 import {
-  REVIEW_SORT_OPTIONS,
-  isReviewSortKey,
-  type ReviewSortKey,
-} from "@/lib/ranking";
-import { RATING_AXES, REGION_SLUGS } from "@/lib/labels";
+  RATING_AXES,
+  REGION_SLUGS,
+  ROTATION_SPECIALTIES,
+  STUDENT_FIELDS,
+} from "@/lib/labels";
 import {
+  buildReviewHref,
+  hasReviewFilters,
+  parseReviewQuery,
+} from "@/lib/review-query";
+import {
+  formatNumber,
   getDictionary,
   lookup,
   type Dictionary,
@@ -30,6 +37,10 @@ import {
 } from "@/components/review-card";
 import { ReportControl } from "@/components/vote-buttons";
 import type { ThreadComment, ThreadViewer } from "@/components/comment-thread";
+import type {
+  RotationSpecialty,
+  StudentField,
+} from "@/generated/prisma/client";
 
 /**
  * The facility page — the one page the whole site exists to produce.
@@ -41,8 +52,6 @@ import type { ThreadComment, ThreadViewer } from "@/components/comment-thread";
  * IP address to someone else, which would quietly undo the promise the site
  * is built on.
  */
-
-const DEFAULT_REVIEW_SORT: ReviewSortKey = "helpful";
 
 /**
  * Arabic has its own comma, and the Latin one reads as a typo in Arabic text.
@@ -107,13 +116,13 @@ export async function generateMetadata({
   const title = t.facility.titleWithCity(names.primary, cityName);
 
   const description =
-    facility.reviewCount > 0
+    facility.ratingCount > 0
       ? t.facility.metaRated(
           names.primary,
           kind,
           place,
           facility.ratingAvg.toFixed(1),
-          facility.reviewCount,
+          facility.ratingCount,
         )
       : t.facility.metaUnrated(names.primary, kind, place);
 
@@ -144,19 +153,34 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
   const names = facilityNamesFor(locale, facility);
   const cityName = cityNameFor(locale, facility.city.name);
 
-  const sortParam = firstParam(sp.rsort);
-  // A separate `rsort`/`rpage` namespace, so paging the reviews here can never
-  // be confused with paging the facility directory that linked in.
-  const sort: ReviewSortKey = isReviewSortKey(sortParam)
-    ? sortParam
-    : DEFAULT_REVIEW_SORT;
-  const page = parsePage(firstParam(sp.rpage));
+  // A separate `r*` namespace means review filtering and paging can never be
+  // confused with the facility-directory URL that linked here.
+  const reviewQuery = parseReviewQuery(sp);
+  const { sort, page } = reviewQuery;
 
   const viewer = await getCurrentUser();
 
-  const [reviewPage, distribution, axisTotals, alsoInCity, account, ownReview] =
+  const [
+    reviewPage,
+    distribution,
+    axisTotals,
+    alsoInCity,
+    account,
+    ownReview,
+    reviewFieldGroups,
+    reviewSpecialtyGroups,
+  ] =
     await Promise.all([
-      listReviews(facility.id, sort, page, viewer?.id),
+      listReviews(
+        facility.id,
+        {
+          sort,
+          page,
+          field: reviewQuery.field as StudentField | undefined,
+          specialty: reviewQuery.specialty as RotationSpecialty | undefined,
+        },
+        viewer?.id,
+      ),
 
       prisma.review.groupBy({
         by: ["overall"],
@@ -198,6 +222,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
           nameLocal: true,
           kind: true,
           reviewCount: true,
+          ratingCount: true,
           ratingAvg: true,
           city: { select: { name: true, slug: true, countryCode: true } },
         },
@@ -216,6 +241,31 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             select: { id: true },
           })
         : null,
+
+      prisma.review.groupBy({
+        by: ["field"],
+        where: {
+          facilityId: facility.id,
+          status: "PUBLISHED",
+          specialty: reviewQuery.specialty
+            ? (reviewQuery.specialty as RotationSpecialty)
+            : undefined,
+        },
+        _count: { _all: true },
+      }),
+
+      prisma.review.groupBy({
+        by: ["specialty"],
+        where: {
+          facilityId: facility.id,
+          status: "PUBLISHED",
+          field: reviewQuery.field
+            ? (reviewQuery.field as StudentField)
+            : undefined,
+          specialty: { not: null },
+        },
+        _count: { _all: true },
+      }),
     ]);
 
   const reviews = reviewPage.reviews;
@@ -276,9 +326,19 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
 
   const distributionCounts = [0, 0, 0, 0, 0];
   for (const row of distribution) {
+    if (row.overall === null) continue;
     const index = Math.min(5, Math.max(1, Math.round(row.overall))) - 1;
     distributionCounts[index] += row._count;
   }
+
+  const fieldCounts = new Map(
+    reviewFieldGroups.map((row) => [String(row.field), row._count._all]),
+  );
+  const specialtyCounts = new Map(
+    reviewSpecialtyGroups
+      .filter((row) => row.specialty !== null)
+      .map((row) => [String(row.specialty), row._count._all]),
+  );
 
   const axisCount: Record<string, number> = {
     supervision: axisTotals._count.supervision,
@@ -300,8 +360,14 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
     facility.city.region,
   );
   const regionSlug = REGION_SLUGS[facility.city.region];
-  const rated = facility.reviewCount > 0;
-  const canonicalPath = reviewsPath(facility.slug, sort, page);
+  const rated = facility.ratingCount > 0;
+  const reviewFiltersActive = hasReviewFilters(reviewQuery);
+  const canonicalPath = buildReviewHref(
+    facility.slug,
+    reviewQuery,
+    {},
+    false,
+  );
   const writeHref = `/facilities/${facility.slug}/review`;
   const osmHref = openStreetMapHref(facility);
   const websiteHref = safeExternalHref(facility.website);
@@ -390,6 +456,11 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
           {facility.status === "PENDING" ? (
             <span className="chip chip--warn">{t.facility.pendingBadge}</span>
           ) : null}
+          {facility.reviewCount > 0 ? (
+            <Link className="btn btn--small" href="#reviews">
+              {t.facility.readReviews(facility.reviewCount)}
+            </Link>
+          ) : null}
           <Link
             className="btn btn--primary hidden lg:inline-flex"
             href={writeHref}
@@ -447,14 +518,17 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                     className="tnum"
                     style={{ fontSize: "var(--step--1)", color: "var(--ink-3)" }}
                   >
-                    {t.common.reviewCount(facility.reviewCount)}
+                    {t.facility.ratedReviewCount(facility.ratingCount)}
+                    {facility.reviewCount > facility.ratingCount
+                      ? `${t.common.separator}${t.facility.totalExperienceCount(facility.reviewCount)}`
+                      : ""}
                   </span>
                 </div>
 
                 <div style={{ flex: "1 1 16rem", minInlineSize: 0 }}>
                   <RatingDistribution
                     counts={distributionCounts}
-                    total={facility.reviewCount}
+                    total={facility.ratingCount}
                     t={t}
                   />
                 </div>
@@ -463,7 +537,9 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
               <div style={{ display: "grid", gap: "var(--space-xs)" }}>
                 <p className="label">{t.facility.notRatedYet}</p>
                 <p style={{ maxInlineSize: "var(--measure)", color: "var(--ink-2)" }}>
-                  {t.facility.notRatedBody(kindLabel.toLowerCase())}
+                  {facility.reviewCount > 0
+                    ? t.facility.unratedWithExperiences(facility.reviewCount)
+                    : t.facility.notRatedBody(kindLabel.toLowerCase())}
                 </p>
                 <div>
                   <Link className="btn btn--primary" href={writeHref}>
@@ -474,8 +550,8 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             )}
 
             <div
+              className="hidden lg:grid"
               style={{
-                display: "grid",
                 gap: "var(--space-s)",
                 gridTemplateColumns: "repeat(auto-fit, minmax(15rem, 1fr))",
                 borderBlockStart: "1px solid var(--line)",
@@ -494,6 +570,31 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                 />
               ))}
             </div>
+
+            <details className="lg:hidden">
+              <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+                {t.facility.ratingBreakdown}
+              </summary>
+              <div
+                style={{
+                  display: "grid",
+                  gap: "var(--space-s)",
+                  borderBlockStart: "1px solid var(--line)",
+                  paddingBlockStart: "var(--space-m)",
+                  marginBlockStart: "var(--space-s)",
+                }}
+              >
+                {RATING_AXES.map((axis) => (
+                  <SubRating
+                    key={axis.key}
+                    label={t.labels.ratingAxis[axis.key].label}
+                    value={facility[axis.avgKey]}
+                    count={axisCount[axis.key] ?? 0}
+                    t={t}
+                  />
+                ))}
+              </div>
+            </details>
           </section>
 
           <section
@@ -507,35 +608,190 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
             }}
           >
             <h2 id="reviews-heading" style={{ fontSize: "var(--step-2)" }}>
-              {rated
+              {facility.reviewCount > 0
                 ? t.facility.reviewsHeadingCount(facility.reviewCount)
                 : t.facility.reviewsHeading}
             </h2>
 
-            {reviewPage.total > 1 ? (
-              <nav className="tabs" aria-label={t.facility.sortReviews}>
-                {(Object.keys(REVIEW_SORT_OPTIONS) as ReviewSortKey[]).map((key) => (
-                  <Link
-                    key={key}
-                    className="tab"
-                    href={reviewsHref(facility.slug, key, 1)}
-                    aria-current={key === sort ? "page" : undefined}
+            {facility.reviewCount > 1 || reviewFiltersActive ? (
+              <form
+                action={`/facilities/${facility.slug}#reviews`}
+                method="get"
+                className="card"
+                aria-label={t.facility.filterReviews}
+                style={{
+                  padding: "var(--space-m)",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "end",
+                  gap: "var(--space-s)",
+                }}
+              >
+                {sort !== "helpful" ? (
+                  <input type="hidden" name="rsort" value={sort} />
+                ) : null}
+
+                <label className="field" style={{ flex: "1 1 14rem" }}>
+                  <span className="label">{t.facility.reviewerField}</span>
+                  <select
+                    className="select"
+                    name="rfield"
+                    defaultValue={reviewQuery.field?.toLowerCase() ?? ""}
                   >
-                    {t.labels.reviewSort[key]}
+                    <option value="">{t.facility.allReviewerFields}</option>
+                    {STUDENT_FIELDS.filter(
+                      (field) =>
+                        (fieldCounts.get(field) ?? 0) > 0 ||
+                        field === reviewQuery.field,
+                    ).map((field) => (
+                      <option key={field} value={field.toLowerCase()}>
+                        {lookup(t.labels.studentField, field, field)} (
+                        {formatNumber(fieldCounts.get(field) ?? 0)})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="field" style={{ flex: "1 1 14rem" }}>
+                  <span className="label">{t.facility.rotationSpecialty}</span>
+                  <select
+                    className="select"
+                    name="rspecialty"
+                    defaultValue={reviewQuery.specialty?.toLowerCase() ?? ""}
+                  >
+                    <option value="">{t.facility.allRotationSpecialties}</option>
+                    {ROTATION_SPECIALTIES.filter(
+                      (specialty) =>
+                        (specialtyCounts.get(specialty) ?? 0) > 0 ||
+                        specialty === reviewQuery.specialty,
+                    ).map((specialty) => (
+                      <option key={specialty} value={specialty.toLowerCase()}>
+                        {lookup(
+                          t.labels.rotationSpecialty,
+                          specialty,
+                          specialty,
+                        )}{" "}
+                        ({formatNumber(specialtyCounts.get(specialty) ?? 0)})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <button className="btn btn--primary btn--small" type="submit">
+                  {t.facility.applyReviewFilters}
+                </button>
+                {reviewFiltersActive ? (
+                  <Link
+                    className="btn btn--quiet btn--small"
+                    scroll={false}
+                    href={buildReviewHref(
+                      facility.slug,
+                      reviewQuery,
+                      { field: undefined, specialty: undefined },
+                    )}
+                  >
+                    {t.facility.clearReviewFilters}
                   </Link>
-                ))}
-              </nav>
+                ) : null}
+              </form>
+            ) : null}
+
+            {reviewFiltersActive ? (
+              <p className="hint" role="status">
+                {t.facility.matchingReviews(reviewPage.total)}
+              </p>
+            ) : null}
+
+            {reviewPage.total > 1 ? (
+              <>
+                <nav
+                  className="tabs hidden sm:flex"
+                  aria-label={t.facility.sortReviews}
+                >
+                  {(Object.keys(REVIEW_SORT_OPTIONS) as ReviewSortKey[]).map(
+                    (key) => (
+                      <Link
+                        key={key}
+                        className="tab"
+                        scroll={false}
+                        href={buildReviewHref(facility.slug, reviewQuery, {
+                          sort: key,
+                          page: 1,
+                        })}
+                        aria-current={key === sort ? "page" : undefined}
+                      >
+                        {t.labels.reviewSort[key]}
+                      </Link>
+                    ),
+                  )}
+                </nav>
+
+                <form
+                  className="sm:hidden"
+                  action={`/facilities/${facility.slug}#reviews`}
+                  method="get"
+                  style={{ display: "flex", alignItems: "end", gap: "var(--space-xs)" }}
+                >
+                  {reviewQuery.field ? (
+                    <input
+                      type="hidden"
+                      name="rfield"
+                      value={reviewQuery.field.toLowerCase()}
+                    />
+                  ) : null}
+                  {reviewQuery.specialty ? (
+                    <input
+                      type="hidden"
+                      name="rspecialty"
+                      value={reviewQuery.specialty.toLowerCase()}
+                    />
+                  ) : null}
+                  <label className="field" style={{ flex: "1 1 auto" }}>
+                    <span className="label">{t.facility.sortReviews}</span>
+                    <select className="select" name="rsort" defaultValue={sort}>
+                      {(Object.keys(REVIEW_SORT_OPTIONS) as ReviewSortKey[]).map(
+                        (key) => (
+                          <option key={key} value={key}>
+                            {t.labels.reviewSort[key]}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </label>
+                  <button className="btn btn--small" type="submit">
+                    {t.facility.applyReviewSort}
+                  </button>
+                </form>
+              </>
             ) : null}
 
             {reviews.length === 0 ? (
               <p className="notice">
                 {reviewPage.total === 0
-                  ? t.facility.noReviewsYet
+                  ? reviewFiltersActive
+                    ? t.facility.noMatchingReviews
+                    : t.facility.noReviewsYet
                   : t.facility.noReviewsOnPage}{" "}
                 {reviewPage.total === 0 ? (
-                  <Link href={writeHref}>{t.facility.writeTheFirstOne}</Link>
+                  reviewFiltersActive ? (
+                    <Link
+                      scroll={false}
+                      href={buildReviewHref(
+                        facility.slug,
+                        reviewQuery,
+                        { field: undefined, specialty: undefined },
+                      )}
+                    >
+                      {t.facility.clearReviewFilters}
+                    </Link>
+                  ) : (
+                    <Link href={writeHref}>{t.facility.writeTheFirstOne}</Link>
+                  )
                 ) : (
-                  <Link href={reviewsHref(facility.slug, sort, 1)}>
+                  <Link
+                    scroll={false}
+                    href={buildReviewHref(facility.slug, reviewQuery, { page: 1 })}
+                  >
                     {t.facility.backToFirstPage}
                   </Link>
                 )}
@@ -579,7 +835,10 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                 {page > 1 ? (
                   <Link
                     className="btn btn--small"
-                    href={reviewsHref(facility.slug, sort, page - 1)}
+                    scroll={false}
+                    href={buildReviewHref(facility.slug, reviewQuery, {
+                      page: page - 1,
+                    })}
                     rel="prev"
                   >
                     <span aria-hidden="true">{arrows.back}</span>{" "}
@@ -596,7 +855,10 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
                 {page < reviewPage.pageCount ? (
                   <Link
                     className="btn btn--small"
-                    href={reviewsHref(facility.slug, sort, page + 1)}
+                    scroll={false}
+                    href={buildReviewHref(facility.slug, reviewQuery, {
+                      page: page + 1,
+                    })}
                     rel="next"
                   >
                     {t.facility.olderPage}{" "}
@@ -622,7 +884,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
               zIndex: 5,
               background: "var(--paper)",
               borderBlockStart: "1px solid var(--line)",
-              padding: "var(--space-xs) 0",
+              padding: "var(--space-xs) 0 max(var(--space-xs), env(safe-area-inset-bottom))",
               marginBlockStart: "var(--space-l)",
             }}
           >
@@ -782,35 +1044,6 @@ export default async function FacilityPage({ params, searchParams }: PageProps) 
 // Helpers
 // ---------------------------------------------------------------------------
 
-function firstParam(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function parsePage(value: string | undefined): number {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 && parsed <= 1000 ? parsed : 1;
-}
-
-/**
- * Link builder for the review list. Parameters sitting at their default are
- * omitted, so every ordering of every page has exactly one URL.
- *
- * The vocabulary stays English (`?rsort=helpful`) in both languages on
- * purpose: a link shared from the Arabic page has to open the same ordering
- * for whoever receives it.
- */
-function reviewsPath(slug: string, sort: ReviewSortKey, page: number): string {
-  const params = new URLSearchParams();
-  if (sort !== DEFAULT_REVIEW_SORT) params.set("rsort", sort);
-  if (page > 1) params.set("rpage", String(page));
-  const query = params.toString();
-  return `/facilities/${slug}${query ? `?${query}` : ""}`;
-}
-
-function reviewsHref(slug: string, sort: ReviewSortKey, page: number): string {
-  return `${reviewsPath(slug, sort, page)}#reviews`;
-}
-
 /** The viewer's own vote, when `listReviews` was given a viewer to look for. */
 function viewerVoteOf(review: { votes?: { value: number }[] }): number {
   return review.votes?.[0]?.value ?? 0;
@@ -882,13 +1115,15 @@ type StructuredFacility = {
   phone: string | null;
   ratingAvg: number;
   reviewCount: number;
+  ratingCount: number;
   city: { name: string; countryCode: string };
 };
 
 type StructuredReview = {
-  overall: number;
+  overall: number | null;
   title: string | null;
   body: string;
+  source: string;
   author: { username: string } | null;
 };
 
@@ -926,29 +1161,37 @@ function structuredData(
         : undefined,
   };
 
-  if (facility.reviewCount > 0) {
+  if (facility.ratingCount > 0) {
     data.aggregateRating = {
       "@type": "AggregateRating",
       ratingValue: facility.ratingAvg,
-      reviewCount: facility.reviewCount,
+      reviewCount: facility.ratingCount,
       bestRating: 5,
       worstRating: 1,
     };
+  }
 
+  if (facility.reviewCount > 0) {
     // No `datePublished`: an exact date beside a field and a small department
     // is identifying, and the schema does not require one.
     data.review = reviews.slice(0, 10).map((review) => ({
       "@type": "Review",
       author: {
         "@type": "Person",
-        name: review.author?.username ?? t.review.authorDeleted,
+        name:
+          review.source === "BATCH17_SURVEY"
+            ? t.review.importedSurvey
+            : (review.author?.username ?? t.review.authorDeleted),
       },
-      reviewRating: {
-        "@type": "Rating",
-        ratingValue: review.overall,
-        bestRating: 5,
-        worstRating: 1,
-      },
+      reviewRating:
+        review.overall === null
+          ? undefined
+          : {
+              "@type": "Rating",
+              ratingValue: review.overall,
+              bestRating: 5,
+              worstRating: 1,
+            },
       name: review.title ?? undefined,
       reviewBody:
         review.body.length > 600

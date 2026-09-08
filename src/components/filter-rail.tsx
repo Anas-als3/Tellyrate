@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   activeFamilies,
   buildHref,
+  clearedQuery,
   familyOverride,
   familyValue,
   type FacilityQuery,
@@ -10,6 +11,8 @@ import {
 import { REGIONS } from "@/lib/labels";
 import { formatNumber, lookup, type Dictionary } from "@/lib/i18n/dictionaries";
 import { getT } from "@/lib/i18n/server";
+import { DEFAULT_SORT } from "@/lib/ranking";
+import { MobileFilterForm } from "@/components/mobile-filter-form";
 
 /**
  * The facet rail.
@@ -38,6 +41,8 @@ export type FilterFacets = {
   cities: FilterOption[];
   countries: FilterOption[];
   kinds: FilterOption[];
+  fields: FilterOption[];
+  specialties: FilterOption[];
   ratings: FilterOption[];
   /**
    * Optional, and the only family that is: a region is a place to start
@@ -76,6 +81,10 @@ function anyLabel(t: Dictionary, family: RailFamily): string {
       return t.facilities.anyCountry;
     case "kind":
       return t.facilities.anyKind;
+    case "field":
+      return t.facilities.anyField;
+    case "specialty":
+      return t.facilities.anySpecialty;
     case "min":
       return t.facilities.anyRating;
   }
@@ -92,6 +101,10 @@ function groupTitle(t: Dictionary, family: RailFamily): string {
       return t.facilities.countryFamily;
     case "kind":
       return t.facilities.kindFamily;
+    case "field":
+      return t.facilities.fieldFamily;
+    case "specialty":
+      return t.facilities.specialtyFamily;
     case "min":
       return t.facilities.ratingFamily;
   }
@@ -293,6 +306,20 @@ function FilterGroups({
         t={t}
         base={base}
         query={query}
+        family="field"
+        options={facets.fields}
+      />
+      <FilterGroup
+        t={t}
+        base={base}
+        query={query}
+        family="specialty"
+        options={facets.specialties}
+      />
+      <FilterGroup
+        t={t}
+        base={base}
+        query={query}
         family="kind"
         options={facets.kinds}
       />
@@ -321,6 +348,7 @@ export async function FilterRail({
     <FilterGroups t={t} base={base} query={query} facets={facets} />
   );
   const activeCount = activeFamilies(query).length;
+  const regions = regionOptions(t, facets);
 
   return (
     <>
@@ -334,11 +362,7 @@ export async function FilterRail({
         aria-label={t.facilities.filtersHeading}
         className="hidden lg:block"
         style={{
-          position: "sticky",
-          insetBlockStart: "var(--space-m)",
           alignSelf: "start",
-          maxBlockSize: "calc(100dvh - 2 * var(--space-m))",
-          overflowY: "auto",
           paddingInlineEnd: "var(--space-2xs)",
         }}
       >
@@ -358,7 +382,41 @@ export async function FilterRail({
             </span>
           ) : null}
         </summary>
-        <div style={{ marginBlockStart: "var(--space-m)" }}>{groups}</div>
+        <div style={{ marginBlockStart: "var(--space-m)" }}>
+          <MobileFilterForm
+            base={base}
+            values={{
+              q: query.q,
+              sort: query.sort === DEFAULT_SORT ? undefined : query.sort,
+              country: query.country,
+              region: query.region,
+              city: query.city,
+              field: query.field,
+              specialty: query.specialty,
+              kind: query.kind,
+              min: query.min === undefined ? undefined : String(query.min),
+            }}
+            facets={facets}
+            regions={regions}
+            clearHref={buildHref(base, clearedQuery(query))}
+            strings={{
+              region: t.facilities.regionFamily,
+              city: t.facilities.cityFamily,
+              field: t.facilities.fieldFamily,
+              specialty: t.facilities.specialtyFamily,
+              kind: t.facilities.kindFamily,
+              rating: t.facilities.ratingFamily,
+              anyRegion: t.facilities.anyRegion,
+              anyCity: t.facilities.anyCity,
+              anyField: t.facilities.anyField,
+              anySpecialty: t.facilities.anySpecialty,
+              anyKind: t.facilities.anyKind,
+              anyRating: t.facilities.anyRating,
+              apply: t.facilities.applyFilters,
+              clear: t.facilities.clearAll,
+            }}
+          />
+        </div>
       </details>
     </>
   );
