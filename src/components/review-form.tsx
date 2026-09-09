@@ -20,7 +20,7 @@ import {
   RATING_AXES,
   ROTATION_SPECIALTIES,
   STUDENT_FIELDS,
-  TRAINEE_ROLES,
+  traineeRoleOptions,
 } from "@/lib/labels";
 
 /**
@@ -333,6 +333,18 @@ export function ReviewForm({
     () => (initial?.body?.trim().length ?? 0) >= COUNTER_AFTER,
   );
   const [detailsOpen, setDetailsOpen] = useState(() => hasDetails(initial));
+
+  /**
+   * The three kinds of placement a review may be written about, plus — when a
+   * review carrying a retired answer is being edited — whatever it already
+   * says.
+   *
+   * The question used to offer seven answers and now offers three. No review
+   * in production was written under the old list, so this branch is a guard
+   * rather than a migration: it exists so that editing a typo in the body can
+   * never silently restate somebody's placement as one it was not.
+   */
+  const roleOptions = traineeRoleOptions(initial?.role);
 
   // Drafts belong to the create flow. An edit already has a saved version to
   // fall back on, and a stale draft over it would be a nasty surprise.
@@ -714,7 +726,7 @@ export function ReviewForm({
           <option value="" disabled>
             {t.rolePlaceholder}
           </option>
-          {TRAINEE_ROLES.map((value) => (
+          {roleOptions.map((value) => (
             <option key={value} value={value}>
               {lookup(d.labels.traineeRole, value, d.labels.traineeFallback)}
             </option>

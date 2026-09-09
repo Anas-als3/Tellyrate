@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { recalcCity, recalcFacility } from "@/lib/aggregates";
 import { prisma } from "@/lib/db";
+import { traineeRoleAllowed } from "@/lib/labels";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { getCurrentUser } from "@/lib/session";
 import {
@@ -152,6 +153,27 @@ function collectFieldErrors(error: z.ZodError): ReviewFieldErrors {
 }
 
 /**
+ * The role question offers three answers, and the server has to say so too —
+ * a `<select>` is a suggestion, not a constraint.
+ *
+ * `TraineeRole` still holds the four it used to offer, because reviews written
+ * under the old list carry them (see the note on the enum in schema.prisma).
+ * So an edit may keep whatever its review already said, and only a *new* answer
+ * has to be one of the three.
+ */
+function rejectRetiredRole(
+  role: string,
+  keeping?: string,
+): ReviewActionState | null {
+  if (traineeRoleAllowed(role, keeping)) return null;
+  return {
+    status: "error",
+    message: "A couple of things need fixing before this can post.",
+    fieldErrors: { role: "Say what you were doing there" },
+  };
+}
+
+/**
  * Prisma's error classes travel badly across driver-adapter boundaries and
  * bundler copies, so identify the unique-constraint violation by its code
  * rather than by `instanceof`.
@@ -225,6 +247,9 @@ export async function submitReviewAction(
       fieldErrors: collectFieldErrors(parsed.error),
     };
   }
+
+  const retired = rejectRetiredRole(parsed.data.role);
+  if (retired) return retired;
 
   const [account, facility] = await Promise.all([
     prisma.user.findUnique({
@@ -330,6 +355,8 @@ export async function updateReviewAction(
       id: true,
       authorId: true,
       facilityId: true,
+      // Carried so an edit may keep an answer the question no longer offers.
+      role: true,
       facility: {
         select: { slug: true, cityId: true, city: { select: { slug: true } } },
       },
@@ -345,6 +372,9 @@ export async function updateReviewAction(
       fieldErrors: {},
     };
   }
+
+  const retired = rejectRetiredRole(parsed.data.role, review.role);
+  if (retired) return retired;
 
   const limit = await checkRateLimit("review", user.id);
   if (!limit.ok) {

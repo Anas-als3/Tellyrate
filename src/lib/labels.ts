@@ -38,13 +38,19 @@ export const STUDENT_FIELD_LABELS: Record<string, string> = {
 export const STUDENT_FIELDS = Object.keys(STUDENT_FIELD_LABELS);
 
 /**
- * What the reviewer was at the facility. Read together with their field, so a
- * review is placed as "Pharmacy · Intern" or "Medicine · Summer trainee".
+ * What the reviewer was doing at the facility. Read together with their field,
+ * so a review is placed as "Pharmacy · Internship" or "Medicine · Summer
+ * training".
+ *
+ * Every value the database recognises is here, because every one of them is on
+ * a review somebody wrote. Only three are still offered — see
+ * `TRAINEE_ROLES_OFFERED` below.
  */
 export const TRAINEE_ROLE_LABELS: Record<string, string> = {
+  INTERN: "Internship year",
+  SUMMER_TRAINEE: "Summer training",
+  VOLUNTEER: "Volunteering",
   STUDENT: "Student on rotation",
-  SUMMER_TRAINEE: "Summer trainee",
-  INTERN: "Intern",
   RESIDENT: "Resident",
   FELLOW: "Fellow",
   OBSERVER: "Observer",
@@ -53,11 +59,63 @@ export const TRAINEE_ROLE_LABELS: Record<string, string> = {
 
 export const TRAINEE_ROLES = Object.keys(TRAINEE_ROLE_LABELS);
 
+/**
+ * The three a new review may choose from, in the order they are offered.
+ *
+ * These are the three ways a Saudi health student actually turns up at a
+ * facility outside their coursework: the internship year, a summer placement,
+ * and volunteering.
+ *
+ * The rest of `TRAINEE_ROLES` is recognised but not offered. Nobody in
+ * production has written a review under the old, longer list — every published
+ * review is an internship year, and all of them came from the batch survey
+ * import rather than from the form. So this is a guard rather than a
+ * migration: if a review carrying a retired value ever does turn up, from a
+ * seeded database or a future import, it displays what its author said and
+ * survives being edited, instead of being quietly restated as an internship.
+ */
+export const TRAINEE_ROLES_OFFERED = [
+  "INTERN",
+  "SUMMER_TRAINEE",
+  "VOLUNTEER",
+] as const;
+
+export type OfferedTraineeRole = (typeof TRAINEE_ROLES_OFFERED)[number];
+
+export function isOfferedTraineeRole(value: string): boolean {
+  return (TRAINEE_ROLES_OFFERED as readonly string[]).includes(value);
+}
+
+/**
+ * Whether a review may be saved carrying this role.
+ *
+ * `existing` is what the review already says, and passing it is what lets
+ * somebody fix a typo in a review written under the old question without being
+ * made to restate their placement as one of the three. A new review has no
+ * existing role, so it gets the three and nothing else.
+ */
+export function traineeRoleAllowed(next: string, existing?: string): boolean {
+  return isOfferedTraineeRole(next) || next === existing;
+}
+
+/**
+ * The roles to put in the form's menu: the three, plus whatever this review
+ * already says if the question no longer offers it.
+ */
+export function traineeRoleOptions(
+  current?: string | null,
+): readonly string[] {
+  return current && !isOfferedTraineeRole(current)
+    ? [...TRAINEE_ROLES_OFFERED, current]
+    : TRAINEE_ROLES_OFFERED;
+}
+
 /** The short form used in the rotation stamp, where space is tight. */
 export const TRAINEE_ROLE_SHORT: Record<string, string> = {
+  INTERN: "Internship",
+  SUMMER_TRAINEE: "Summer training",
+  VOLUNTEER: "Volunteer",
   STUDENT: "Student",
-  SUMMER_TRAINEE: "Summer trainee",
-  INTERN: "Intern",
   RESIDENT: "Resident",
   FELLOW: "Fellow",
   OBSERVER: "Observer",

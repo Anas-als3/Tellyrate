@@ -82,6 +82,20 @@ enum StudentField {
 /// were and what the placement was is the same question twice, and this form
 /// is meant to be one screen. Summer training is a role here rather than a
 /// placement type because that is how people in Saudi Arabia describe it.
+/// What the reviewer was doing at the facility.
+///
+/// Only three of these are offered when writing a review — the internship
+/// year, summer training and volunteering; see `TRAINEE_ROLES_OFFERED` in
+/// lib/labels.ts.
+///
+/// The other four are not dropped, for two reasons. Dropping a value from a
+/// Postgres enum means building a new type and rewriting the column, which is
+/// a migration with real risk behind it and nothing to gain: no review in
+/// production carries one. And the seed database does carry them, which keeps
+/// the display path for a retired value honest — if one ever did appear, it
+/// would read as what its author said rather than as a fallback.
+///
+/// They still display. They are just no longer on the menu.
 enum TraineeRole {
   STUDENT
   SUMMER_TRAINEE
@@ -90,6 +104,7 @@ enum TraineeRole {
   FELLOW
   OBSERVER
   OTHER
+  VOLUNTEER
 }
 
 /// The clinical area of the placement, separate from the reviewer's broad

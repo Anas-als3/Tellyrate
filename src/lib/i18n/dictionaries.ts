@@ -700,10 +700,10 @@ const en = {
     fieldHint:
       "Kept broad on purpose — a narrower list would make a small cohort easy to pick apart.",
 
-    roleLabel: "What were you there as — required",
-    rolePlaceholder: "Choose your role",
+    roleLabel: "What were you doing there — required",
+    rolePlaceholder: "Choose one",
     roleHint:
-      "A reader weighs the same placement differently depending on whether it came from a first-week student or a second-year resident.",
+      "A reader weighs the same placement differently depending on whether it came from a full internship year or two weeks of summer training.",
 
     specialtyLabel: "Rotation specialty",
     specialtyPlaceholder: "Choose a broad specialty (optional)",
@@ -1304,10 +1304,16 @@ const en = {
       OTHER: "Other",
     },
 
+    /**
+     * The first three are what a new review may choose; the rest are carried
+     * by reviews written before the question was narrowed and still have to
+     * read correctly. See `TRAINEE_ROLES_OFFERED` in lib/labels.ts.
+     */
     traineeRole: {
+      INTERN: "Internship year",
+      SUMMER_TRAINEE: "Summer training",
+      VOLUNTEER: "Volunteering",
       STUDENT: "Student on rotation",
-      SUMMER_TRAINEE: "Summer trainee",
-      INTERN: "Intern",
       RESIDENT: "Resident",
       FELLOW: "Fellow",
       OBSERVER: "Observer",
@@ -1316,9 +1322,10 @@ const en = {
 
     /** The short form used in the rotation stamp, where space is tight. */
     traineeRoleShort: {
+      INTERN: "Internship",
+      SUMMER_TRAINEE: "Summer training",
+      VOLUNTEER: "Volunteer",
       STUDENT: "Student",
-      SUMMER_TRAINEE: "Summer trainee",
-      INTERN: "Intern",
       RESIDENT: "Resident",
       FELLOW: "Fellow",
       OBSERVER: "Observer",
@@ -2308,8 +2315,8 @@ const ar: Dictionary = {
     fieldHint:
       "نستخدم تخصصات عامة حتى لا تكشف التجربة هويتك داخل دفعة صغيرة.",
 
-    roleLabel: "صفتك أثناء التدريب — مطلوب",
-    rolePlaceholder: "اختر صفتك أثناء التدريب",
+    roleLabel: "نوع مشاركتك — مطلوب",
+    rolePlaceholder: "اختر نوع المشاركة",
     roleHint:
       "تساعد هذه المعلومة القارئ على فهم تجربتك في سياقها.",
 
@@ -2936,9 +2943,10 @@ const ar: Dictionary = {
     },
 
     traineeRole: {
+      INTERN: "امتياز",
+      SUMMER_TRAINEE: "تدريب صيفي",
+      VOLUNTEER: "تطوع",
       STUDENT: "طالب في تدريب سريري",
-      SUMMER_TRAINEE: "متدرب صيفي",
-      INTERN: "متدرب امتياز",
       RESIDENT: "مقيم",
       FELLOW: "زميل",
       OBSERVER: "متدرب بالملاحظة",
@@ -2946,9 +2954,10 @@ const ar: Dictionary = {
     },
 
     traineeRoleShort: {
-      STUDENT: "طالب",
-      SUMMER_TRAINEE: "متدرب صيفي",
       INTERN: "امتياز",
+      SUMMER_TRAINEE: "تدريب صيفي",
+      VOLUNTEER: "تطوع",
+      STUDENT: "طالب",
       RESIDENT: "مقيم",
       FELLOW: "زميل",
       OBSERVER: "ملاحظ",
