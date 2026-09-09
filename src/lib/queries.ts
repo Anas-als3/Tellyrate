@@ -8,7 +8,9 @@ import {
   type ReviewSortKey,
   type SortKey,
 } from "@/lib/ranking";
+import { listRegions } from "@/lib/regions";
 import { reviewPageForPrecedingCount } from "@/lib/review-query";
+import { deriveStartOptions, type StartOptions } from "@/lib/start";
 import type {
   FacilityKind,
   Prisma,
@@ -325,4 +327,44 @@ export async function getSiteCounts() {
     prisma.city.count({ where: { facilityCount: { gt: 0 } } }),
   ]);
   return { facilities, reviews, cities };
+}
+
+/**
+ * Everything the first-run chooser needs, in three queries.
+ *
+ * Only called when the reader has no `tellyrate-start` cookie, so it costs a
+ * first visit and nothing after that. The review scan is unbounded on purpose:
+ * it is the whole published corpus, which is two hundred rows, and reducing it
+ * in JavaScript is cheaper than the four grouped queries it would otherwise
+ * take to answer "how many facilities in this city have an experience from
+ * this field" for eighty cities and twelve fields at once.
+ *
+ * The counting rule lives in `deriveStartOptions`, next to its test.
+ */
+export async function listStartOptions(): Promise<StartOptions> {
+  const [reviews, cities, regions] = await Promise.all([
+    prisma.review.findMany({
+      where: { status: "PUBLISHED", facility: { status: "PUBLISHED" } },
+      select: {
+        facilityId: true,
+        field: true,
+        facility: { select: { city: { select: { slug: true } } } },
+      },
+    }),
+    prisma.city.findMany({
+      where: { facilityCount: { gt: 0 } },
+      select: { slug: true, name: true, region: true, facilityCount: true },
+    }),
+    listRegions(),
+  ]);
+
+  return deriveStartOptions({
+    reviews: reviews.map((review) => ({
+      facilityId: review.facilityId,
+      field: review.field,
+      citySlug: review.facility.city.slug,
+    })),
+    cities,
+    regions,
+  });
 }

@@ -259,6 +259,62 @@ const en = {
       `Read this experience at ${facility}`,
   },
 
+  /**
+   * The first-run chooser: three questions asked once, on a reader's first
+   * visit to the home page, and never again.
+   *
+   * The copy carries one obligation the rest of the site does not. Two hundred
+   * experiences are spread across two thousand facilities, so most answers to
+   * these three questions match nothing at all — and a reader who has just
+   * answered three questions has earned being told that plainly, before they
+   * press the button, rather than being shown an empty page afterwards. That
+   * is what `noteWithoutField` is for.
+   */
+  start: {
+    eyebrow: "First time here",
+    lede: "Three questions and you are in. Your answers are not kept, and nothing is locked in.",
+
+    /** Named on the dialog itself, for anyone arriving by screen reader. */
+    dialogLabel: "Set up your first search",
+    dismiss: "Skip",
+    back: "Back",
+    step: (n: number, total: number) =>
+      `Step ${formatNumber(n)} of ${formatNumber(total)}`,
+    stepNames: ["Field", "Region", "City"],
+
+    fieldHeading: "What do you study?",
+    fieldLede:
+      "Experiences read differently depending on who wrote them, so every place from here on shows how much of it students in your field wrote.",
+    fieldNothing: "None written yet",
+
+    regionHeading: "Where would you train?",
+    regionLede: "Start wide — the next question narrows it.",
+
+    cityHeading: (region: string) => `Where in ${region}?`,
+    cityLede: "Or take the whole region and narrow it later.",
+    anywhereIn: (region: string) => `Anywhere in ${region}`,
+
+    placeCount: (n: number) => enCount(n, "place", "places"),
+    experienceCount: (n: number) => enCount(n, "experience", "experiences"),
+    /** Sits under a city: "309 places · 18 with Medicine". */
+    withField: (n: number, field: string) =>
+      `${formatNumber(n)} with ${field}`,
+
+    show: (n: number) => `Show ${enCount(n, "place", "places")}`,
+
+    /**
+     * The line above the button, which has to be a plain string rather than a
+     * function: the overlay is a client component, and a function cannot cross
+     * that boundary. The field and the place it refers to are the two answers
+     * already on screen directly above it, so naming them again would only
+     * repeat what the reader can see.
+     */
+    noteWithField: "Narrowed to places students in your field wrote about.",
+    noteWithoutField:
+      "Nobody has written up your field here yet, so this shows every place instead.",
+    showFallback: "Show results",
+  },
+
   facilities: {
     metaDescription:
       "Hospitals, clinics and health centres reviewed by the healthcare students who trained in them.",
@@ -1085,11 +1141,13 @@ const en = {
 
       sessionsTitle: "Sessions and cookies",
       sessionsP1:
-        "Signing in sets exactly one cookie, tellyrate_session. It is httpOnly so page scripts cannot read it, SameSite=Lax so another site cannot ride on it, marked Secure in production, and it expires after thirty days — slid forward once a session is more than half spent, so you are not logged out mid-visit.",
+        "Signing in sets exactly one cookie, tellyrate_session. It is httpOnly so page scripts cannot read it, SameSite=Lax so another site cannot ride on it, and marked Secure in production. The session behind it lasts thirty days, slid forward once it is more than half spent so you are not logged out mid-visit. The cookie itself is written with a much longer life — 400 days, the longest a browser will keep one — deliberately: the sliding renewal happens while a page is being rendered, where a cookie cannot be rewritten, so the cookie has to outlive the session it carries or a renewed session would be thrown away by the browser. What decides whether you are signed in is the row in the database, not the cookie.",
       sessionsP2:
         "The value in the cookie is 256 random bits. What the database stores is its SHA-256 digest, so a dump of the sessions table is a list of hashes that cannot be replayed as a login. Signing out deletes the row and the cookie; signing out everywhere deletes every session for the account, which is the remedy if you think your password has leaked.",
       sessionsP3:
-        "The only other cookie is the language you picked, tellyrate-locale, holding en or ar. It is read on the server to decide which words a page is written in, and it is not sent anywhere else. There is no analytics cookie, no third-party cookie, and no consent banner, because there is nothing to consent to.",
+        "The second is the language you picked, tellyrate-locale, holding en or ar. It is read on the server to decide which words a page is written in, and it is not sent anywhere else.",
+      sessionsP4:
+        "The third is tellyrate-start, and its entire value is the character 1. On a first visit the home page offers to set a search up for you — what you study, then a region, then a city — and this is what stops it asking again. It lasts a year, it is read on the server to decide whether to show that panel at all, and it records that the question was put, not what was answered. The three answers become the query string of one link and are stored by this site nowhere else — though, like any link you follow, that one is in your browser history and in the request the server was asked to serve. There is no analytics cookie, no third-party cookie, and no consent banner, because there is nothing to consent to.",
 
       storageTitle: "Your browser’s local storage",
       storageP1:
@@ -1640,6 +1698,63 @@ const ar: Dictionary = {
     studentFallback: "طالب",
     readExperienceAt: (facility: string) =>
       `اقرأ هذه التجربة في ${facility}`,
+  },
+
+  start: {
+    eyebrow: "أول زيارة لك",
+    lede: "ثلاثة أسئلة وتدخل. لا نحفظ إجاباتك، ويمكنك تغييرها في أي وقت.",
+
+    dialogLabel: "جهّز بحثك الأول",
+    dismiss: "تخطي",
+    back: "رجوع",
+    step: (n: number, total: number) =>
+      `الخطوة ${formatNumber(n)} من ${formatNumber(total)}`,
+    stepNames: ["التخصص", "المنطقة", "المدينة"],
+
+    fieldHeading: "ما تخصصك؟",
+    fieldLede:
+      "التجربة تختلف باختلاف من كتبها، لذلك سيظهر مع كل مكان بعد هذه الخطوة كم كتب عنه طلاب تخصصك.",
+    fieldNothing: "لا توجد تجارب بعد",
+
+    regionHeading: "أين تريد التدريب؟",
+    regionLede: "ابدأ بالمنطقة، والسؤال التالي يضيّق الاختيار.",
+
+    cityHeading: (region: string) => `أين في ${region}؟`,
+    cityLede: "أو اختر المنطقة كاملة وضيّق الاختيار لاحقا.",
+    anywhereIn: (region: string) => `كل مدن ${region}`,
+
+    placeCount: (n: number) =>
+      arCount(n, {
+        zero: "0 منشأة",
+        one: "منشأة واحدة",
+        two: "منشأتان",
+        few: "{n} منشآت",
+        many: "{n} منشأة",
+      }),
+    experienceCount: (n: number) =>
+      arCount(n, {
+        zero: "لا تجارب",
+        one: "تجربة واحدة",
+        two: "تجربتان",
+        few: "{n} تجارب",
+        many: "{n} تجربة",
+      }),
+    withField: (n: number, field: string) =>
+      `${formatNumber(n)} في ${field}`,
+
+    show: (n: number) =>
+      `اعرض ${arCount(n, {
+        zero: "0 منشأة",
+        one: "منشأة واحدة",
+        two: "منشأتين",
+        few: "{n} منشآت",
+        many: "{n} منشأة",
+      })}`,
+
+    noteWithField: "سنعرض المنشآت التي كتب عنها طلاب تخصصك.",
+    noteWithoutField:
+      "لا توجد تجارب من تخصصك هنا حتى الآن، لذلك سنعرض كل المنشآت.",
+    showFallback: "اعرض النتائج",
   },
 
   facilities: {
@@ -2658,11 +2773,13 @@ const ar: Dictionary = {
 
       sessionsTitle: "الجلسات وملفات تعريف الارتباط",
       sessionsP1:
-        "عند تسجيل الدخول نستخدم ملف ارتباط باسم tellyrate_session لإبقاء حسابك مسجلا. يتم ضبطه ليكون محميا من قراءة سكربتات الصفحة، ولا يرسل عبر اتصال غير مشفر في الموقع المباشر، وتنتهي صلاحيته بعد 30 يوما مع تمديدها أثناء الاستخدام.",
+        "عند تسجيل الدخول نستخدم ملف ارتباط باسم tellyrate_session لإبقاء حسابك مسجلا. يتم ضبطه ليكون محميا من قراءة سكربتات الصفحة، ولا يرسل عبر اتصال غير مشفر في الموقع المباشر. الجلسة نفسها تنتهي بعد 30 يوما وتُمدَّد أثناء الاستخدام، أما ملف الارتباط فيُكتب بعمر أطول بكثير — 400 يوم — عن قصد: التمديد يحدث أثناء عرض الصفحة حيث لا يمكن إعادة كتابة الملف، فلا بد أن يعيش الملف أطول من الجلسة التي يحملها. ما يحدد إن كنت مسجلا هو السجل في قاعدة البيانات لا الملف.",
       sessionsP2:
         "يحمل الملف رمزا عشوائيا، بينما نحفظ في قاعدة البيانات بصمة آمنة لهذا الرمز. تسجيل الخروج يحذف الجلسة، وخيار تسجيل الخروج من جميع الأجهزة يحذف كل جلسات حسابك.",
       sessionsP3:
-        "نستخدم ملف ارتباط آخر باسم tellyrate-locale لتذكر اللغة التي اخترتها. لا نستخدم ملفات ارتباط للتحليلات أو الإعلانات أو خدمات خارجية.",
+        "الملف الثاني هو tellyrate-locale لتذكر اللغة التي اخترتها، ويُقرأ في الخادم لتحديد لغة الصفحة فقط.",
+      sessionsP4:
+        "الملف الثالث هو tellyrate-start وقيمته الحرف 1 لا غير. في أول زيارة تعرض عليك الصفحة الرئيسية أن تجهّز لك بحثا: تخصصك ثم المنطقة ثم المدينة، وهذا الملف هو ما يمنع تكرار السؤال. مدته سنة، ويُقرأ في الخادم لتحديد ما إذا كانت اللوحة ستظهر أصلا، ويسجل أن السؤال طُرح لا ما أجبت به. تتحول إجاباتك إلى رابط واحد ولا نحفظها في أي مكان آخر، وإن كان ذلك الرابط — كأي رابط تفتحه — يبقى في سجل متصفحك وفي الطلب الذي أرسلته إلى الخادم. لا نستخدم ملفات ارتباط للتحليلات أو الإعلانات أو خدمات خارجية، ولا يوجد شريط موافقة لأنه لا يوجد ما توافق عليه.",
 
       storageTitle: "التخزين المحلي في متصفحك",
       storageP1:

@@ -150,16 +150,20 @@ export default async function PrivacyPage() {
             />
           </p>
           <p>{privacy.sessionsP2}</p>
-          {/* The site sets a second cookie to remember the reader's language,
-              and this paragraph is where the page admits to it. The English
-              copy this replaced still claimed the session cookie was the only
-              one — a page whose whole argument is that it can be checked
-              against the code cannot afford to be out of date with it. */}
+          {/* One paragraph per cookie, and a new cookie is a new paragraph.
+              The English copy this replaced still claimed the session cookie
+              was the only one — a page whose whole argument is that it can be
+              checked against the code cannot afford to be out of date with
+              it, so `tellyrate-start` got its own line here in the same commit
+              that introduced it. */}
           <p>
             <Prose
               text={privacy.sessionsP3}
               code={["tellyrate-locale", "en", "ar"]}
             />
+          </p>
+          <p>
+            <Prose text={privacy.sessionsP4} code={["tellyrate-start", "1"]} />
           </p>
         </Section>
 

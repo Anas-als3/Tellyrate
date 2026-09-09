@@ -138,6 +138,22 @@
   --shadow-1: 0 1px 0 0 rgb(23 20 21 / 0.04), 0 1px 2px -1px rgb(23 20 21 / 0.09);
   --shadow-2: 0 1px 0 0 rgb(23 20 21 / 0.05), 0 10px 28px -14px rgb(23 20 21 / 0.28);
 
+  /* Glass — used by the first-run chooser and nowhere else yet.
+     Laboratory glass, not frosted plastic: real glass is colourless and is
+     read by its rim and its wall, not by being milky. So the tint is high and
+     the blur is low, which is also the only way a translucent panel survives
+     on a near-white page. `--ink` keeps its measured 16.8:1 because the
+     effective ground stays within a hair of `--surface`. */
+  --glass: color-mix(in oklab, var(--surface) 84%, transparent);
+  --glass-line: color-mix(in oklab, var(--line-strong) 60%, transparent);
+  --glass-rim: rgb(255 255 255 / 0.72);
+  --glass-blur: 14px;
+  --glass-cast: 0 1px 0 0 rgb(23 20 21 / 0.05),
+    0 24px 60px -34px rgb(23 20 21 / 0.42);
+  /* Deliberately light. A heavy scrim would leave the panel sampling a flat
+     wash, and a glass panel over a flat wash is just a tinted rectangle. */
+  --scrim: color-mix(in oklab, #171415 22%, transparent);
+
   /* typography */
   --font-ui: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     sans-serif;
@@ -227,6 +243,17 @@
     --shadow-1: 0 0 0 1px rgb(255 255 255 / 0.06);
     --shadow-2: 0 0 0 1px rgb(255 255 255 / 0.08),
       0 16px 40px -20px rgb(0 0 0 / 0.8);
+
+    /* The stack inverts here on purpose: --surface-2 is lighter than --paper,
+       so the panel reads as an illuminated sign on a dark wall rather than as
+       frost, which is what frosting a dark page actually looks like. */
+    --glass: color-mix(in oklab, var(--surface-2) 82%, transparent);
+    --glass-line: color-mix(in oklab, var(--line-strong) 72%, transparent);
+    --glass-rim: rgb(255 255 255 / 0.10);
+    --glass-blur: 12px;
+    --glass-cast: 0 0 0 1px rgb(255 255 255 / 0.08),
+      0 28px 70px -30px rgb(0 0 0 / 0.9);
+    --scrim: rgb(0 0 0 / 0.58);
   }
 }
 
@@ -270,6 +297,14 @@
   --shadow-1: 0 0 0 1px rgb(255 255 255 / 0.06);
   --shadow-2: 0 0 0 1px rgb(255 255 255 / 0.08),
     0 16px 40px -20px rgb(0 0 0 / 0.8);
+
+  --glass: color-mix(in oklab, var(--surface-2) 82%, transparent);
+  --glass-line: color-mix(in oklab, var(--line-strong) 72%, transparent);
+  --glass-rim: rgb(255 255 255 / 0.10);
+  --glass-blur: 12px;
+  --glass-cast: 0 0 0 1px rgb(255 255 255 / 0.08),
+    0 28px 70px -30px rgb(0 0 0 / 0.9);
+  --scrim: rgb(0 0 0 / 0.58);
 }
 
 /* Expose the tokens to Tailwind utilities. */
@@ -635,6 +670,12 @@ textarea {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    /* The delays matter as much as the durations, and this block used to leave
+       them alone. A 120ms delay in front of a 0.01ms animation is 120ms of
+       staring at nothing followed by a snap — worse than the movement it was
+       meant to remove. */
+    animation-delay: 0ms !important;
+    transition-delay: 0ms !important;
   }
 }
 
@@ -904,5 +945,483 @@ textarea {
   }
   50% {
     opacity: 0.55;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   The first-run chooser — a directory board
+
+   A student's first visit answers three questions before it shows anything:
+   what they study, which region, which city. The panel that asks them is
+   modelled on the lit directory board bolted to a hospital wall — it hangs
+   from the top of the screen, and each answer stays on the board as a sign
+   line while the next question opens below it.
+
+   The descent is the whole idea, and it is why it is built on the block axis:
+   block is vertical in Arabic exactly as it is in English, so the metaphor
+   costs nothing to mirror. A horizontal step-slide — the usual wizard — would
+   have run backwards in Arabic and needed a `[dir="rtl"]` patch for every
+   transform.
+
+   The glass is the panel's, and only the panel's. One `backdrop-filter` in the
+   whole overlay: the scrim underneath is a flat wash, because blurring it too
+   would leave the panel sampling a solid colour, and a glass sheet over a
+   solid colour is a tinted rectangle.
+   -------------------------------------------------------------------------- */
+
+/*
+ * `<dialog>` with `showModal()`, not a positioned div.
+ *
+ * `.skip-link` already claims `z-index: 100` and the header's menu 60, so a
+ * plain overlay has to outbid them and would still lose to any future ancestor
+ * that creates a stacking context. The top layer sidesteps the auction
+ * entirely, and brings the three things a hand-written modal gets wrong:
+ * genuine inertness for the page behind, Escape, and focus restored to
+ * wherever it was. The cost is the UA's own dialog styling, reset here.
+ */
+.start {
+  position: fixed;
+  inset-block: 0;
+  inset-inline: 0;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  /* The UA gives `dialog` `width: fit-content; height: fit-content`, which
+     wins over stretching between the insets and would collapse this to the
+     size of its own contents in the corner of the screen. */
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
+  background: transparent;
+  color: inherit;
+  overflow: hidden;
+}
+
+/* `[open]`, not the bare class: author rules beat the UA's
+   `dialog:not([open]) { display: none }` regardless of specificity, so an
+   unqualified `display: flex` here would leave the panel on screen for
+   everyone, closed or not. */
+.start[open] {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/*
+ * Left transparent, and the scrim below is a real element instead.
+ *
+ * Every colour token in this file is declared on `:root`, and `::backdrop`
+ * only inherits from its originating element on recent engines. A
+ * `var(--scrim)` here would silently fall back to the UA's own grey on
+ * anything older — neither theme-correct nor this palette.
+ */
+.start::backdrop {
+  background: transparent;
+}
+
+.start__scrim {
+  position: absolute;
+  inset-block: 0;
+  inset-inline: 0;
+  background: var(--scrim);
+  /* Stops a thumb dragged on the scrim from scrolling the page behind it,
+     which `overflow: hidden` on the body does not reliably prevent on iOS. */
+  touch-action: none;
+  animation: start-scrim 180ms ease-out both;
+}
+
+.start__board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  /* Short of the full height on purpose: the page has to stay visible above
+     the sheet, or there is nothing behind the glass to see through it.
+     The `vh` line is the fallback for browsers without `dvh`. */
+  max-block-size: calc(100vh - var(--space-3xl));
+  max-block-size: calc(100dvh - var(--space-3xl));
+  border: 1px solid var(--glass-line);
+  /* Near-square: this is a data container, whatever else it is. */
+  border-radius: var(--r-1) var(--r-1) 0 0;
+  /* The opaque plate is the BASE and the glass is the enhancement, never the
+     other way round. The contrast ratios annotated at the top of this file are
+     only true against an opaque ground, so the failure path has to be the
+     opaque one. */
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 0 var(--glass-rim), var(--glass-cast);
+  animation: start-board-sheet 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@supports (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .start__board {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(116%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(116%);
+  }
+}
+
+/*
+ * Written as a removal rather than as a condition on the glass above, and that
+ * is the whole point. Media Queries L4 is three-valued: an engine that has
+ * never heard of `prefers-reduced-transparency` evaluates the feature to
+ * `unknown`, and `not unknown` is `unknown` too — which does not match. Gating
+ * the glass on `@media not (...)` would therefore have deleted it outright in
+ * every browser lacking the feature, rather than in the browsers whose reader
+ * asked for less transparency.
+ */
+@media (prefers-reduced-transparency: reduce) {
+  .start__board {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (min-width: 720px) {
+  .start[open] {
+    align-items: flex-start;
+  }
+
+  .start__board {
+    /* Hangs from the top rather than sitting centred: a centred panel grows in
+       both directions and the sense of descending through the questions goes
+       with it. Clear of the 56px sticky header. */
+    margin-block-start: 88px;
+    inline-size: min(680px, calc(100% - 2 * var(--space-l)));
+    max-block-size: min(640px, calc(100vh - 128px));
+    max-block-size: min(640px, calc(100dvh - 128px));
+    border-radius: var(--r-1);
+    animation-name: start-board;
+    /* `backwards`, not `both`: see the note on the keyframes. */
+    animation-fill-mode: backwards;
+  }
+}
+
+/* The head strip: a chart header over a hairline, the same move as `.stamp`. */
+/*
+ * Focus is moved onto the step heading on open and on every move between
+ * questions, so the question is heard before the answers. The ring is dropped
+ * only when the browser judges that nobody was driving by keyboard — Chrome
+ * matches `:focus-visible` on a programmatic focus move during keyboard
+ * interaction, and that reader should keep their indicator.
+ */
+.start__head h2:not(:focus-visible) {
+  outline: none;
+}
+
+.start__head {
+  flex: 0 0 auto;
+  padding-block: var(--space-m) var(--space-s);
+  padding-inline: var(--space-m);
+  border-block-end: 1px solid var(--line);
+  box-shadow: 0 3px 0 -2px var(--line);
+}
+
+.start__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  margin-block-end: var(--space-2xs);
+}
+
+.start__levels {
+  flex: 1 1 auto;
+  /* Flex children refuse to shrink below their own content unless told to, and
+     an unshrinkable scroll area would push the footer off the bottom of the
+     board rather than scrolling. */
+  min-block-size: 0;
+  padding-inline: var(--space-m);
+  /* The block axis is vertical in both languages — `writing-mode` never
+     changes here — so this is `overflow-y` rather than the logical longhand,
+     which is still uneven across the browsers this has to run on. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* One row per question, answered or not. All three are on the board from the
+   first frame, which is what makes the shape of the flow legible before any
+   of it has been answered. */
+.start__row {
+  padding-block: var(--space-s);
+  border-block-end: 1px solid var(--line);
+}
+
+/* `:not(--open)` matters: without it this outranks the brand rule below and
+   quietly deletes the progress indicator on the last question — which is the
+   one place the reader most needs to see how far down the board they are. */
+.start__row:last-child:not(.start__row--open) {
+  border-block-end: 0;
+}
+
+/* The open question. A 2px brand rule sits under it, and its position down the
+   board is the progress indicator — there is no separate bar and no dots. */
+.start__row--open {
+  /* A floor, and only a floor. The field and region lists are taller than this
+     and set their own height; what it prevents is the board collapsing around
+     a two-city region, which is the jarring case — the panel shrinking by half
+     under the reader's hand as they answer. */
+  min-block-size: 19rem;
+  border-block-end: 2px solid var(--brand);
+}
+
+/* An answered question, collapsed to what it says. A real button, so going
+   back is one press on the answer itself rather than a hunt for "Back". */
+.start__sign {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding-block: 0;
+  padding-inline: var(--space-2xs);
+  border: 1px solid transparent;
+  border-radius: var(--r-1);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--step-0);
+  font-weight: 600;
+  font-stretch: 92%;
+  text-align: start;
+  cursor: pointer;
+}
+
+.start__sign:hover {
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+
+/* A question not yet reached: the same row, stated but inert. */
+/*
+ * `--ink-2`, not `--ink-3`, here and on `.start__note` and the option counts.
+ * The ratios annotated at the top of this file were measured against an opaque
+ * ground, and the glass is not one — what sits behind this text is 84% of
+ * `--surface` over a scrim over whatever the blur happens to be sampling.
+ * `--ink-3` is 5.1:1 with no headroom for that; `--ink-2` is 8.9:1 and has.
+ */
+.start__pending {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  min-block-size: 44px;
+  padding-inline: var(--space-2xs);
+  color: var(--ink-2);
+}
+
+.start__rowname {
+  flex: 0 0 5.5rem;
+}
+
+/* Two columns where there is room for two, and never a horizontal scroller —
+   see the note on `.tabs`. */
+.start__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  column-gap: var(--space-m);
+  /* Small, but not nothing: below ~500px the grid is a single column, and
+     without it two 44px targets would share an edge. */
+  row-gap: var(--space-3xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * One option. Not a `.chip`: chips are `white-space: nowrap`, and
+ * «المنطقة الشمالية» would be pushed straight out of its cell.
+ *
+ * 44px is the floor here even though `.btn` ships at 40px. This is a first
+ * screen operated by a thumb, and it is the one place the standard the star
+ * input already states should actually be met.
+ */
+.start__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: var(--space-2xs);
+  border: 1px solid transparent;
+  border-radius: var(--r-1);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: var(--step-0);
+  font-stretch: 92%;
+  text-align: start;
+  cursor: pointer;
+  animation: start-option 200ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.start__option:hover {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.start__option[aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+
+.start__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Pushes the reading — a bar and a number — to the far edge of the row, so the
+   numbers line up down the column whatever the labels do. */
+.start__reading {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 0 0 auto;
+}
+
+/*
+ * The share bar. Wide enough that `.gbar`'s 20% graduations stay readable —
+ * at half this width they collapse into noise — and always `--tier-5`, never
+ * the tier ramp. The ramp is a quality scale; using it here would tell a
+ * reader that a city with few places is a badly rated one.
+ */
+.gbar--mini {
+  inline-size: 56px;
+  block-size: 6px;
+  flex: 0 0 auto;
+}
+
+.start__foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  flex-wrap: wrap;
+  padding-block: var(--space-s) var(--space-m);
+  padding-inline: var(--space-m);
+  border-block-start: 1px solid var(--line);
+}
+
+/*
+ * Every button on the board meets the 44px floor its option rows already
+ * declare — Skip and Back keep `.btn--small`'s quiet weight but not its 32px
+ * height, and the primary button is lifted from `.btn`'s 40px. This is a first
+ * screen driven by a thumb, and the way out of it has to be as easy to hit as
+ * the way on.
+ */
+.start__head .btn,
+.start__foot .btn {
+  min-block-size: 44px;
+}
+
+.start__note {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+  font-size: var(--step--1);
+  color: var(--ink-2);
+}
+
+/* Always at the far edge of the footer, and on a phone a full-width target on
+   its own line — it is the one thing on the board a thumb is reaching for. */
+.start__cta {
+  margin-inline-start: auto;
+}
+
+@media (max-width: 719px) {
+  .start__cta {
+    inline-size: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Motion — one easing, the same curve `.gbar__fill` already uses.
+
+   Every animated property's resting value is its FINAL state and the keyframes
+   supply only the from-state. That is what makes the global reduced-motion
+   rule sufficient: at a 0.01ms duration everything lands where it belongs
+   instead of being stranded mid-animation.
+   -------------------------------------------------------------------------- */
+
+@keyframes start-scrim {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * The board unrolls downward.
+ *
+ * Both ends are stated, and both are an `inset()`. A shape and `none` are not
+ * interpolable, so a keyframe that ran from `inset(...)` to the resting
+ * `clip-path: none` would animate *discretely* — holding the board fully
+ * clipped, which is to say invisible, for the first half and snapping open at
+ * the midpoint. The unroll would never happen.
+ *
+ * The insets are negative so the clip sits outside the border box and never
+ * crops the shadow, and the fill mode is `backwards` rather than `both` so
+ * that once the animation is over the property returns to `none` and leaves no
+ * clip on the board at all.
+ *
+ * Written physically because `clip-path` has no logical form — but the two
+ * inline values are equal, and RTL mirrors only the inline axis, so this
+ * renders identically in either direction.
+ */
+@keyframes start-board {
+  from {
+    opacity: 0;
+    clip-path: inset(-60px -60px calc(100% + 60px) -60px);
+    translate: 0 -10px;
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(-60px);
+    translate: 0 0;
+  }
+}
+
+/* On a phone the board is docked to the bottom edge, where unrolling from the
+   top would read as backwards. It rises instead. */
+@keyframes start-board-sheet {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+@keyframes start-option {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start__scrim,
+  .start__board,
+  .start__option {
+    animation: none;
+  }
+}
+
+/*
+ * Dismissal fades rather than cutting.
+ *
+ * An animation rather than a transition, and that is not a preference: the
+ * entrance above declares `animation-fill-mode: both`, which keeps applying at
+ * its end and would sit above a plain `opacity` declaration in the cascade.
+ * A second animation on a more specific selector replaces the first outright,
+ * which leaves nothing to reason about.
+ */
+.start--closing .start__scrim,
+.start--closing .start__board {
+  animation: start-out 180ms ease-out both;
+}
+
+@keyframes start-out {
+  to {
+    opacity: 0;
   }
 }

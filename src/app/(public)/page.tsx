@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { getSiteCounts } from "@/lib/queries";
+import { getSiteCounts, listStartOptions } from "@/lib/queries";
 import { listRegions } from "@/lib/regions";
 import { rotationStamp } from "@/lib/labels";
 import { buildReviewPermalink } from "@/lib/review-query";
@@ -13,7 +14,10 @@ import {
 } from "@/lib/i18n/dictionaries";
 import { facilityNamesFor } from "@/lib/i18n/names";
 import { getLocale } from "@/lib/i18n/server";
+import { START_COOKIE, START_COOKIE_VALUE } from "@/lib/start";
+import { buildStartProps } from "@/lib/start-view";
 import { FacilityCard } from "@/components/facility-card";
+import { StartOverlay } from "@/components/start-overlay";
 import { Stars } from "@/components/stars";
 
 /**
@@ -59,8 +63,27 @@ export default async function HomePage() {
   const locale = await getLocale();
   const t = getDictionary(locale);
 
-  const [counts, regions, mostReviewed, highestRated, latestReviews] =
-    await Promise.all([
+  /**
+   * Whether this reader has met the first-run board before.
+   *
+   * Read here rather than in the browser: deciding it client-side would mean
+   * shipping the page without the board and popping it in after hydration, and
+   * would be a hydration mismatch besides. `cookies()` is memoised per request
+   * and `getLocale()` above has already opted this render into being
+   * per-request, so the read costs nothing — but note the coupling to
+   * `force-dynamic` above: a cached shell would show the board to everyone.
+   */
+  const firstVisit =
+    (await cookies()).get(START_COOKIE)?.value !== START_COOKIE_VALUE;
+
+  const [
+    counts,
+    regions,
+    mostReviewed,
+    highestRated,
+    latestReviews,
+    startOptions,
+  ] = await Promise.all([
       getSiteCounts(),
       listRegions(),
       prisma.facility.findMany({
@@ -99,6 +122,9 @@ export default async function HomePage() {
           },
         },
       }),
+      // Three more queries, and only for a reader who has not answered the
+      // board before. Returning visitors pay neither them nor the payload.
+      firstVisit ? listStartOptions() : null,
     ]);
 
   // Before the first review lands there is no "most reviewed", so show what is
@@ -374,6 +400,12 @@ export default async function HomePage() {
           </Link>
         </p>
       </section>
+
+      {/* Last in the document, and a `<dialog>` in the top layer once it opens,
+          so it never comes between a screen reader and the page it covers. */}
+      {startOptions ? (
+        <StartOverlay {...buildStartProps(startOptions, t, locale)} />
+      ) : null}
     </div>
   );
 }
